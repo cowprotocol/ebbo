@@ -7,17 +7,17 @@ This is a tool that monitors all settlements that happen onchain - primarily foc
 The project consists of 3 main components:  
 
 1.  In the first component, for each auction, we look at all solutions that did NOT win and check whether any of them actually provided a better deal to an order that got executed by the winning solution. This currently is best used for analyzing historical data. This script utilizes the callData of all solutions.
-The output consists of all orders that could have provided the user a better surplus with corresponding solver and absolute/relative values of the surplus difference. It also provides the error rate of each solver. The competition endpoint is used for this.
-*Relevant file for this test:*
+The output consists of all orders that could have provided the user a better surplus with corresponding solver and absolute/relative values of the surplus difference. It also provides the error rate of each solver. The competition endpoint is used for this. <br />
+*Relevant file for this test: <br />
 	`cowEndpointSurplus.py`
 
 2. The second component is a spin-off from the first that serves as a logging tool on the most recent data available using the competition endpoint. It gathers the most recent settlements available, and analyzes them to see if any of them could have given a better surplus.
-*Relevant files for this test. The first file should be executed since it uses functions from the second:*
-`main.py` 
+*Relevant files for this test. The first file should be executed since it uses functions from the second:* <br />
+`main.py` <br />
 `cowEndpointFunctions.py`
 
-4.  The third component will rely on onchain data and the instance.json describing the auction. This component parses all settlements that happened onchain, recovers the surplus that each order got, and then, for each executed order separately, calls Quasimodo and asks for a solution that only executes that order. Then, it checks what surplus Quasimodo gives to that order and compares with what happened onchain.
-*Relevant file for this test:*
+4.  The third component will rely on onchain data and the instance.json describing the auction. This component parses all settlements that happened onchain, recovers the surplus that each order got, and then, for each executed order separately, calls Quasimodo and asks for a solution that only executes that order. Then, it checks what surplus Quasimodo gives to that order and compares with what happened onchain. <br />
+*Relevant file for this test:* <br />
 `OnChainSurplus.py`
 
 
