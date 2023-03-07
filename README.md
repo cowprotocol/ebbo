@@ -8,10 +8,10 @@ The project consists of 3 main components:
 
 1.  In the first component, for each auction, we look at all solutions that did NOT win and check whether any of them actually provided a better deal to an order that got executed by the winning solution. This currently is best used for analyzing historical data. This script utilizes the callData of all solutions.
 The output consists of all orders that could have provided the user a better surplus with corresponding solver and absolute/relative values of the surplus difference. It also provides the error rate of each solver. The competition endpoint is used for this. <br />
-*Relevant file for this test: <br />
+*Relevant file for this test:* <br />
 	`cowEndpointSurplus.py`
 
-2. The second component is a spin-off from the first that serves as a logging tool on the most recent data available using the competition endpoint. It gathers the most recent settlements available, and analyzes them to see if any of them could have given a better surplus.
+2. The second component is a spin-off from the first that serves as a logging tool on the most recent data available using the competition endpoint. It gathers the most recent settlements available, and analyzes them to see if any of them could have given a better surplus. <br />
 *Relevant files for this test. The first file should be executed since it uses functions from the second:* <br />
 `main.py` <br />
 `cowEndpointFunctions.py`
