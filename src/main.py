@@ -1,7 +1,7 @@
 import time
 import requests
 import json
-from cowEndpointFunctions import calculations, fetchCompetitionData
+from cowEndpointFunctions import getSurplus, fetchCompetitionData
 from web3 import Web3
 from config import INFURA_KEY, ETHERSCAN_KEY
 
@@ -19,11 +19,11 @@ def getHashes(startBlock, endBlock):
 def main():
     w3 = Web3(Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}"))
     startBlock = w3.eth.block_number
-    time.sleep(360)
+    time.sleep(1800)
     endBlock = w3.eth.block_number
     uncheckedHashes = []
     while True:
-        time.sleep(360)
+        time.sleep(1800)
         fetchedHashes = getHashes(startBlock, endBlock)
         allHashes = fetchedHashes + uncheckedHashes
         uncheckedHashes = []
@@ -32,7 +32,7 @@ def main():
             jsonData = fetchCompetitionData(hash)
             allHashes.pop(0)
             if jsonData.status_code == 200:
-                calculations(hash)
+                getSurplus(hash)
             else:
                 uncheckedHashes.append(hash)
 
@@ -40,4 +40,5 @@ def main():
         startBlock = endBlock
         endBlock = w3.eth.block_number
 
-main()
+if __name__ == "__main__":
+    main()
