@@ -4,9 +4,9 @@ from fractions import Fraction
 from config import ETHERSCAN_KEY
 
 
-def surplusCalculation(startBlock = None, endBlock = None, settlementHash = None):
+def totalSurplus(startBlock = None, endBlock = None, settlementHash = None):
     if settlementHash is not None:
-        calculations(settlementHash)
+        getSurplus(settlementHash)
 
     elif startBlock is not None and endBlock is not None:
         #Etherscan endpoint call for settlements between start and end block
@@ -18,7 +18,7 @@ def surplusCalculation(startBlock = None, endBlock = None, settlementHash = None
 
         for counterResults in range(len(results)):
             settlementHash = results[counterResults]["hash"]
-            calculations(settlementHash)
+            getSurplus(settlementHash)
 
 def fetchCompetitionData(settlementHash):
     endpointUrl = f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{settlementHash}"
@@ -26,10 +26,8 @@ def fetchCompetitionData(settlementHash):
     return jsonCompetitionData
 
             
-def calculations(settlementHash):   
+def getSurplus(settlementHash):   
     # Once we have settlement transaction hashes, call competition endpoint to get solver data
-    # endpointUrl = f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{settlementHash}"
-    # jsonCompetitionData = requests.get(endpointUrl)
     jsonCompetitionData = fetchCompetitionData(settlementHash)
     if jsonCompetitionData.status_code == 200:
         pyCompetitionData = json.loads(jsonCompetitionData.text)
@@ -40,10 +38,11 @@ def calculations(settlementHash):
             individualOrderID = winningSolution["orders"][orderCounter]["id"]
             orderDataUrl = f"https://api.cow.fi/mainnet/api/v1/orders/{individualOrderID}"
             jsonIndividualOrder = requests.get(orderDataUrl)
+            
             if jsonIndividualOrder.status_code == 200:
                 pyIndividualOrder = json.loads(jsonIndividualOrder.text)
                 if pyIndividualOrder["isLiquidityOrder"] == False:
-                    # print(settlementHash)
+
                 #These two values are fixed for each order ID
                     buyAmountFromID = int(pyIndividualOrder["buyAmount"])
                     sellAmountFromID = int(pyIndividualOrder["sellAmount"])
@@ -88,7 +87,7 @@ def calculations(settlementHash):
                         solnCount+=1
                     printFunction(surplusDeviationDict, settlementHash, individualOrderID, pyCompetitionData)
                         
-
+# Sort all {absolute, relative} value pairs in ascending order by absolute (since we want the lowest values) and print
 def printFunction(surplusDeviationDict, settlementHash, individualOrderID, pyCompetitionData):
     sortedDict = dict(sorted(surplusDeviationDict.items(), key=lambda x: x[1][0]))
     sortedValues = sorted(sortedDict.values(), key=lambda x: x[0])
