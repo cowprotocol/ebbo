@@ -31,7 +31,7 @@ solverDict = {
 def surplusCalculation(startBlock = None, endBlock = None, settlementHash = None):
     
     if settlementHash is not None:
-        calculations(settlementHash)
+        getSurplus(settlementHash)
 
     elif startBlock is not None and endBlock is not None:
         #Etherscan endpoint call for settlements between start and end block
@@ -43,25 +43,11 @@ def surplusCalculation(startBlock = None, endBlock = None, settlementHash = None
 
         for counterResults in range(len(results)):
             settlementHash = results[counterResults]["hash"]
-            calculations(settlementHash)
+            getSurplus(settlementHash)
+        statisticsOutput(startBlock, endBlock)
 
-        with open(f"{fileName}", mode="a") as file:
-            file.write(f"Total Orders = {str(totalOrders)} over {str(int(endBlock)-int(startBlock))} blocks from {str(startBlock)} to {str(endBlock)}\n")
-            file.write("No. of better surplus orders: " + str(higherSurplusOrders) + "\n")
-            file.write("Percent of potentially better offers: " + str(((higherSurplusOrders*100)/totalOrders)) + "%\n")
-            file.write(f"Total missed surplus: {totalSurplusETH} ETH\n")
-            file.write("\n")
 
-            for i in range(len(solverDict)):
-                key = list(solverDict.keys())[i]
-                if solverDict[key][0] == 0:
-                    errorPercent = 0
-                else:
-                    errorPercent = ((solverDict[key][1])*100)/(solverDict[key][0])
-                file.write(f"Solver: {key} errored: {errorPercent}%\n")
-            file.close()
-            
-def calculations(settlementHash):   
+def getSurplus(settlementHash):   
     # Once we have settlement transaction hashes, call competition endpoint to get solver data
     endpointUrl = f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{settlementHash}"
     jsonCompetitionData = requests.get(endpointUrl)
@@ -127,8 +113,9 @@ def calculations(settlementHash):
                                 surplusDeviationDict[solnCount] = surplusETH, percentDeviation
                         solnCount+=1
                     printFunction(surplusDeviationDict, settlementHash, individualOrderID, pyCompetitionData)
+                      
                         
-
+# Sort all {absolute, relative} value pairs in ascending order by absolute (since we want the lowest values) and print
 def printFunction(surplusDeviationDict, settlementHash, individualOrderID, pyCompetitionData):
     sortedDict = dict(sorted(surplusDeviationDict.items(), key=lambda x: x[1][0]))
     sortedValues = sorted(sortedDict.values(), key=lambda x: x[0])
@@ -151,6 +138,24 @@ def printFunction(surplusDeviationDict, settlementHash, individualOrderID, pyCom
             file.write("\n")
             file.close()
 
+
+def statisticsOutput(startBlock, endBlock):
+    with open(f"{fileName}", mode="a") as file:
+        file.write(f"Total Orders = {str(totalOrders)} over {str(int(endBlock)-int(startBlock))} blocks from {str(startBlock)} to {str(endBlock)}\n")
+        file.write("No. of better surplus orders: " + str(higherSurplusOrders) + "\n")
+        file.write("Percent of potentially better offers: " + str(((higherSurplusOrders*100)/totalOrders)) + "%\n")
+        file.write(f"Total missed surplus: {totalSurplusETH} ETH\n")
+        file.write("\n")
+
+    for i in range(len(solverDict)):
+        key = list(solverDict.keys())[i]
+        if solverDict[key][0] == 0:
+            errorPercent = 0
+        else:
+            errorPercent = ((solverDict[key][1])*100)/(solverDict[key][0])
+        file.write(f"Solver: {key} errored: {errorPercent}%\n")
+    file.close()
+
 # ---------------------------- TESTING --------------------------------
 
 optionInput = input("b for block input, h for hash input: ")
@@ -172,5 +177,3 @@ match optionInput:
             file.write("\n")
         print()
         surplusCalculation(None, None, settlementHash)
-
-
