@@ -134,6 +134,7 @@ def printFunction(surplusDeviationDict, settlementHash, individualOrderID, pyCom
         with open(f"{fileName}", mode="a") as file:
             file.write("Settlement Hash: " + settlementHash + "\n")
             file.write("For order: " + individualOrderID + "\n")
+            file.write("Winning Solver: " + solver + "\n")
             file.write("More surplus Corresponding Solver: " + pyCompetitionData["solutions"][firstKey]["solver"] + "     Deviation: " + str(format(sortedValues[0][1], '.5f')) + "%" + "   absolute difference: " + str(format(sortedValues[0][0], '.5f')) + " ETH\n")
             file.write("\n")
             file.close()
@@ -147,14 +148,14 @@ def statisticsOutput(startBlock, endBlock):
         file.write(f"Total missed surplus: {totalSurplusETH} ETH\n")
         file.write("\n")
 
-    for i in range(len(solverDict)):
-        key = list(solverDict.keys())[i]
-        if solverDict[key][0] == 0:
-            errorPercent = 0
-        else:
-            errorPercent = ((solverDict[key][1])*100)/(solverDict[key][0])
-        file.write(f"Solver: {key} errored: {errorPercent}%\n")
-    file.close()
+        for i in range(len(solverDict)):
+            key = list(solverDict.keys())[i]
+            if solverDict[key][0] == 0:
+                errorPercent = 0
+            else:
+                errorPercent = ((solverDict[key][1])*100)/(solverDict[key][0])
+            file.write(f"Solver: {key} errored: {errorPercent}%\n")
+        file.close()
 
 # ---------------------------- TESTING --------------------------------
 
