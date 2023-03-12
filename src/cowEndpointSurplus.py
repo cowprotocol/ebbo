@@ -135,7 +135,7 @@ def printFunction(surplusDeviationDict, settlementHash, individualOrderID, pyCom
             file.write("Settlement Hash: " + settlementHash + "\n")
             file.write("For order: " + individualOrderID + "\n")
             file.write("Winning Solver: " + solver + "\n")
-            file.write("More surplus Corresponding Solver: " + pyCompetitionData["solutions"][firstKey]["solver"] + "     Deviation: " + str(format(sortedValues[0][1], '.5f')) + "%" + "   absolute difference: " + str(format(sortedValues[0][0], '.5f')) + " ETH\n")
+            file.write("More surplus Corresponding Solver: " + pyCompetitionData["solutions"][firstKey]["solver"] + "     Deviation: " + str(format(sortedValues[0][1], '.4f')) + "%" + "   absolute difference: " + str(format(sortedValues[0][0], '.5f')) + " ETH\n")
             file.write("\n")
             file.close()
 
@@ -144,8 +144,9 @@ def statisticsOutput(startBlock, endBlock):
     with open(f"{fileName}", mode="a") as file:
         file.write(f"Total Orders = {str(totalOrders)} over {str(int(endBlock)-int(startBlock))} blocks from {str(startBlock)} to {str(endBlock)}\n")
         file.write("No. of better surplus orders: " + str(higherSurplusOrders) + "\n")
-        file.write("Percent of potentially better offers: " + str(((higherSurplusOrders*100)/totalOrders)) + "%\n")
-        file.write(f"Total missed surplus: {totalSurplusETH} ETH\n")
+        percentBetterOffers = getPercent(higherSurplusOrders, totalOrders)
+        file.write("Percent of potentially better offers: " + percentBetterOffers + "%\n")
+        file.write(f"Total missed surplus: " + str(format(totalSurplusETH, '.3f')) + "ETH\n")
         file.write("\n")
 
         for i in range(len(solverDict)):
@@ -154,8 +155,14 @@ def statisticsOutput(startBlock, endBlock):
                 errorPercent = 0
             else:
                 errorPercent = ((solverDict[key][1])*100)/(solverDict[key][0])
-            file.write(f"Solver: {key} errored: {errorPercent}%\n")
+            file.write(f"Solver: {key} errored: " +  str(format(errorPercent, '.3f')) + "%\n")
         file.close()
+
+def getPercent(numerator, denominator):
+    percent = (numerator*100)/denominator
+    percent = str(format(percent, '.3f'))
+    return percent
+
 
 # ---------------------------- TESTING --------------------------------
 
