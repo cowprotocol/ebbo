@@ -72,6 +72,7 @@ def decoder(settlementHash, w3, contractInstance):
     bucketResponsePy = json.loads(bucketResponseJson.text)
 
     # there can be multiple orders/trades in a single settlement
+
     for ordersCount in range(len(decoded_settlement.trades)):
         trade = decoded_settlement.trades[ordersCount]
         sellTokenIndex = trade['sellTokenIndex']
@@ -84,20 +85,21 @@ def decoder(settlementHash, w3, contractInstance):
         orderId = endpointDataPy["solutions"][-1]["orders"][ordersCount]["id"]
         for order in bucketResponsePy["orders"].items():
             if order[1]["id"] == orderId:
-                bucketResponsePy["orders"] = order
+                orderToDict = {order[0]: order[1]}
+                bucketResponsePy["orders"] = orderToDict
                 break
         #convert back to JSON for sending to Quasimodo
         bucketResponseJson = json.dumps(bucketResponsePy)
         # space here to post and receive instance.json to-fro Quasimodo
         # assuming jsonObject is called instanceJson
-        InstanceJson = {}
-        InstancePy = json.loads(InstanceJson.text)
-        if len(InstancePy["prices"]) > 0:
-            sellTokenIndex = trade['sellTokenIndex']
-            buyTokenIndex = trade['buyTokenIndex']
-            sellTokenClearingPrice = InstancePy["prices"][sellTokenIndex]
-            buyTokenClearingPrice = InstancePy["prices"][buyTokenIndex]
-            quasimodoSurplus = getSurplus(trade, sellTokenClearingPrice, buyTokenClearingPrice)
+        # InstanceJson = {}
+        # InstancePy = json.loads(InstanceJson.text)
+        # if len(InstancePy["prices"]) > 0:
+        #     sellTokenIndex = trade['sellTokenIndex']
+        #     buyTokenIndex = trade['buyTokenIndex']
+        #     sellTokenClearingPrice = InstancePy["prices"][sellTokenIndex]
+        #     buyTokenClearingPrice = InstancePy["prices"][buyTokenIndex]
+        #     quasimodoSurplus = getSurplus(trade, sellTokenClearingPrice, buyTokenClearingPrice)
 
 
 def getSurplus(trade, sellTokenClearingPrice, buyTokenClearingPrice):
