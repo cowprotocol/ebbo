@@ -7,8 +7,8 @@ import requests
 from fractions import Fraction
 import directory
 
-class EBBOHistoricalDataTesting:
 
+class EBBOHistoricalDataTesting:
     def __init__(self):
         self.total_orders = 0
         self.higher_surplus_orders = 0
@@ -34,7 +34,9 @@ class EBBOHistoricalDataTesting:
             "Barter": [0, 0],
         }
 
-    def total_surplus(self, start_block=None, end_block=None, settlement_hash=None, file_name=None):
+    def total_surplus(
+        self, start_block=None, end_block=None, settlement_hash=None, file_name=None
+    ):
         self.file_name = file_name
 
         if settlement_hash is not None:
@@ -74,28 +76,41 @@ class EBBOHistoricalDataTesting:
                 if json_order.status_code == 200:
                     individual_order_data = json.loads(json_order.text)
                     if individual_order_data["isLiquidityOrder"] is False:
-                    # printing settlement_hash as a debug test
+                        # printing settlement_hash as a debug test
                         print(settlement_hash)
                         surplus_deviation_dict = {}
                         soln_count = 0
                         for soln in competition_data["solutions"]:
                             for order in soln["orders"]:
                                 if individual_win_order_id == order["id"]:
-                                    diff_surplus, percent_deviation, surplus_token = self.get_surplus_difference(
+                                    (
+                                        diff_surplus,
+                                        percent_deviation,
+                                        surplus_token,
+                                    ) = self.get_surplus_difference(
                                         individual_order_data, soln, order
                                     )
                                     surplus_eth = (
-                                        int(competition_data["auction"]["prices"][surplus_token])
+                                        int(
+                                            competition_data["auction"]["prices"][
+                                                surplus_token
+                                            ]
+                                        )
                                         / (pow(10, 18))
                                     ) * (diff_surplus / pow(10, 18))
-                                    surplus_deviation_dict[soln_count] = surplus_eth, percent_deviation
+                                    surplus_deviation_dict[soln_count] = (
+                                        surplus_eth,
+                                        percent_deviation,
+                                    )
                             soln_count += 1
                         self.print_function(
-                            surplus_deviation_dict, settlement_hash, individual_win_order_id, competition_data
+                            surplus_deviation_dict,
+                            settlement_hash,
+                            individual_win_order_id,
+                            competition_data,
                         )
         else:
             print("not able to fetch data from competition endpoint.")
-
 
     def get_surplus_difference(self, individual_order_data, soln, order):
         buy_amount_from_id = int(individual_order_data["buyAmount"])
@@ -105,19 +120,25 @@ class EBBOHistoricalDataTesting:
         kind = individual_order_data["kind"]
 
         if kind == "sell":
-            win_surplus = int(individual_order_data["executedBuyAmount"]) - buy_amount_from_id
+            win_surplus = (
+                int(individual_order_data["executedBuyAmount"]) - buy_amount_from_id
+            )
             if individual_order_data["class"] == "limit":
                 exec_amt = (
-                    (int(Fraction(order["executedAmount"]))
-                    - int(individual_order_data["executedSurplusFee"]))
+                    (
+                        int(Fraction(order["executedAmount"]))
+                        - int(individual_order_data["executedSurplusFee"])
+                    )
                     * Fraction(soln["clearingPrices"][sell_token])
                     // Fraction(soln["clearingPrices"][buy_token])
                 )
                 surplus = exec_amt - buy_amount_from_id
             else:
-                exec_amt = int(Fraction(order["executedAmount"])
-                            * Fraction(soln["clearingPrices"][sell_token])
-                            // Fraction(soln["clearingPrices"][buy_token]))
+                exec_amt = int(
+                    Fraction(order["executedAmount"])
+                    * Fraction(soln["clearingPrices"][sell_token])
+                    // Fraction(soln["clearingPrices"][buy_token])
+                )
                 surplus = exec_amt - buy_amount_from_id
 
             diff_surplus = win_surplus - surplus
@@ -125,18 +146,26 @@ class EBBOHistoricalDataTesting:
             surplus_token = individual_order_data["buyToken"]
 
         elif kind == "buy":
-            win_surplus = sell_amount_from_id - int(individual_order_data["executedSellAmountBeforeFees"])
+            win_surplus = sell_amount_from_id - int(
+                individual_order_data["executedSellAmountBeforeFees"]
+            )
             if individual_order_data["class"] == "limit":
                 exec_amt = (
                     (int(Fraction(order["executedAmount"])))
                     * Fraction(soln["clearingPrices"][buy_token])
                     // Fraction(soln["clearingPrices"][sell_token])
                 )
-                surplus = sell_amount_from_id - int(individual_order_data["executedSurplusFee"]) - exec_amt
+                surplus = (
+                    sell_amount_from_id
+                    - int(individual_order_data["executedSurplusFee"])
+                    - exec_amt
+                )
             else:
-                exec_amt = int(Fraction(order["executedAmount"])
-                            * Fraction(soln["clearingPrices"][buy_token])
-                            // Fraction(soln["clearingPrices"][sell_token]))
+                exec_amt = int(
+                    Fraction(order["executedAmount"])
+                    * Fraction(soln["clearingPrices"][buy_token])
+                    // Fraction(soln["clearingPrices"][sell_token])
+                )
                 surplus = sell_amount_from_id - exec_amt
 
             diff_surplus = win_surplus - surplus
@@ -145,16 +174,23 @@ class EBBOHistoricalDataTesting:
 
         return (diff_surplus, percent_deviation, surplus_token)
 
-
-    def print_function(self, surplus_deviation_dict, settlement_hash, individual_order_id, competition_data):
-        sorted_dict = dict(sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0]))
+    def print_function(
+        self,
+        surplus_deviation_dict,
+        settlement_hash,
+        individual_order_id,
+        competition_data,
+    ):
+        sorted_dict = dict(
+            sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0])
+        )
         sorted_values = sorted(sorted_dict.values(), key=lambda x: x[0])
         if sorted_values[0][0] < -0.001 and sorted_values[0][1] < -1:
             for key, value in sorted_dict.items():
                 if value == sorted_values[0]:
                     first_key = key
                     break
-                
+
             self.higher_surplus_orders += 1
             solver = competition_data["solutions"][-1]["solver"]
             self.solver_dict[solver][1] += 1
@@ -178,29 +214,45 @@ class EBBOHistoricalDataTesting:
                 file.write("\n")
                 file.close()
 
-
     def statistics_output(self, start_block, end_block):
         with open(f"{self.file_name}", mode="a") as file:
             file.write(
                 f"Total Orders = {str(self.total_orders)} over {str(int(end_block)-int(start_block))} blocks from {str(start_block)} to {str(end_block)}\n"
             )
-            file.write("No. of better surplus orders: " + str(self.higher_surplus_orders) + "\n")
-            percent_better_offers = self.get_percent(self.higher_surplus_orders, self.total_orders)
-            file.write("Percent of potentially better offers: " + percent_better_offers + "%\n")
+            file.write(
+                "No. of better surplus orders: "
+                + str(self.higher_surplus_orders)
+                + "\n"
+            )
+            percent_better_offers = self.get_percent(
+                self.higher_surplus_orders, self.total_orders
+            )
+            file.write(
+                "Percent of potentially better offers: " + percent_better_offers + "%\n"
+            )
             total_surplus_eth = self.total_surplus_eth
-            file.write(f"Total missed surplus: " + str(format(total_surplus_eth, ".3f")) + "ETH\n")
+            file.write(
+                f"Total missed surplus: "
+                + str(format(total_surplus_eth, ".3f"))
+                + "ETH\n"
+            )
             file.write("\n")
 
             for key in self.solver_dict:
                 if self.solver_dict[key][0] == 0:
                     error_percent = 0
                 else:
-                    error_percent = (self.solver_dict[key][1] * 100) / (self.solver_dict[key][0])
-                file.write(f"Solver: {key} errored: " +  str(format(error_percent, '.3f')) + "%\n")
+                    error_percent = (self.solver_dict[key][1] * 100) / (
+                        self.solver_dict[key][0]
+                    )
+                file.write(
+                    f"Solver: {key} errored: "
+                    + str(format(error_percent, ".3f"))
+                    + "%\n"
+                )
             file.close()
 
-
     def get_percent(self, higher_surplus_orders: int, total_orders: int) -> str:
-        percent = (higher_surplus_orders * 100)/total_orders
-        percent = str(format(percent, '.3f'))
+        percent = (higher_surplus_orders * 100) / total_orders
+        percent = str(format(percent, ".3f"))
         return percent
