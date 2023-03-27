@@ -1,3 +1,12 @@
 {
-  "signedContributors": []
+  "signedContributors": [
+    {
+      "name": "shubhagarwal03",
+      "id": 59472112,
+      "comment_id": 1485268360,
+      "created_at": "2023-03-27T14:56:01Z",
+      "repoId": 607342437,
+      "pullRequestNo": 8
+    }
+  ]
 }
