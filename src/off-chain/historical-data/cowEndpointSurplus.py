@@ -36,7 +36,7 @@ class EBBOHistoricalDataTesting:
 
     def total_surplus(
         self, start_block=None, end_block=None, settlement_hash=None, file_name=None
-    ):
+    ) -> None:
         self.file_name = file_name
 
         if settlement_hash is not None:
@@ -56,7 +56,7 @@ class EBBOHistoricalDataTesting:
             except ValueError:
                 print("etherscan error.")
 
-    def get_order_surplus(self, settlement_hash: str):
+    def get_order_surplus(self, settlement_hash: str) -> None:
         # Once we have settlement transaction hashes, call competition endpoint to get solver data
         endpoint_url = f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{settlement_hash}"
         json_competition_data = requests.get(endpoint_url)
@@ -180,7 +180,7 @@ class EBBOHistoricalDataTesting:
         settlement_hash,
         individual_order_id,
         competition_data,
-    ):
+    ) -> None:
         sorted_dict = dict(
             sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0])
         )
@@ -214,7 +214,7 @@ class EBBOHistoricalDataTesting:
                 file.write("\n")
                 file.close()
 
-    def statistics_output(self, start_block, end_block):
+    def statistics_output(self, start_block, end_block) -> None:
         with open(f"{self.file_name}", mode="a") as file:
             file.write(
                 f"Total Orders = {str(self.total_orders)} over {str(int(end_block)-int(start_block))} blocks from {str(start_block)} to {str(end_block)}\n"
@@ -252,7 +252,7 @@ class EBBOHistoricalDataTesting:
                 )
             file.close()
 
-    def get_percent(self, higher_surplus_orders: int, total_orders: int) -> str:
+    def get_percent(self, higher_surplus_orders: int, total_orders: int):
         percent = (higher_surplus_orders * 100) / total_orders
-        percent = str(format(percent, ".3f"))
-        return percent
+        string_percent = str(format(percent, ".3f"))
+        return string_percent
