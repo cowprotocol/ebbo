@@ -7,14 +7,14 @@ import requests
 from fractions import Fraction
 import directory
 import configuration
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple, Any, Optional
 
 
 class EBBOHistoricalDataTesting:
-    def __init__(self, file_name=None):
+    def __init__(self, file_name=None) -> None:
         self.total_orders = 0
         self.higher_surplus_orders = 0
-        self.total_surplus_eth = 0
+        self.total_surplus_eth = 0.0
         self.file_name = file_name
 
     """
@@ -25,9 +25,9 @@ class EBBOHistoricalDataTesting:
 
     def get_surplus_by_input(
         self,
-        start_block: int = None,
-        end_block: int = None,
-        settlement_hash: str = None,
+        start_block: Optional[int] = None,
+        end_block: Optional[int] = None,
+        settlement_hash: Optional[str] = None,
     ) -> None:
         settlement_hashes_list = []
 
@@ -43,6 +43,8 @@ class EBBOHistoricalDataTesting:
         for comp_data in solver_competition_data:
             self.get_order_surplus(comp_data)
 
+        return
+
     """
     This function gets all hashes for a contract address between two blocks
     """
@@ -52,14 +54,19 @@ class EBBOHistoricalDataTesting:
         # all "result" go into results (based on API return value names from docs)
         try:
             settlements = json.loads(
-                (requests.get(etherscan_url, headers=configuration.header)).text
+                (
+                    requests.get(
+                        etherscan_url, headers=configuration.header, timeout=1000000
+                    )
+                ).text
             )["result"]
             settlement_hashes_list = []
             for settlement in settlements:
                 settlement_hashes_list.append(settlement["hash"])
-            return settlement_hashes_list
         except ValueError:
             print("etherscan error.")
+
+        return settlement_hashes_list
 
     """
     This function uses a list of tx hashes to fetch and assemble competition data
@@ -73,7 +80,7 @@ class EBBOHistoricalDataTesting:
         for tx_hash in settlement_hashes_list:
             endpoint_url = f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{tx_hash}"
             json_competition_data = requests.get(
-                endpoint_url, headers=configuration.header
+                endpoint_url, headers=configuration.header, timeout=1000000
             )
             if json_competition_data.status_code == 200:
                 solver_competition_data.append(json.loads(json_competition_data.text))
@@ -98,7 +105,9 @@ class EBBOHistoricalDataTesting:
             order_data_url = (
                 f"https://api.cow.fi/mainnet/api/v1/orders/{individual_win_order_id}"
             )
-            json_order = requests.get(order_data_url, headers=configuration.header)
+            json_order = requests.get(
+                order_data_url, headers=configuration.header, timeout=1000000
+            )
             if json_order.status_code == 200:
                 individual_order_data = json.loads(json_order.text)
                 if individual_order_data["isLiquidityOrder"]:
@@ -144,7 +153,7 @@ class EBBOHistoricalDataTesting:
             sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0])
         )
         sorted_values = sorted(sorted_dict.values(), key=lambda x: x[0])
-        if sorted_values[0][0] < -0.002 and sorted_values[0][1] < -0.01:
+        if sorted_values[0][0] < -0.002 and sorted_values[0][1] < -0.1:
             for key, value in sorted_dict.items():
                 if value == sorted_values[0]:
                     first_key = key
@@ -176,12 +185,15 @@ class EBBOHistoricalDataTesting:
     def write_to_file(
         self,
         individual_order_id: str,
-        first_key,
+        first_key: int,
         solver: str,
         competition_data: Dict[str, Any],
         sorted_values: List[Tuple[float, float]],
-    ):
+    ) -> None:
         with open(f"{self.file_name}", mode="a") as file:
+            file.write(
+                "Transaction Hash: " + competition_data["transactionHash"] + "\n"
+            )
             file.write("For order: " + individual_order_id + "\n")
             file.write("Winning Solver: " + solver + "\n")
             file.write(
@@ -205,6 +217,7 @@ class EBBOHistoricalDataTesting:
         competition_data: Dict[str, Any],
         sorted_values: List[Tuple[float, float]],
     ) -> None:
+        print("Transaction Hash: " + competition_data["transactionHash"])
         print("For order: " + individual_order_id)
         print("Winning Solver: " + solver)
         print(
@@ -244,7 +257,7 @@ class EBBOHistoricalDataTesting:
 
             for key in configuration.solver_dict:
                 if configuration.solver_dict[key][0] == 0:
-                    error_percent = 0
+                    error_percent = 0.0
                 else:
                     error_percent = (configuration.solver_dict[key][1] * 100) / (
                         configuration.solver_dict[key][0]
