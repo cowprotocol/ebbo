@@ -51,7 +51,9 @@ class EBBOHistoricalDataTesting:
         etherscan_url = f"https://api.etherscan.io/api?module=account&action=txlist&address=0x9008D19f58AAbD9eD0D60971565AA8510560ab41&startblock={start_block}&endblock={end_block}&sort=desc&apikey={directory.ETHERSCAN_KEY}"
         # all "result" go into results (based on API return value names from docs)
         try:
-            settlements = json.loads((requests.get(etherscan_url, headers=configuration.header)).text)["result"]
+            settlements = json.loads(
+                (requests.get(etherscan_url, headers=configuration.header)).text
+            )["result"]
             settlement_hashes_list = []
             for settlement in settlements:
                 settlement_hashes_list.append(settlement["hash"])
@@ -70,7 +72,9 @@ class EBBOHistoricalDataTesting:
         solver_competition_data = []
         for tx_hash in settlement_hashes_list:
             endpoint_url = f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{tx_hash}"
-            json_competition_data = requests.get(endpoint_url, headers=configuration.header)
+            json_competition_data = requests.get(
+                endpoint_url, headers=configuration.header
+            )
             if json_competition_data.status_code == 200:
                 solver_competition_data.append(json.loads(json_competition_data.text))
 
@@ -170,7 +174,12 @@ class EBBOHistoricalDataTesting:
                 )
 
     def write_to_file(
-        self, individual_order_id, first_key, solver, competition_data, sorted_values
+        self,
+        individual_order_id: str,
+        first_key,
+        solver: str,
+        competition_data: Dict[str, Any],
+        sorted_values: List[Tuple[float, float]],
     ):
         with open(f"{self.file_name}", mode="a") as file:
             file.write("For order: " + individual_order_id + "\n")
@@ -189,8 +198,13 @@ class EBBOHistoricalDataTesting:
             file.close()
 
     def print_logs(
-        self, individual_order_id, first_key, solver, competition_data, sorted_values
-    ):
+        self,
+        individual_order_id: str,
+        first_key: int,
+        solver: str,
+        competition_data: Dict[str, Any],
+        sorted_values: List[Tuple[float, float]],
+    ) -> None:
         print("For order: " + individual_order_id)
         print("Winning Solver: " + solver)
         print(
