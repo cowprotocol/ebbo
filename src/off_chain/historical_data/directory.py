@@ -11,4 +11,4 @@ with open(config, "r") as f:
     fileRead = f.read()
 exec(fileRead)
 ETHERSCAN_KEY = locals()["ETHERSCAN_KEY"]
-solver_dict = locals()["solver_dict"]
+INFURA_KEY = locals()["INFURA_KEY"]
