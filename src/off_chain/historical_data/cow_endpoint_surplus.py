@@ -11,7 +11,7 @@ from typing import List, Dict, Tuple, Any, Optional
 
 
 class EBBOHistoricalDataTesting:
-    def __init__(self, file_name=None) -> None:
+    def __init__(self, file_name: Optional[str] = None) -> None:
         self.total_orders = 0
         self.higher_surplus_orders = 0
         self.total_surplus_eth = 0.0
@@ -43,8 +43,6 @@ class EBBOHistoricalDataTesting:
         for comp_data in solver_competition_data:
             self.get_order_surplus(comp_data)
 
-        return
-
     """
     This function gets all hashes for a contract address between two blocks
     """
@@ -56,7 +54,9 @@ class EBBOHistoricalDataTesting:
             settlements = json.loads(
                 (
                     requests.get(
-                        etherscan_url, headers=configuration.header, timeout=1000000
+                        etherscan_url,
+                        headers=configuration.header,
+                        timeout=1000000,
                     )
                 ).text
             )["result"]
@@ -80,7 +80,9 @@ class EBBOHistoricalDataTesting:
         for tx_hash in settlement_hashes_list:
             endpoint_url = f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{tx_hash}"
             json_competition_data = requests.get(
-                endpoint_url, headers=configuration.header, timeout=1000000
+                endpoint_url,
+                headers=configuration.header,
+                timeout=1000000,
             )
             if json_competition_data.status_code == 200:
                 solver_competition_data.append(json.loads(json_competition_data.text))
@@ -106,7 +108,9 @@ class EBBOHistoricalDataTesting:
                 f"https://api.cow.fi/mainnet/api/v1/orders/{individual_win_order_id}"
             )
             json_order = requests.get(
-                order_data_url, headers=configuration.header, timeout=1000000
+                order_data_url,
+                headers=configuration.header,
+                timeout=1000000,
             )
             if json_order.status_code == 200:
                 individual_order_data = json.loads(json_order.text)
