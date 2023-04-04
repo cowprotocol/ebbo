@@ -5,6 +5,7 @@ from web3 import Web3
 import directory
 import logging
 
+
 def main() -> None:
     Instance = EBBOHistoricalDataTesting()
     infura_connection = f"https://mainnet.infura.io/v3/{directory.INFURA_KEY}"
