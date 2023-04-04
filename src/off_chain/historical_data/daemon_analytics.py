@@ -1,21 +1,21 @@
 import time
-from typing import List, Union
+from typing import List
 from cow_endpoint_surplus import EBBOHistoricalDataTesting
 from web3 import Web3
 import directory
-
+import logging
 
 def main() -> None:
     Instance = EBBOHistoricalDataTesting()
     infura_connection = f"https://mainnet.infura.io/v3/{directory.INFURA_KEY}"
     w3 = Web3(Web3.HTTPProvider(infura_connection))
     start_block = w3.eth.block_number
-    time.sleep(1800)
-    print("starting...")
+    time.sleep(1)
+    logging.info("starting...")
     end_block = w3.eth.block_number
     unchecked_hashes: List[str] = []
     while True:
-        time.sleep(1800)
+        time.sleep(1)
         fetched_hashes = Instance.get_settlement_hashes(start_block, end_block)
         all_hashes = fetched_hashes + unchecked_hashes
         unchecked_hashes = []
@@ -30,7 +30,7 @@ def main() -> None:
             else:
                 unchecked_hashes.append(hash)
 
-        print("going to sleep")
+        logging.info("going to sleep")
         start_block = end_block
         end_block = w3.eth.block_number
 

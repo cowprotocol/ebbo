@@ -3,4 +3,4 @@ mypy==0.982
 pylint==2.14.4
 pytest==7.1.2
 python-dotenv>=0.20.0
-web3==5.30.0
+web3==6.0.0
