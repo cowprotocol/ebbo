@@ -8,6 +8,7 @@ from fractions import Fraction
 import directory
 import configuration
 from typing import List, Dict, Tuple, Any, Optional
+import logging
 
 
 class EBBOHistoricalDataTesting:
@@ -16,6 +17,15 @@ class EBBOHistoricalDataTesting:
         self.higher_surplus_orders = 0
         self.total_surplus_eth = 0.0
         self.file_name = file_name
+
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(levelname)s - %(message)s",
+            handlers=[
+                logging.StreamHandler(),
+                logging.FileHandler(f"{self.file_name}.log", mode="w"),
+            ],
+        )
 
     """
     Below function takes start, end blocks as an input or solely the tx hash for EBBO testing.
@@ -64,7 +74,7 @@ class EBBOHistoricalDataTesting:
             for settlement in settlements:
                 settlement_hashes_list.append(settlement["hash"])
         except ValueError:
-            print("etherscan error.")
+            logging.critical("etherscan error.")
 
         return settlement_hashes_list
 
@@ -116,8 +126,7 @@ class EBBOHistoricalDataTesting:
                 individual_order_data = json.loads(json_order.text)
                 if individual_order_data["isLiquidityOrder"]:
                     continue
-                # printing "processing..." as a debug test to ensure running program
-                # print("processing...")
+
                 surplus_deviation_dict = {}
                 soln_count = 0
                 for soln in competition_data["solutions"]:
@@ -194,24 +203,36 @@ class EBBOHistoricalDataTesting:
         competition_data: Dict[str, Any],
         sorted_values: List[Tuple[float, float]],
     ) -> None:
-        with open(f"{self.file_name}", mode="a") as file:
-            file.write(
-                "Transaction Hash: " + competition_data["transactionHash"] + "\n"
-            )
-            file.write("For order: " + individual_order_id + "\n")
-            file.write("Winning Solver: " + solver + "\n")
-            file.write(
-                "More surplus Corresponding Solver: "
-                + competition_data["solutions"][first_key]["solver"]
-                + "     Deviation: "
-                + str(format(sorted_values[0][1], ".4f"))
-                + "%"
-                + "   absolute difference: "
-                + str(format(sorted_values[0][0], ".5f"))
-                + " ETH\n"
-            )
-            file.write("\n")
-            file.close()
+        # with open(f"{self.file_name}", mode="a") as file:
+        #     file.write(
+        #         "Transaction Hash: " + competition_data["transactionHash"] + "\n"
+        #     )
+        #     file.write("For order: " + individual_order_id + "\n")
+        #     file.write("Winning Solver: " + solver + "\n")
+        #     file.write(
+        #         "More surplus Corresponding Solver: "
+        #         + competition_data["solutions"][first_key]["solver"]
+        #         + "     Deviation: "
+        #         + str(format(sorted_values[0][1], ".4f"))
+        #         + "%"
+        #         + "   absolute difference: "
+        #         + str(format(sorted_values[0][0], ".5f"))
+        #         + " ETH\n"
+        #     )
+        #     file.write("\n")
+        #     file.close()
+        logging.info("Transaction Hash: %s", competition_data["transactionHash"])
+        logging.info("For order: %s", individual_order_id)
+        logging.info("Winning Solver: %s", solver)
+        logging.info(
+            "More surplus Corresponding Solver: %s",
+            competition_data["solutions"][first_key]["solver"],
+        )
+        logging.info("Deviation: %s", str(format(sorted_values[0][1], ".4f")) + "%")
+        logging.info(
+            "absolute difference: %s", str(format(sorted_values[0][0], ".5f")) + " ETH"
+        )
+        logging.info(" ")
 
     def print_logs(
         self,
