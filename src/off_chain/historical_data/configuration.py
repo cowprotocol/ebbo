@@ -23,7 +23,7 @@ header = {
 }
 
 
-def get_logger(filename):
+def get_logger(filename: str) -> logging.Logger:
     logger = logging.getLogger(filename)
     logger.setLevel(logging.INFO)
     fh = logging.FileHandler(filename + ".log", mode="w")
