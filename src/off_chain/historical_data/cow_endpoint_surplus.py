@@ -6,9 +6,8 @@ import json
 import requests
 from fractions import Fraction
 import directory
-import configuration
+from configuration import solver_dict, header, get_logger
 from typing import List, Dict, Tuple, Any, Optional
-import logging
 
 
 class EBBOHistoricalDataTesting:
@@ -17,15 +16,7 @@ class EBBOHistoricalDataTesting:
         self.higher_surplus_orders = 0
         self.total_surplus_eth = 0.0
         self.file_name = file_name
-
-        logging.basicConfig(
-            level=logging.INFO,
-            format="%(levelname)s - %(message)s",
-            handlers=[
-                logging.StreamHandler(),
-                logging.FileHandler(f"{self.file_name}.log", mode="w"),
-            ],
-        )
+        self.logger = get_logger(f"{self.file_name}")
 
     """
     Below function takes start, end blocks as an input or solely the tx hash for EBBO testing.
@@ -65,7 +56,7 @@ class EBBOHistoricalDataTesting:
                 (
                     requests.get(
                         etherscan_url,
-                        headers=configuration.header,
+                        headers=header,
                         timeout=1000000,
                     )
                 ).text
@@ -74,7 +65,7 @@ class EBBOHistoricalDataTesting:
             for settlement in settlements:
                 settlement_hashes_list.append(settlement["hash"])
         except ValueError:
-            logging.critical("etherscan error.")
+            self.logger.critical("etherscan error.")
 
         return settlement_hashes_list
 
@@ -91,7 +82,7 @@ class EBBOHistoricalDataTesting:
             endpoint_url = f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{tx_hash}"
             json_competition_data = requests.get(
                 endpoint_url,
-                headers=configuration.header,
+                headers=header,
                 timeout=1000000,
             )
             if json_competition_data.status_code == 200:
@@ -111,7 +102,7 @@ class EBBOHistoricalDataTesting:
         winning_orders = competition_data["solutions"][-1]["orders"]
 
         for individual_win_order in winning_orders:
-            configuration.solver_dict[winning_solver][0] += 1
+            solver_dict[winning_solver][0] += 1
             self.total_orders += 1
             individual_win_order_id = individual_win_order["id"]
             order_data_url = (
@@ -119,7 +110,7 @@ class EBBOHistoricalDataTesting:
             )
             json_order = requests.get(
                 order_data_url,
-                headers=configuration.header,
+                headers=header,
                 timeout=1000000,
             )
             if json_order.status_code == 200:
@@ -174,28 +165,18 @@ class EBBOHistoricalDataTesting:
 
             self.higher_surplus_orders += 1
             solver = competition_data["solutions"][-1]["solver"]
-            configuration.solver_dict[solver][1] += 1
+            solver_dict[solver][1] += 1
             self.total_surplus_eth += sorted_values[0][0]
 
-            if self.file_name == None:
-                self.print_logs(
-                    individual_order_id,
-                    first_key,
-                    solver,
-                    competition_data,
-                    sorted_values,
-                )
-                # write to file if file_name has a value passed from the tests file
-            else:
-                self.write_to_file(
-                    individual_order_id,
-                    first_key,
-                    solver,
-                    competition_data,
-                    sorted_values,
-                )
+            self.log_to_file(
+                individual_order_id,
+                first_key,
+                solver,
+                competition_data,
+                sorted_values,
+            )
 
-    def write_to_file(
+    def log_to_file(
         self,
         individual_order_id: str,
         first_key: int,
@@ -203,100 +184,44 @@ class EBBOHistoricalDataTesting:
         competition_data: Dict[str, Any],
         sorted_values: List[Tuple[float, float]],
     ) -> None:
-        # with open(f"{self.file_name}", mode="a") as file:
-        #     file.write(
-        #         "Transaction Hash: " + competition_data["transactionHash"] + "\n"
-        #     )
-        #     file.write("For order: " + individual_order_id + "\n")
-        #     file.write("Winning Solver: " + solver + "\n")
-        #     file.write(
-        #         "More surplus Corresponding Solver: "
-        #         + competition_data["solutions"][first_key]["solver"]
-        #         + "     Deviation: "
-        #         + str(format(sorted_values[0][1], ".4f"))
-        #         + "%"
-        #         + "   absolute difference: "
-        #         + str(format(sorted_values[0][0], ".5f"))
-        #         + " ETH\n"
-        #     )
-        #     file.write("\n")
-        #     file.close()
-        logging.info("Transaction Hash: %s", competition_data["transactionHash"])
-        logging.info("For order: %s", individual_order_id)
-        logging.info("Winning Solver: %s", solver)
-        logging.info(
+        self.logger.info("Transaction Hash: %s", competition_data["transactionHash"])
+        self.logger.info("For order: %s", individual_order_id)
+        self.logger.info("Winning Solver: %s", solver)
+        self.logger.info(
             "More surplus Corresponding Solver: %s",
             competition_data["solutions"][first_key]["solver"],
         )
-        logging.info("Deviation: %s", str(format(sorted_values[0][1], ".4f")) + "%")
-        logging.info(
+        self.logger.info("Deviation: %s", str(format(sorted_values[0][1], ".4f")) + "%")
+        self.logger.info(
             "absolute difference: %s", str(format(sorted_values[0][0], ".5f")) + " ETH"
         )
-        logging.info(" ")
-
-    def print_logs(
-        self,
-        individual_order_id: str,
-        first_key: int,
-        solver: str,
-        competition_data: Dict[str, Any],
-        sorted_values: List[Tuple[float, float]],
-    ) -> None:
-        print("Transaction Hash: " + competition_data["transactionHash"])
-        print("For order: " + individual_order_id)
-        print("Winning Solver: " + solver)
-        print(
-            "More surplus Corresponding Solver: "
-            + competition_data["solutions"][first_key]["solver"]
-            + "     Deviation: "
-            + str(format(sorted_values[0][1], ".4f"))
-            + "%"
-            + "   absolute difference: "
-            + str(format(sorted_values[0][0], ".5f"))
-            + " ETH"
-        )
-        print()
+        self.logger.info(" ")
 
     def statistics_output(self, start_block: int, end_block: int) -> None:
-        with open(f"{self.file_name}", mode="a") as file:
-            file.write(
-                f"Total Orders = {str(self.total_orders)} over {str(int(end_block)-int(start_block))} blocks from {str(start_block)} to {str(end_block)}\n"
+        self.logger.info(
+            "Better Surplus Potential orders percent: %s,      total missed ETH value: %s",
+            self.get_percent_better_orders(),
+            str(format(self.total_surplus_eth, ".5f")),
+        )
+        self.logger.info(
+            "Total Orders = %s over %s blocks from %s to %s",
+            str(self.total_orders),
+            str(int(end_block) - int(start_block)),
+            str(start_block),
+            str(end_block),
+        )
+        for key in solver_dict:
+            if solver_dict[key][0] == 0:
+                error_percent = 0.0
+            else:
+                error_percent = (solver_dict[key][1] * 100) / (solver_dict[key][0])
+            self.logger.info(
+                "Solver: %s errored: %s%%", key, format(error_percent, ".3f")
             )
-            file.write(
-                "No. of better surplus orders: "
-                + str(self.higher_surplus_orders)
-                + "\n"
-            )
-            percent_better_offers = self.get_percent(
-                self.higher_surplus_orders, self.total_orders
-            )
-            file.write(
-                "Percent of potentially better offers: " + percent_better_offers + "%\n"
-            )
-            file.write(
-                f"Total missed surplus: "
-                + str(format(self.total_surplus_eth, ".3f"))
-                + "ETH\n"
-            )
-            file.write("\n")
 
-            for key in configuration.solver_dict:
-                if configuration.solver_dict[key][0] == 0:
-                    error_percent = 0.0
-                else:
-                    error_percent = (configuration.solver_dict[key][1] * 100) / (
-                        configuration.solver_dict[key][0]
-                    )
-                file.write(
-                    f"Solver: {key} errored: "
-                    + str(format(error_percent, ".3f"))
-                    + "%\n"
-                )
-            file.close()
-
-    def get_percent(self, higher_surplus_orders: int, total_orders: int) -> str:
-        percent = (higher_surplus_orders * 100) / total_orders
-        string_percent = str(format(percent, ".3f"))
+    def get_percent_better_orders(self) -> str:
+        percent = (self.higher_surplus_orders * 100) / self.total_orders
+        string_percent = str(format(percent, ".3f")) + " %"
         return string_percent
 
 

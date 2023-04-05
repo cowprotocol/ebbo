@@ -1,3 +1,5 @@
+import logging
+
 solver_dict = {
     "1Inch": [0, 0],
     "Raven": [0, 0],
@@ -19,3 +21,18 @@ solver_dict = {
 header = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
 }
+
+
+def get_logger(filename):
+    logger = logging.getLogger(filename)
+    logger.setLevel(logging.INFO)
+    fh = logging.FileHandler(filename + ".log", mode="w")
+    fh.setLevel(logging.DEBUG)
+    formatter = logging.Formatter("%(levelname)s - %(message)s")
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.DEBUG)
+    sh.setFormatter(formatter)
+    logger.addHandler(sh)
+    return logger

@@ -6,25 +6,15 @@ class TestSurplusCalculation(unittest.TestCase):
     def test_hash_input(self) -> None:
         # Test that function works with a hash
         self.hash = "0x703f603e67ac532646ce2d4a5cd85703bcfbad0dd64364fc2d1bd8e38d7871c6"
-        self.file_name = str(self.hash) + ".txt"
-        # clears the previous file if checking same hash
-        with open(f"{self.file_name}", mode="w") as file:
-            file.write("\n")
-        file.close()
+        self.file_name = str(self.hash)
         instance = EBBOHistoricalDataTesting(self.file_name)
         self.assertIsNone(instance.get_surplus_by_input(settlement_hash=self.hash))
 
     def test_block_range_input(self) -> None:
         # Test that function works with a start and end block input
-        self.start_block = 16936719
-        self.end_block = 16939800
-        self.file_name = (
-            str(self.start_block) + "_surplusTo_" + str(self.end_block) + ".txt"
-        )
-        # clears the previous file if checking same block range
-        with open(f"{self.file_name}", mode="w") as file:
-            file.write("\n")
-        file.close()
+        self.start_block = 16929719
+        self.end_block = 16929800
+        self.file_name = str(self.start_block) + "_surplusTo_" + str(self.end_block)
         instance = EBBOHistoricalDataTesting(self.file_name)
         self.assertIsNone(
             instance.get_surplus_by_input(

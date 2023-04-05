@@ -1,6 +1,6 @@
 import os
 
-configPath = "src/config.py"
+configPath = "config.py"
 # Get the directory path of the current script (src string omitted)
 # Manually adjusted letter-wise
 ebboDirPath = os.path.dirname(os.path.abspath(__file__))[:-29]
