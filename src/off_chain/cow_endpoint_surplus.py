@@ -3,14 +3,18 @@ EBBO Historical Data Testing via block number inputs or a single settlement hash
 Uses CoW Endpoint provided callData.
 """
 import json
-import requests
 from fractions import Fraction
+from typing import List, Dict, Tuple, Any, Optional
+import requests
 from config import ETHERSCAN_KEY
 from src.off_chain.configuration import get_solver_dict, header, get_logger
-from typing import List, Dict, Tuple, Any, Optional
 
 
 class EBBOAnalysis:
+    """
+    initialization of logging object, and vars for analytics report.
+    """
+
     def __init__(self, file_name: Optional[str] = None) -> None:
         self.total_orders = 0
         self.higher_surplus_orders = 0
@@ -18,18 +22,17 @@ class EBBOAnalysis:
         self.logger = get_logger(f"{file_name}")
         self.solver_dict = get_solver_dict()
 
-    """
-    Below function takes start, end blocks as an input or solely the tx hash for EBBO testing.
-    Adds all hashes to a list (between blocks or single hash) and fetches competition endpoint data for all of the hashes.
-    Then calls on the get_order_surplus in a loop to compute potential better surplus for each settlement, if any.
-    """
-
     def get_surplus_by_input(
         self,
         start_block: Optional[int] = None,
         end_block: Optional[int] = None,
         settlement_hash: Optional[str] = None,
     ) -> None:
+        """
+        Below function takes start, end blocks as an input or solely the tx hash for EBBO testing.
+        Adds all hashes to a list (between blocks or single hash) and fetches competition endpoint data for all of the hashes.
+        """
+
         settlement_hashes_list = []
 
         if settlement_hash is not None:
@@ -44,11 +47,11 @@ class EBBOAnalysis:
         for comp_data in solver_competition_data:
             self.get_order_surplus(comp_data)
 
-    """
-    This function gets all hashes for a contract address between two blocks
-    """
-
     def get_settlement_hashes(self, start_block: int, end_block: int) -> List[str]:
+        """
+        This function gets all hashes for a contract address between two blocks
+        """
+
         etherscan_url = f"https://api.etherscan.io/api?module=account&action=txlist&address=0x9008D19f58AAbD9eD0D60971565AA8510560ab41&startblock={start_block}&endblock={end_block}&sort=desc&apikey={ETHERSCAN_KEY}"
         # all "result" go into results (based on API return value names from docs)
         try:
@@ -69,14 +72,14 @@ class EBBOAnalysis:
 
         return settlement_hashes_list
 
-    """
-    This function uses a list of tx hashes to fetch and assemble competition data
-    for each of the tx hashes and returns it to get_surplus_by_input for further surplus calculation.
-    """
-
     def get_solver_competition_data(
         self, settlement_hashes_list: List[str]
     ) -> List[Dict[str, Any]]:
+        """
+        This function uses a list of tx hashes to fetch and assemble competition data
+        for each of the tx hashes and returns it to get_surplus_by_input for further surplus calculation.
+        """
+
         solver_competition_data = []
         for tx_hash in settlement_hashes_list:
             try:
@@ -106,14 +109,14 @@ class EBBOAnalysis:
 
         return solver_competition_data
 
-    """
-    get_order_data() uses an orderUID to fetch order data from CoW endpoint.
-    Checks both production and staging.
-    """
-
     def get_order_data(
         self, individual_win_order_id: str
     ) -> Tuple[Dict[str, Any], int]:
+        """
+        This function uses an orderUID to fetch order data from CoW endpoint.
+        Checks both production and staging.
+        """
+
         individual_order_data = {}
         status_code = 0  # Set default values for these variables
         try:
@@ -195,22 +198,22 @@ class EBBOAnalysis:
             except Exception as e:
                 self.logger.error(f"Unhandled exception: {str(e)}.")
 
-    """
-    Below function finds the solution that could have been given a better surplus (if any) and 
-    checks whether if meets the flagging conditions. If yes, logging function is called.
-    """
-
     def flagging_order_check(
         self,
         surplus_deviation_dict: Dict[int, Tuple[float, float]],
         individual_order_id: str,
         competition_data: Dict[str, Any],
     ) -> None:
+        """
+        Below function finds the solution that could have been given a better surplus (if any) and
+        checks whether if meets the flagging conditions. If yes, logging function is called.
+        """
+
         sorted_dict = dict(
             sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0])
         )
         sorted_values = sorted(sorted_dict.values(), key=lambda x: x[0])
-        if sorted_values[0][0] < -0.0001 and sorted_values[0][1] < -0.001:
+        if sorted_values[0][0] < -0.002 and sorted_values[0][1] < -0.1:
             for key, value in sorted_dict.items():
                 if value == sorted_values[0]:
                     first_key = key
@@ -229,10 +232,6 @@ class EBBOAnalysis:
                 sorted_values,
             )
 
-    """
-    Logs to terminal (and file).
-    """
-
     def logging_function(
         self,
         individual_order_id: str,
@@ -241,6 +240,10 @@ class EBBOAnalysis:
         competition_data: Dict[str, Any],
         sorted_values: List[Tuple[float, float]],
     ) -> None:
+        """
+        Logs to terminal (and file).
+        """
+
         self.logger.info("Transaction Hash: %s", competition_data["transactionHash"])
         self.logger.info("For order: %s", individual_order_id)
         self.logger.info("Winning Solver: %s", solver)
@@ -284,11 +287,10 @@ class EBBOAnalysis:
                 "Solver: %s errored: %s%%", key, format(error_percent, ".3f")
             )
 
-    """
-    get_percent_better_orders() returns the percent of better orders.
-    """
-
     def get_percent_better_orders(self) -> str:
+        """
+        get_percent_better_orders() returns the percent of better orders.
+        """
         string_percent = str
         try:
             percent = (self.higher_surplus_orders * 100) / self.total_orders
@@ -298,16 +300,15 @@ class EBBOAnalysis:
         return string_percent
 
 
-"""
-computes surplus difference given non-winning solution data and winning solution data.
-"""
-
-
 def get_surplus_difference(
     individual_order_data: Dict[str, Any],
     soln_clearing_price: Dict[str, Any],
     order: Dict[str, Any],
 ) -> Tuple[int, float, str]:
+    """
+    computes surplus difference given non-winning solution data and winning solution data.
+    """
+
     buy_amount = int(individual_order_data["buyAmount"])
     sell_amount = int(individual_order_data["sellAmount"])
     sell_token = individual_order_data["sellToken"]
