@@ -286,7 +286,7 @@ computes surplus difference given non-winning solution data and winning solution
 
 def get_surplus_difference(
     individual_order_data: Dict[str, Any],
-    soln_clearingPrice: Dict[str, Any],
+    soln_clearing_price: Dict[str, Any],
     order: Dict[str, Any],
 ) -> Tuple[int, float, str]:
     buy_amount = int(individual_order_data["buyAmount"])
@@ -303,15 +303,15 @@ def get_surplus_difference(
                     int(Fraction(order["executedAmount"]))
                     - int(individual_order_data["executedSurplusFee"])
                 )
-                * Fraction(soln_clearingPrice[sell_token])
-                // Fraction(soln_clearingPrice[buy_token])
+                * Fraction(soln_clearing_price[sell_token])
+                // Fraction(soln_clearing_price[buy_token])
             )
             surplus = exec_amt - buy_amount
         else:
             exec_amt = int(
                 Fraction(order["executedAmount"])
-                * Fraction(soln_clearingPrice[sell_token])
-                // Fraction(soln_clearingPrice[buy_token])
+                * Fraction(soln_clearing_price[sell_token])
+                // Fraction(soln_clearing_price[buy_token])
             )
             surplus = exec_amt - buy_amount
 
@@ -326,8 +326,8 @@ def get_surplus_difference(
         if individual_order_data["class"] == "limit":
             exec_amt = (
                 (int(Fraction(order["executedAmount"])))
-                * Fraction(soln_clearingPrice[buy_token])
-                // Fraction(soln_clearingPrice[sell_token])
+                * Fraction(soln_clearing_price[buy_token])
+                // Fraction(soln_clearing_price[sell_token])
             )
             surplus = (
                 sell_amount
@@ -337,8 +337,8 @@ def get_surplus_difference(
         else:
             exec_amt = int(
                 Fraction(order["executedAmount"])
-                * Fraction(soln_clearingPrice[buy_token])
-                // Fraction(soln_clearingPrice[sell_token])
+                * Fraction(soln_clearing_price[buy_token])
+                // Fraction(soln_clearing_price[sell_token])
             )
             surplus = sell_amount - exec_amt
 

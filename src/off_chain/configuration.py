@@ -1,8 +1,8 @@
 import logging
+from typing import Dict, List, Optional
 from config import DUNE_KEY
 from dune_client.client import DuneClient
 from dune_client.query import Query
-from typing import Dict, List, Optional
 
 
 def get_solver_dict() -> Dict[str, List[int]]:
