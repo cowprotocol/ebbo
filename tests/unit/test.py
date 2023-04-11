@@ -1,21 +1,21 @@
 import unittest
-from cow_endpoint_surplus import EBBOHistoricalDataTesting, get_surplus_difference
+from src.off_chain.cow_endpoint_surplus import EBBOAnalysis, get_surplus_difference
 
 
 class TestSurplusCalculation(unittest.TestCase):
     def test_hash_input(self) -> None:
         # Test that function works with a hash
-        self.hash = "0x703f603e67ac532646ce2d4a5cd85703bcfbad0dd64364fc2d1bd8e38d7871c6"
+        self.hash = "0xf713448104731e43b74b39d0897653f5a7f889cbad6c275d72991c506de7fa52"
         self.file_name = str(self.hash)
-        instance = EBBOHistoricalDataTesting(self.file_name)
+        instance = EBBOAnalysis(self.file_name)
         self.assertIsNone(instance.get_surplus_by_input(settlement_hash=self.hash))
 
     def test_block_range_input(self) -> None:
         # Test that function works with a start and end block input
-        self.start_block = 16929719
-        self.end_block = 16929800
+        self.start_block = 16962710
+        self.end_block = 16963710
         self.file_name = str(self.start_block) + "_surplusTo_" + str(self.end_block)
-        instance = EBBOHistoricalDataTesting(self.file_name)
+        instance = EBBOAnalysis(self.file_name)
         self.assertIsNone(
             instance.get_surplus_by_input(
                 start_block=self.start_block, end_block=self.end_block

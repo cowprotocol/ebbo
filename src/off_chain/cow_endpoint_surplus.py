@@ -5,18 +5,18 @@ Uses CoW Endpoint provided callData.
 import json
 import requests
 from fractions import Fraction
-import directory
-from configuration import solver_dict, header, get_logger
+from config import ETHERSCAN_KEY
+from src.off_chain.configuration import get_solver_dict, header, get_logger
 from typing import List, Dict, Tuple, Any, Optional
 
 
-class EBBOHistoricalDataTesting:
+class EBBOAnalysis:
     def __init__(self, file_name: Optional[str] = None) -> None:
         self.total_orders = 0
         self.higher_surplus_orders = 0
         self.total_surplus_eth = 0.0
-        self.file_name = file_name
-        self.logger = get_logger(f"{self.file_name}")
+        self.logger = get_logger(f"{file_name}")
+        self.solver_dict = get_solver_dict()
 
     """
     Below function takes start, end blocks as an input or solely the tx hash for EBBO testing.
@@ -49,7 +49,7 @@ class EBBOHistoricalDataTesting:
     """
 
     def get_settlement_hashes(self, start_block: int, end_block: int) -> List[str]:
-        etherscan_url = f"https://api.etherscan.io/api?module=account&action=txlist&address=0x9008D19f58AAbD9eD0D60971565AA8510560ab41&startblock={start_block}&endblock={end_block}&sort=desc&apikey={directory.ETHERSCAN_KEY}"
+        etherscan_url = f"https://api.etherscan.io/api?module=account&action=txlist&address=0x9008D19f58AAbD9eD0D60971565AA8510560ab41&startblock={start_block}&endblock={end_block}&sort=desc&apikey={ETHERSCAN_KEY}"
         # all "result" go into results (based on API return value names from docs)
         try:
             settlements = json.loads(
@@ -57,15 +57,15 @@ class EBBOHistoricalDataTesting:
                     requests.get(
                         etherscan_url,
                         headers=header,
-                        timeout=1000000,
+                        timeout=30,
                     )
                 ).text
             )["result"]
             settlement_hashes_list = []
             for settlement in settlements:
                 settlement_hashes_list.append(settlement["hash"])
-        except ValueError:
-            self.logger.critical("etherscan error.")
+        except Exception as e:
+            self.logger.error(f"Unhandled exception: {str(e)}.")
 
         return settlement_hashes_list
 
@@ -79,20 +79,72 @@ class EBBOHistoricalDataTesting:
     ) -> List[Dict[str, Any]]:
         solver_competition_data = []
         for tx_hash in settlement_hashes_list:
-            endpoint_url = f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{tx_hash}"
-            json_competition_data = requests.get(
-                endpoint_url,
-                headers=header,
-                timeout=1000000,
-            )
-            if json_competition_data.status_code == 200:
-                solver_competition_data.append(json.loads(json_competition_data.text))
+            try:
+                prod_endpoint_url = f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{tx_hash}"
+                json_competition_data = requests.get(
+                    prod_endpoint_url,
+                    headers=header,
+                    timeout=30,
+                )
+                if json_competition_data.status_code == 200:
+                    solver_competition_data.append(
+                        json.loads(json_competition_data.text)
+                    )
+                    # print(tx_hash)
+                elif json_competition_data.status_code == 404:
+                    barn_endpoint_url = f"https://barn.api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{tx_hash}"
+                    barn_competition_data = requests.get(
+                        barn_endpoint_url, headers=header, timeout=30
+                    )
+                    if barn_competition_data == 200:
+                        solver_competition_data.append(
+                            json.loads(barn_competition_data)
+                        )
+                        # print(tx_hash)
+            except Exception as e:
+                self.logger.error(f"Unhandled exception: {str(e)}.")
 
         return solver_competition_data
 
     """
+    get_order_data() uses an orderUID to fetch order data from CoW endpoint.
+    Checks both production and staging.
+    """
+
+    def get_order_data(
+        self, individual_win_order_id: str
+    ) -> Tuple[Dict[str, Any], int]:
+        individual_order_data = {}
+        status_code = 0  # Set default values for these variables
+        try:
+            prod_order_data_url = (
+                f"https://api.cow.fi/mainnet/api/v1/orders/{individual_win_order_id}"
+            )
+            prod_order = requests.get(
+                prod_order_data_url,
+                headers=header,
+                timeout=30,
+            )
+            if prod_order.status_code == 200:
+                individual_order_data = json.loads(prod_order.text)
+                status_code = prod_order.status_code
+
+            elif prod_order.status_code == 404:
+                barn_order_data_url = f"https://barn.api.cow.fi/mainnet/api/v1/orders/{individual_win_order_id}"
+                barn_order = requests.get(
+                    barn_order_data_url, headers=header, timeout=30
+                )
+                if barn_order.status_code == 200:
+                    individual_order_data = json.loads(barn_order.text)
+                    status_code = barn_order.status_code
+        except Exception as e:
+            self.logger.error(f"endpoint might be down, Unhandled exception: {str(e)}.")
+
+        return (individual_order_data, status_code)
+
+    """
     This function goes through each order that the winning solution executed and finds non-winning
-    solutions that executed the same rder and calculates surplus difference between that pair 
+    solutions that executed the same order and calculates surplus difference between that pair 
     (winning and non-winning solution). 
     Difference conversions to ETH and % deviations from traded amount have been made to check for flagging orders.
     """
@@ -102,20 +154,14 @@ class EBBOHistoricalDataTesting:
         winning_orders = competition_data["solutions"][-1]["orders"]
 
         for individual_win_order in winning_orders:
-            solver_dict[winning_solver][0] += 1
+            self.solver_dict[winning_solver][0] += 1
             self.total_orders += 1
             individual_win_order_id = individual_win_order["id"]
-            order_data_url = (
-                f"https://api.cow.fi/mainnet/api/v1/orders/{individual_win_order_id}"
+            (individual_order_data, status_code) = self.get_order_data(
+                individual_win_order_id
             )
-            json_order = requests.get(
-                order_data_url,
-                headers=header,
-                timeout=1000000,
-            )
-            if json_order.status_code == 200:
-                individual_order_data = json.loads(json_order.text)
-                if individual_order_data["isLiquidityOrder"]:
+            try:
+                if individual_order_data["isLiquidityOrder"] or status_code != 200:
                     continue
 
                 surplus_deviation_dict = {}
@@ -146,6 +192,8 @@ class EBBOHistoricalDataTesting:
                     individual_win_order_id,
                     competition_data,
                 )
+            except Exception as e:
+                self.logger.error(f"Unhandled exception: {str(e)}.")
 
     def print_function(
         self,
@@ -165,7 +213,7 @@ class EBBOHistoricalDataTesting:
 
             self.higher_surplus_orders += 1
             solver = competition_data["solutions"][-1]["solver"]
-            solver_dict[solver][1] += 1
+            self.solver_dict[solver][1] += 1
             self.total_surplus_eth += sorted_values[0][0]
 
             self.log_to_file(
@@ -210,18 +258,24 @@ class EBBOHistoricalDataTesting:
             str(start_block),
             str(end_block),
         )
-        for key in solver_dict:
-            if solver_dict[key][0] == 0:
+        for key in self.solver_dict:
+            if self.solver_dict[key][0] == 0:
                 error_percent = 0.0
             else:
-                error_percent = (solver_dict[key][1] * 100) / (solver_dict[key][0])
+                error_percent = (self.solver_dict[key][1] * 100) / (
+                    self.solver_dict[key][0]
+                )
             self.logger.info(
                 "Solver: %s errored: %s%%", key, format(error_percent, ".3f")
             )
 
     def get_percent_better_orders(self) -> str:
-        percent = (self.higher_surplus_orders * 100) / self.total_orders
-        string_percent = str(format(percent, ".3f")) + " %"
+        string_percent = str
+        try:
+            percent = (self.higher_surplus_orders * 100) / self.total_orders
+            string_percent = str(format(percent, ".3f")) + "%"
+        except:
+            self.logger.critical("Number of orders = 0.")
         return string_percent
 
 
