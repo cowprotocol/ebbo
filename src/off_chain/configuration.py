@@ -1,8 +1,17 @@
+"""
+This file contains functions used by cow_endpoint_surplus.
+"""
 import logging
 from typing import Dict, List, Optional
 from config import DUNE_KEY
 from dune_client.client import DuneClient
 from dune_client.query import Query
+
+"""
+get_solver_dict() prepares a solver dictionary by fetching solver names from a Dune query.
+Example, "1Inch: [0, 0]" is a specific row, the first value is the number of solutions that could have
+been given a better surplus, the second value is the total number of solutions executed by that solver.
+"""
 
 
 def get_solver_dict() -> Dict[str, List[int]]:
@@ -29,6 +38,11 @@ def get_solver_dict() -> Dict[str, List[int]]:
     solver_dict["NaiveSolver"] = solver_dict.pop("Naive")
 
     return solver_dict
+
+
+"""
+get_logger() returns a logger object that can write to a file, terminal or only file if needed.
+"""
 
 
 def get_logger(filename: Optional[str] = None) -> logging.Logger:

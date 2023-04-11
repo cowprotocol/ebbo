@@ -187,7 +187,7 @@ class EBBOAnalysis:
                                 percent_deviation,
                             )
                     soln_count += 1
-                self.print_function(
+                self.flagging_order_check(
                     surplus_deviation_dict,
                     individual_win_order_id,
                     competition_data,
@@ -195,7 +195,12 @@ class EBBOAnalysis:
             except Exception as e:
                 self.logger.error(f"Unhandled exception: {str(e)}.")
 
-    def print_function(
+    """
+    Below function finds the solution that could have been given a better surplus (if any) and 
+    checks whether if meets the flagging conditions. If yes, logging function is called.
+    """
+
+    def flagging_order_check(
         self,
         surplus_deviation_dict: Dict[int, Tuple[float, float]],
         individual_order_id: str,
@@ -205,7 +210,7 @@ class EBBOAnalysis:
             sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0])
         )
         sorted_values = sorted(sorted_dict.values(), key=lambda x: x[0])
-        if sorted_values[0][0] < -0.002 and sorted_values[0][1] < -0.1:
+        if sorted_values[0][0] < -0.0001 and sorted_values[0][1] < -0.001:
             for key, value in sorted_dict.items():
                 if value == sorted_values[0]:
                     first_key = key
@@ -216,7 +221,7 @@ class EBBOAnalysis:
             self.solver_dict[solver][1] += 1
             self.total_surplus_eth += sorted_values[0][0]
 
-            self.log_to_file(
+            self.logging_function(
                 individual_order_id,
                 first_key,
                 solver,
@@ -224,7 +229,11 @@ class EBBOAnalysis:
                 sorted_values,
             )
 
-    def log_to_file(
+    """
+    Logs to terminal (and file).
+    """
+
+    def logging_function(
         self,
         individual_order_id: str,
         first_key: int,
@@ -244,6 +253,12 @@ class EBBOAnalysis:
             "absolute difference: %s", str(format(sorted_values[0][0], ".5f")) + " ETH"
         )
         self.logger.info(" ")
+
+    """
+    statistics_output() provides an analytics report over the range of blocks searched for 
+    finding better surplus. Includes percent error by solvers, percent of all orders with
+    better surplus, total ETH value potentially missed, etc.
+    """
 
     def statistics_output(self, start_block: int, end_block: int) -> None:
         self.logger.info(
@@ -268,6 +283,10 @@ class EBBOAnalysis:
             self.logger.info(
                 "Solver: %s errored: %s%%", key, format(error_percent, ".3f")
             )
+
+    """
+    get_percent_better_orders() returns the percent of better orders.
+    """
 
     def get_percent_better_orders(self) -> str:
         string_percent = str

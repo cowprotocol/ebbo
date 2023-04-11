@@ -1,12 +1,5 @@
-import time
-from typing import List, Optional
-from web3 import Web3
-from config import INFURA_KEY
-from src.off_chain.cow_endpoint_surplus import EBBOAnalysis
-from src.off_chain.configuration import get_logger
-
 """
-At runtime, this function records the most recent block and initializes it as the start block.
+At runtime, "main" function records the most recent block and initializes it as the start block.
 After the daemon is asleep for 30 mins, it gets the newest block as the end block.
 Since the competition endpoint has a lag of 30 mins (worst case), we wait 30 mins before we
 fetch comp. data and start checking for potential surplus.
@@ -15,6 +8,12 @@ to be checked in the next cycle. Once all hashes in the current cycle have been 
 the previous end block + 1 becomes the start block for the next cycle, and the latest block is the new end block.
 Daemon sleeps for 30 mins and continues checking.
 """
+import time
+from typing import List, Optional
+from web3 import Web3
+from config import INFURA_KEY
+from src.off_chain.cow_endpoint_surplus import EBBOAnalysis
+from src.off_chain.configuration import get_logger
 
 
 class DaemonEBBO:
@@ -32,8 +31,7 @@ class DaemonEBBO:
         unchecked_hashes: List[str] = []
         while True:
             time.sleep(sleep_time)
-            fetched_hashes = self.Instance.get_settlement_hashes(
-                start_block, end_block)
+            fetched_hashes = self.Instance.get_settlement_hashes(start_block, end_block)
             all_hashes = fetched_hashes + unchecked_hashes
             unchecked_hashes = []
             while len(all_hashes) > 0:
@@ -56,4 +54,4 @@ class DaemonEBBO:
 
 if __name__ == "__main__":
     checker = DaemonEBBO()
-    checker.main(5)
+    checker.main(30)
