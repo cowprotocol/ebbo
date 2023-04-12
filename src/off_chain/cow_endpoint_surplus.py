@@ -111,7 +111,7 @@ class EBBOAnalysis:
                     barn_competition_data = requests.get(
                         barn_endpoint_url, headers=header, timeout=30
                     )
-                    if barn_competition_data == 200:
+                    if barn_competition_data.status_code == 200:
                         solver_competition_data.append(
                             json.loads(barn_competition_data)
                         )
@@ -227,7 +227,7 @@ class EBBOAnalysis:
             sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0])
         )
         sorted_values = sorted(sorted_dict.values(), key=lambda x: x[0])
-        if sorted_values[0][0] < -0.0001 and sorted_values[0][1] < -0.01:
+        if sorted_values[0][0] < -0.002 and sorted_values[0][1] < -0.1:
             for key, value in sorted_dict.items():
                 if value == sorted_values[0]:
                     first_key = key
@@ -303,12 +303,11 @@ class EBBOAnalysis:
         """
         get_percent_better_orders() returns the percent of better orders.
         """
-        string_percent = str
         try:
             percent = (self.higher_surplus_orders * 100) / self.total_orders
             string_percent = str(format(percent, ".3f")) + "%"
-        except:
-            self.logger.critical("Number of orders = 0.")
+        except Exception as e:
+            self.logger.critical(f"Possibly number of orders = 0, {str(e)}")
         return string_percent
 
 
