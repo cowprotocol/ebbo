@@ -13,7 +13,7 @@ class TestSurplusCalculation(unittest.TestCase):
     def test_block_range_input(self) -> None:
         # Test that function works with a start and end block input
         self.start_block = 16962710
-        self.end_block = 16963710
+        self.end_block = 16993710
         self.file_name = str(self.start_block) + "_surplusTo_" + str(self.end_block)
         instance = EBBOAnalysis(self.file_name)
         self.assertIsNone(
