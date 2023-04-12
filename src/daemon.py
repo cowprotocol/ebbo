@@ -6,7 +6,7 @@ fetch comp. data and start checking for potential surplus.
 If the data was not retrievable for any reason, it adds it to the list of unchecked hashes
 to be checked in the next cycle. Once all hashes in the current cycle have been iterated through,
 the previous end block + 1 becomes the start block for the next cycle, and the latest block is
-the new end block. Daemon sleeps for 30 mins and continues checking.
+the new end block. Daemon sleeps for 30 mins and continue checking.
 """
 import time
 from typing import List, Optional
