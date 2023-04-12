@@ -173,14 +173,12 @@ class EBBOAnalysis:
         """
 
         winning_solver = competition_data["solutions"][-1]["solver"]
-        winning_orders = competition_data["solutions"][-1]["orders"]
 
-        for individual_win_order in winning_orders:
+        for individual_win_order in competition_data["solutions"][-1]["orders"]:
             self.solver_dict[winning_solver][0] += 1
             self.total_orders += 1
-            individual_win_order_id = individual_win_order["id"]
             (individual_order_data, status_code) = self.get_order_data(
-                individual_win_order_id
+                individual_win_order["id"]
             )
             try:
                 if individual_order_data["isLiquidityOrder"] or status_code != 200:
@@ -190,7 +188,7 @@ class EBBOAnalysis:
                 soln_count = 0
                 for soln in competition_data["solutions"]:
                     for order in soln["orders"]:
-                        if individual_win_order_id == order["id"]:
+                        if individual_win_order["id"] == order["id"]:
                             (
                                 diff_surplus,
                                 percent_deviation,
@@ -211,13 +209,13 @@ class EBBOAnalysis:
                     soln_count += 1
                 self.flagging_order_check(
                     surplus_deviation_dict,
-                    individual_win_order_id,
+                    individual_win_order["id"],
                     competition_data,
                 )
             except TypeError as except_err:
                 self.logger.error("Unhandled exception: %s.", str(except_err))
 
-                self.logger.error(individual_win_order_id)
+                self.logger.error(individual_win_order["id"])
 
     def flagging_order_check(
         self,

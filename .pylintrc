@@ -1,2 +1,2 @@
 [MASTER]
-disable=fixme,too-few-public-methods,too-many-arguments
+disable=fixme,too-few-public-methods,too-many-arguments,import-error
