@@ -145,8 +145,10 @@ class EBBOAnalysis:
                 status_code = prod_order.status_code
 
             elif prod_order.status_code == 404:
-                barn_order_data_url = ("https://barn.api.cow.fi/mainnet/api/v1"
-                                       f"/orders/{individual_win_order_id}")
+                barn_order_data_url = (
+                    "https://barn.api.cow.fi/mainnet/api/v1"
+                    f"/orders/{individual_win_order_id}"
+                )
                 barn_order = requests.get(
                     barn_order_data_url, headers=header, timeout=30
                 )
