@@ -20,12 +20,13 @@ def get_solver_dict() -> Dict[str, List[int]]:
 
     dune = DuneClient(DUNE_KEY)
     results = dune.refresh(query)
-    solvers = vars((vars(results))["result"])
-    for solver in solvers["rows"]:
+    solvers = results.get_rows()
+    for solver in solvers:
         solver_dict[solver["name"]] = [0, 0]
 
     # These names need to be updated since Dune and Orderbook Endpoint have different names.
     # Example, "1Inch: [0, 0]" is a specific row, the first value is the number of solutions
+    # won, second value is number of solutions of that solver with higher surplus found.
 
     solver_dict["BaselineSolver"] = solver_dict.pop("Baseline")
     solver_dict["1Inch"] = solver_dict.pop("Gnosis_1inch")
@@ -47,11 +48,11 @@ def get_logger(filename: Optional[str] = None) -> logging.Logger:
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
     if filename:
-        fh = logging.FileHandler(filename + ".log", mode="w")
-        fh.setLevel(logging.INFO)
+        file_handler = logging.FileHandler(filename + ".log", mode="w")
+        file_handler.setLevel(logging.INFO)
         formatter = logging.Formatter("%(levelname)s - %(message)s")
-        fh.setFormatter(formatter)
-        logger.addHandler(fh)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
     return logger
 

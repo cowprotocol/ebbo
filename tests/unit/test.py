@@ -1,19 +1,30 @@
+"""
+File to run historical block/hash testing for EBBO
+"""
 import unittest
 from src.off_chain.cow_endpoint_surplus import EBBOAnalysis, get_surplus_difference
 
 
 class TestSurplusCalculation(unittest.TestCase):
+    """
+    Each function is a test
+    """
+
     def test_hash_input(self) -> None:
-        # Test that function works with a hash
+        """
+        Test that function works with a hash
+        """
         self.hash = "0xf713448104731e43b74b39d0897653f5a7f889cbad6c275d72991c506de7fa52"
         self.file_name = str(self.hash)
         instance = EBBOAnalysis(self.file_name)
         self.assertIsNone(instance.get_surplus_by_input(settlement_hash=self.hash))
 
     def test_block_range_input(self) -> None:
-        # Test that function works with a start and end block input
-        self.start_block = 16962710
-        self.end_block = 16993710
+        """
+        Test that function works with a start and end block input
+        """
+        self.start_block = 16968373
+        self.end_block = 16968833
         self.file_name = str(self.start_block) + "_surplusTo_" + str(self.end_block)
         instance = EBBOAnalysis(self.file_name)
         self.assertIsNone(
@@ -24,7 +35,9 @@ class TestSurplusCalculation(unittest.TestCase):
         instance.statistics_output(self.start_block, self.end_block)
 
     def test_surplus_difference(self) -> None:
-        # Test that function works with a hash
+        """
+        Testing only test_surplus_difference() function outside EBBOAnalysis class
+        """
         self.order_data = {}
         self.order_data["buyAmount"] = "2390570453901"
         self.order_data["sellAmount"] = "2411147339029"

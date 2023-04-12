@@ -42,6 +42,9 @@ class EBBOAnalysis:
         elif start_block is not None and end_block is not None:
             # Etherscan endpoint call for settlements between start and end block
             settlement_hashes_list = self.get_settlement_hashes(start_block, end_block)
+        if not settlement_hashes_list:
+            raise ValueError("No settlement hashes found")
+
         solver_competition_data = self.get_solver_competition_data(
             settlement_hashes_list
         )
@@ -72,8 +75,8 @@ class EBBOAnalysis:
             settlement_hashes_list = []
             for settlement in settlements:
                 settlement_hashes_list.append(settlement["hash"])
-        except Exception as e:
-            self.logger.error(f"Unhandled exception: {str(e)}.")
+        except ValueError as except_err:
+            self.logger.error("Unhandled exception: %s.", str(except_err))
 
         return settlement_hashes_list
 
@@ -116,8 +119,8 @@ class EBBOAnalysis:
                             json.loads(barn_competition_data.text)
                         )
                         # print(tx_hash)
-            except Exception as e:
-                self.logger.error(f"Unhandled exception: {str(e)}.")
+            except ValueError as except_err:
+                self.logger.error("Unhandled exception: %s.", str(except_err))
 
         return solver_competition_data
 
@@ -130,7 +133,7 @@ class EBBOAnalysis:
         """
 
         individual_order_data = {}
-        status_code = 0  # Set default values for these variables
+        status_code = 0
         try:
             prod_order_data_url = (
                 f"https://api.cow.fi/mainnet/api/v1/orders/{individual_win_order_id}"
@@ -155,8 +158,10 @@ class EBBOAnalysis:
                 if barn_order.status_code == 200:
                     individual_order_data = json.loads(barn_order.text)
                     status_code = barn_order.status_code
-        except Exception as e:
-            self.logger.error(f"endpoint might be down, Unhandled exception: {str(e)}.")
+        except ValueError as except_err:
+            self.logger.error(
+                "Endpoint might be down, Unhandled exception: %s.", str(except_err)
+            )
 
         return (individual_order_data, status_code)
 
@@ -209,8 +214,10 @@ class EBBOAnalysis:
                     individual_win_order_id,
                     competition_data,
                 )
-            except Exception as e:
-                self.logger.error(f"Unhandled exception: {str(e)}.")
+            except TypeError as except_err:
+                self.logger.error("Unhandled exception: %s.", str(except_err))
+
+                self.logger.error(individual_win_order_id)
 
     def flagging_order_check(
         self,
@@ -306,8 +313,10 @@ class EBBOAnalysis:
         try:
             percent = (self.higher_surplus_orders * 100) / self.total_orders
             string_percent = str(format(percent, ".3f")) + "%"
-        except Exception as e:
-            self.logger.critical(f"Possibly number of orders = 0, {str(e)}")
+        except ValueError as except_err:
+            self.logger.error(
+                "Possibly no. of orders = 0, Unhandled exception: %s.", str(except_err)
+            )
         return string_percent
 
 
