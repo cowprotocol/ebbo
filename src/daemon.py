@@ -56,4 +56,5 @@ class DaemonEBBO:
 
 if __name__ == "__main__":
     checker = DaemonEBBO()
+    # sleep time can be set here in seconds
     checker.main(300)
