@@ -5,7 +5,7 @@ Since the competition endpoint has a lag of 30 mins (worst case), we wait 30 min
 fetch comp. data and start checking for potential surplus.
 If the data was not retrievable for any reason, it adds it to the list of unchecked hashes
 to be checked in the next cycle. Once all hashes in the current cycle have been iterated through,
-the previous end block + 1 becomes the start block for the next cycle, and the latest block is 
+the previous end block + 1 becomes the start block for the next cycle, and the latest block is
 the new end block. Daemon sleeps for 30 mins and continues checking.
 """
 import time
@@ -20,6 +20,7 @@ class DaemonEBBO:
     """
     Initialization of EBBOAnalysis class object and logger object.
     """
+
     def __init__(self, file_name: Optional[str] = None):
         self.Instance = EBBOAnalysis()
         self.logger = get_logger(f"{file_name}")

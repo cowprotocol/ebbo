@@ -30,7 +30,8 @@ class EBBOAnalysis:
     ) -> None:
         """
         Below function takes start, end blocks as an input or solely the tx hash for EBBO testing.
-        Adds all hashes to a list (between blocks or single hash) and fetches competition endpoint data for all of the hashes.
+        Adds all hashes to a list (between blocks or single hash) and fetches competition endpoint
+        data for all of the hashes.
         """
 
         settlement_hashes_list = []
@@ -51,8 +52,12 @@ class EBBOAnalysis:
         """
         This function gets all hashes for a contract address between two blocks
         """
-
-        etherscan_url = f"https://api.etherscan.io/api?module=account&action=txlist&address=0x9008D19f58AAbD9eD0D60971565AA8510560ab41&startblock={start_block}&endblock={end_block}&sort=desc&apikey={ETHERSCAN_KEY}"
+        etherscan_url = (
+            "https://api.etherscan.io/api?module=account&action=txlist"
+            "&address=0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
+            f"&startblock={start_block}&endblock={end_block}&sort=desc"
+            f"&apikey={ETHERSCAN_KEY}"
+        )
         # all "result" go into results (based on API return value names from docs)
         try:
             settlements = json.loads(
@@ -77,13 +82,17 @@ class EBBOAnalysis:
     ) -> List[Dict[str, Any]]:
         """
         This function uses a list of tx hashes to fetch and assemble competition data
-        for each of the tx hashes and returns it to get_surplus_by_input for further surplus calculation.
+        for each of the tx hashes and returns it to get_surplus_by_input for further
+        surplus calculation.
         """
 
         solver_competition_data = []
         for tx_hash in settlement_hashes_list:
             try:
-                prod_endpoint_url = f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{tx_hash}"
+                prod_endpoint_url = (
+                    "https://api.cow.fi/mainnet/api/v1/solver_competition"
+                    f"/by_tx_hash/{tx_hash}"
+                )
                 json_competition_data = requests.get(
                     prod_endpoint_url,
                     headers=header,
@@ -95,7 +104,10 @@ class EBBOAnalysis:
                     )
                     # print(tx_hash)
                 elif json_competition_data.status_code == 404:
-                    barn_endpoint_url = f"https://barn.api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{tx_hash}"
+                    barn_endpoint_url = (
+                        "https://barn.api.cow.fi/mainnet/api/v1"
+                        f"/solver_competition/by_tx_hash/{tx_hash}"
+                    )
                     barn_competition_data = requests.get(
                         barn_endpoint_url, headers=header, timeout=30
                     )
@@ -145,14 +157,13 @@ class EBBOAnalysis:
 
         return (individual_order_data, status_code)
 
-    """
-    This function goes through each order that the winning solution executed and finds non-winning
-    solutions that executed the same order and calculates surplus difference between that pair 
-    (winning and non-winning solution). 
-    Difference conversions to ETH and % deviations from traded amount have been made to check for flagging orders.
-    """
-
     def get_order_surplus(self, competition_data: Dict[str, Any]) -> None:
+        """
+        This function goes through each order that the winning solution executed and finds non-winning
+        solutions that executed the same order and calculates surplus difference between that pair
+        (winning and non-winning solution).
+        """
+
         winning_solver = competition_data["solutions"][-1]["solver"]
         winning_orders = competition_data["solutions"][-1]["orders"]
 
@@ -257,13 +268,13 @@ class EBBOAnalysis:
         )
         self.logger.info(" ")
 
-    """
-    statistics_output() provides an analytics report over the range of blocks searched for 
-    finding better surplus. Includes percent error by solvers, percent of all orders with
-    better surplus, total ETH value potentially missed, etc.
-    """
-
     def statistics_output(self, start_block: int, end_block: int) -> None:
+        """
+        statistics_output() provides an analytics report over the range of blocks searched for
+        finding better surplus. Includes percent error by solvers, percent of all orders with
+        better surplus, total ETH value potentially missed, etc.
+        """
+
         self.logger.info(
             "Better Surplus Potential orders percent: %s,      total missed ETH value: %s",
             self.get_percent_better_orders(),
