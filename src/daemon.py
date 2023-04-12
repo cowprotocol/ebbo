@@ -22,7 +22,7 @@ class DaemonEBBO:
     """
 
     def __init__(self, file_name: Optional[str] = None):
-        self.Instance = EBBOAnalysis()
+        self.instance = EBBOAnalysis()
         self.logger = get_logger(f"{file_name}")
 
     def main(self, sleep_time: int) -> None:
@@ -30,28 +30,28 @@ class DaemonEBBO:
         daemon function that runs as highlighted in docstring.
         """
         infura_connection = f"https://mainnet.infura.io/v3/{INFURA_KEY}"
-        w3 = Web3(Web3.HTTPProvider(infura_connection))
-        start_block = w3.eth.block_number
+        web_3 = Web3(Web3.HTTPProvider(infura_connection))
+        start_block = web_3.eth.block_number
         time.sleep(sleep_time)
         self.logger.info("starting...")
-        end_block = w3.eth.block_number
+        end_block = web_3.eth.block_number
         unchecked_hashes: List[str] = []
         while True:
             time.sleep(sleep_time)
-            fetched_hashes = self.Instance.get_settlement_hashes(start_block, end_block)
+            fetched_hashes = self.instance.get_settlement_hashes(start_block, end_block)
             all_hashes = fetched_hashes + unchecked_hashes
             unchecked_hashes = []
             while len(all_hashes) > 0:
                 single_hash = all_hashes.pop(0)
-                response_data = self.Instance.get_solver_competition_data([single_hash])
+                response_data = self.instance.get_solver_competition_data([single_hash])
                 if len(response_data) != 0:
-                    self.Instance.get_order_surplus(response_data[0])
+                    self.instance.get_order_surplus(response_data[0])
                 else:
                     unchecked_hashes.append(single_hash)
 
             self.logger.info("going to sleep...")
             start_block = end_block + 1
-            end_block = w3.eth.block_number
+            end_block = web_3.eth.block_number
 
 
 if __name__ == "__main__":
