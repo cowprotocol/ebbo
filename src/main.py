@@ -8,7 +8,7 @@ import time
 def main() -> None:
     """Main Method"""
     while True:
-        logging.warning("CoW Protocol!")
+        logging.info("Ebbo running...")
         time.sleep(10)
 
 
