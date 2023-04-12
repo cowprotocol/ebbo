@@ -42,13 +42,8 @@ class DaemonEBBO:
             all_hashes = fetched_hashes + unchecked_hashes
             unchecked_hashes = []
             while len(all_hashes) > 0:
-                single_hash = all_hashes[0]
-                single_hash_list: List[str] = []
-                single_hash_list.append(single_hash)
-                response_data = self.Instance.get_solver_competition_data(
-                    single_hash_list
-                )
-                all_hashes.pop(0)
+                single_hash = all_hashes.pop(0)
+                response_data = self.Instance.get_solver_competition_data([single_hash])
                 if len(response_data) != 0:
                     self.Instance.get_order_surplus(response_data[0])
                 else:
@@ -61,4 +56,4 @@ class DaemonEBBO:
 
 if __name__ == "__main__":
     checker = DaemonEBBO()
-    checker.main(30)
+    checker.main(300)

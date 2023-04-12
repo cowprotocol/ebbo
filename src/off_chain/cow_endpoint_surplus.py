@@ -227,7 +227,7 @@ class EBBOAnalysis:
             sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0])
         )
         sorted_values = sorted(sorted_dict.values(), key=lambda x: x[0])
-        if sorted_values[0][0] < -0.002 and sorted_values[0][1] < -0.1:
+        if sorted_values[0][0] < -0.0001 and sorted_values[0][1] < -0.01:
             for key, value in sorted_dict.items():
                 if value == sorted_values[0]:
                     first_key = key
@@ -290,13 +290,11 @@ class EBBOAnalysis:
             str(start_block),
             str(end_block),
         )
-        for key in self.solver_dict:
-            if self.solver_dict[key][0] == 0:
+        for key, value in self.solver_dict.items():
+            if value[0] == 0:
                 error_percent = 0.0
             else:
-                error_percent = (self.solver_dict[key][1] * 100) / (
-                    self.solver_dict[key][0]
-                )
+                error_percent = (value[1] * 100) / (value[0])
             self.logger.info(
                 "Solver: %s errored: %s%%", key, format(error_percent, ".3f")
             )

@@ -1,2 +1,2 @@
 [MASTER]
-disable=fixme,too-few-public-methods,too-many-instance-attributes,too-many-arguments,logging-fstring-interpolation,too-many-locals,duplicate-code,pointless-string-statement,invalid-name,bare-except,invalid-name,import-error,broad-except
+disable=fixme,too-few-public-methods,too-many-instance-attributes,too-many-arguments,logging-fstring-interpolation,too-many-locals,duplicate-code,pointless-string-statement,invalid-name,bare-except,invalid-name,import-error,broad-except,consider-using-dict-items
