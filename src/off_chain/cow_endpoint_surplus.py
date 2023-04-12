@@ -113,7 +113,7 @@ class EBBOAnalysis:
                     )
                     if barn_competition_data.status_code == 200:
                         solver_competition_data.append(
-                            json.loads(barn_competition_data)
+                            json.loads(barn_competition_data.text)
                         )
                         # print(tx_hash)
             except Exception as e:
