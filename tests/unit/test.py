@@ -14,7 +14,7 @@ class TestSurplusCalculation(unittest.TestCase):
         """
         Test that function works with a hash
         """
-        self.hash = "0xf713448104731e43b74b39d0897653f5a7f889cbad6c275d72991c506de7fa52"
+        self.hash = "0xa5ee470bd261ba2d17394718e6c42b8230eea8d6f444f5ee609621936fe10bd5"
         self.file_name = str(self.hash)
         instance = EBBOAnalysis(self.file_name)
         self.assertIsNone(instance.get_surplus_by_input(settlement_hash=self.hash))
@@ -23,8 +23,8 @@ class TestSurplusCalculation(unittest.TestCase):
         """
         Test that function works with a start and end block input
         """
-        self.start_block = 16968373
-        self.end_block = 16968833
+        self.start_block = 16991373
+        self.end_block = 16992833
         self.file_name = str(self.start_block) + "_surplusTo_" + str(self.end_block)
         instance = EBBOAnalysis(self.file_name)
         self.assertIsNone(

@@ -187,6 +187,10 @@ class EBBOAnalysis:
                 surplus_deviation_dict = {}
                 soln_count = 0
                 for soln in competition_data["solutions"]:
+                    if soln["objective"]["total"] < 0:
+                        surplus_deviation_dict[soln_count] = 0, 0
+                        soln_count += 1
+                        continue
                     for order in soln["orders"]:
                         if individual_win_order["id"] == order["id"]:
                             (
@@ -232,7 +236,7 @@ class EBBOAnalysis:
             sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0])
         )
         sorted_values = sorted(sorted_dict.values(), key=lambda x: x[0])
-        if sorted_values[0][0] < -0.004 and sorted_values[0][1] < -0.2:
+        if sorted_values[0][0] < -0.001 and sorted_values[0][1] < -0.2:
             for key, value in sorted_dict.items():
                 if value == sorted_values[0]:
                     first_key = key

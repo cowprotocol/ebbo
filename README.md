@@ -30,7 +30,7 @@ The output consists of all orders that could have provided the user a better sur
     python3 -m src.daemon
 
   
-4. The third component will rely on onchain data and the instance.json describing the auction. This component parses all settlements that happened onchain, recovers the surplus that each order got, and then, for each executed order separately, calls Quasimodo and asks for a solution that only executes that order. Then, it checks what surplus Quasimodo gives to that order and compares with what happened onchain.
+3. The third component will rely on onchain data and the instance.json describing the auction. This component parses all settlements that happened onchain, recovers the surplus that each order got, and then, for each executed order separately, calls Quasimodo and asks for a solution that only executes that order. Then, it checks what surplus Quasimodo gives to that order and compares with what happened onchain.
 
 *Relevant file for this test:*
 
