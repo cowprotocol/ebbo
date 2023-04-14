@@ -188,7 +188,7 @@ class EBBOAnalysis:
                 soln_count = 0
                 for soln in competition_data["solutions"]:
                     if soln["objective"]["total"] < 0:
-                        surplus_deviation_dict[soln_count] = 0, 0
+                        surplus_deviation_dict[soln_count] = 0.0, 0.0
                         soln_count += 1
                         continue
                     for order in soln["orders"]:
