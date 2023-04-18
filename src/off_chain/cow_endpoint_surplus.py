@@ -236,7 +236,7 @@ class EBBOAnalysis:
             sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0])
         )
         sorted_values = sorted(sorted_dict.values(), key=lambda x: x[0])
-        if sorted_values[0][0] < -0.001 and sorted_values[0][1] < -0.2:
+        if sorted_values[0][0] < -0.002 and sorted_values[0][1] < -0.1:
             for key, value in sorted_dict.items():
                 if value == sorted_values[0]:
                     first_key = key
@@ -264,21 +264,20 @@ class EBBOAnalysis:
         sorted_values: List[Tuple[float, float]],
     ) -> None:
         """
-        Logs to terminal (and file).
+        Logs to terminal (and file iff file_name is passed).
         """
 
-        self.logger.info("Transaction Hash: %s", competition_data["transactionHash"])
-        self.logger.info("For order: %s", individual_order_id)
-        self.logger.info("Winning Solver: %s", solver)
         self.logger.info(
-            "More surplus Corresponding Solver: %s",
+            "Transaction Hash: %s\nFor order: %s\nWinning Solver: %s\n"
+            "More surplus Corresponding Solver: %s\nDeviation: %s\n"
+            "absolute difference: %s\n",
+            competition_data["transactionHash"],
+            individual_order_id,
+            solver,
             competition_data["solutions"][first_key]["solver"],
+            str(format(sorted_values[0][1], ".4f")) + "%",
+            str(format(sorted_values[0][0], ".5f")) + " ETH",
         )
-        self.logger.info("Deviation: %s", str(format(sorted_values[0][1], ".4f")) + "%")
-        self.logger.info(
-            "absolute difference: %s", str(format(sorted_values[0][0], ".5f")) + " ETH"
-        )
-        self.logger.info(" ")
 
     def statistics_output(self, start_block: int, end_block: int) -> None:
         """
