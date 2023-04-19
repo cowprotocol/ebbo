@@ -10,21 +10,21 @@ class TestSurplusCalculation(unittest.TestCase):
     Each function of this class runs a test
     """
 
-    def endpoint_test_hash_input(self) -> None:
+    def test_hash_input(self) -> None:
         """
         Test that function works with a hash
         """
-        self.hash = "0xa5ee470bd261ba2d17394718e6c42b8230eea8d6f444f5ee609621936fe10bd5"
+        self.hash = "0x8b40027e1484c64ae4154d65a5d727ae7f912efd5df43f2c70ae92393ee93b7c"
         self.file_name = str(self.hash)
         instance = EBBOAnalysis(self.file_name)
         self.assertIsNone(instance.get_surplus_by_input(settlement_hash=self.hash))
 
-    def endpoint_test_block_range_input(self) -> None:
+    def test_block_range_input(self) -> None:
         """
         Test that function works with a start and end block input
         """
-        self.start_block = 16991373
-        self.end_block = 16992833
+        self.start_block = 17075358
+        self.end_block = 17075960
         self.file_name = str(self.start_block) + "_surplusTo_" + str(self.end_block)
         instance = EBBOAnalysis(self.file_name)
         self.assertIsNone(
@@ -34,7 +34,7 @@ class TestSurplusCalculation(unittest.TestCase):
         )
         instance.statistics_output(self.start_block, self.end_block)
 
-    def endpoint_test_surplus_difference(self) -> None:
+    def test_surplus_difference(self) -> None:
         """
         Testing only test_surplus_difference() function outside EBBOAnalysis class
         """
@@ -57,7 +57,6 @@ class TestSurplusCalculation(unittest.TestCase):
             "0xc91a71a1ffa3d8b22ba615ba1b9c01b2bbbf55ad": "496353767667424323174400",
             "0xdac17f958d2ee523a2206206994597c13d831ec7": "2411147339029",
         }
-
         (
             self.diff_surplus,
             self.percent_deviation,

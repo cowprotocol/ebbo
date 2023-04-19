@@ -1,4 +1,4 @@
-[
+gpv2_settlement = [
        {
           "inputs":[
              {
@@ -16,22 +16,22 @@
           "type":"constructor"
        },
        {
-          "anonymous":false,
+          "anonymous":False,
           "inputs":[
              {
-                "indexed":true,
+                "indexed":True,
                 "internalType":"address",
                 "name":"target",
                 "type":"address"
              },
              {
-                "indexed":false,
+                "indexed":False,
                 "internalType":"uint256",
                 "name":"value",
                 "type":"uint256"
              },
              {
-                "indexed":false,
+                "indexed":False,
                 "internalType":"bytes4",
                 "name":"selector",
                 "type":"bytes4"
@@ -41,16 +41,16 @@
           "type":"event"
        },
        {
-          "anonymous":false,
+          "anonymous":False,
           "inputs":[
              {
-                "indexed":true,
+                "indexed":True,
                 "internalType":"address",
                 "name":"owner",
                 "type":"address"
              },
              {
-                "indexed":false,
+                "indexed":False,
                 "internalType":"bytes",
                 "name":"orderUid",
                 "type":"bytes"
@@ -60,22 +60,22 @@
           "type":"event"
        },
        {
-          "anonymous":false,
+          "anonymous":False,
           "inputs":[
              {
-                "indexed":true,
+                "indexed":True,
                 "internalType":"address",
                 "name":"owner",
                 "type":"address"
              },
              {
-                "indexed":false,
+                "indexed":False,
                 "internalType":"bytes",
                 "name":"orderUid",
                 "type":"bytes"
              },
              {
-                "indexed":false,
+                "indexed":False,
                 "internalType":"bool",
                 "name":"signed",
                 "type":"bool"
@@ -85,10 +85,10 @@
           "type":"event"
        },
        {
-          "anonymous":false,
+          "anonymous":False,
           "inputs":[
              {
-                "indexed":true,
+                "indexed":True,
                 "internalType":"address",
                 "name":"solver",
                 "type":"address"
@@ -98,46 +98,46 @@
           "type":"event"
        },
        {
-          "anonymous":false,
+          "anonymous":False,
           "inputs":[
              {
-                "indexed":true,
+                "indexed":True,
                 "internalType":"address",
                 "name":"owner",
                 "type":"address"
              },
              {
-                "indexed":false,
+                "indexed":False,
                 "internalType":"contract IERC20",
                 "name":"sellToken",
                 "type":"address"
              },
              {
-                "indexed":false,
+                "indexed":False,
                 "internalType":"contract IERC20",
                 "name":"buyToken",
                 "type":"address"
              },
              {
-                "indexed":false,
+                "indexed":False,
                 "internalType":"uint256",
                 "name":"sellAmount",
                 "type":"uint256"
              },
              {
-                "indexed":false,
+                "indexed":False,
                 "internalType":"uint256",
                 "name":"buyAmount",
                 "type":"uint256"
              },
              {
-                "indexed":false,
+                "indexed":False,
                 "internalType":"uint256",
                 "name":"feeAmount",
                 "type":"uint256"
              },
              {
-                "indexed":false,
+                "indexed":False,
                 "internalType":"bytes",
                 "name":"orderUid",
                 "type":"bytes"
