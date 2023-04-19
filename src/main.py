@@ -4,13 +4,13 @@ Test Deployment file
 import logging
 import time
 
-logging.basicConfig(level=logging.DEBUG)
+#logging.basicConfig(level=logging.DEBUG)
 
 
 def main() -> None:
     """Main Method"""
     while True:
-        logging.error("EBBO running...")
+        logging.warning("EBBO running...")
         time.sleep(10)
 
 
