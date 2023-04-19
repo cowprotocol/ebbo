@@ -5,9 +5,10 @@ from config import INFURA_KEY
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 from typing import List, Tuple
 from fractions import Fraction
+from copy import deepcopy
 import requests
 from web3 import Web3
-# from instance_file import instance
+from src.on_chain.instance_file import instance1, instance2
 
 #GPv2 contract address
 address = '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'
@@ -72,6 +73,7 @@ class OnChainEBBO:
             settlement_hashes_list = self.get_hashes_by_block(start_block, end_block)
             # At this point we have all the needed hashes
         self.decoder(settlement_hashes_list)
+        # return settlement_hashes_list
 
 
     def get_order_data_by_hash(self, settlement_hash):
@@ -105,7 +107,7 @@ class OnChainEBBO:
         gets AWS Bucket response and makes call to quasimodo for required orders.
         """
         for settlement_hash in settlement_hashes_list:
-            print(settlement_hash)
+            # print(settlement_hash)
             try:
                 encoded_transaction = self.web_3.eth.get_transaction(settlement_hash)
                 decoded_settlement = DecodedSettlement.new(self.contract_instance, encoded_transaction.input)
@@ -115,44 +117,53 @@ class OnChainEBBO:
  
             if bucket_response is None:
                 continue
-            # there can be multiple orders/trades in a single settlement
+            # need to make a deepcopy since bucket_response["orders"] is 
+            # updated to a single order, and so for the next order in the
+            # next iteration, we need to once again filter out a single order
+            Bucket_Response = deepcopy(bucket_response) 
+
+            # checking each order in the settlement
             for trade in decoded_settlement.trades:
-                sell_token_index = trade['sellTokenIndex']
-                buy_token_index = trade['buyTokenIndex']
-                sell_token_clearing_price = decoded_settlement.clearing_prices[sell_token_index]
-                buy_token_clearing_price = decoded_settlement.clearing_prices[buy_token_index]
+                # delete the old bucket_response to avoid many copies
+                del bucket_response
+                bucket_response = deepcopy(Bucket_Response)
+                try:
+                    sell_token_index = trade['sellTokenIndex']
+                    buy_token_index = trade['buyTokenIndex']
+                    sell_token_clearing_price = decoded_settlement.clearing_prices[sell_token_index]
+                    buy_token_clearing_price = decoded_settlement.clearing_prices[buy_token_index]
+                    order_type = str('{0:08b}'.format(trade['flags'])) # convert flags value to binary to extract L.S.B (Least Sigificant Byte)
+                    winner_surplus = self.get_surplus(trade, sell_token_clearing_price, buy_token_clearing_price, order_type[-1])
+                    order_id = comp_data["solutions"][-1]["orders"][decoded_settlement.trades.index(trade)]["id"]
+                    for key, order in bucket_response["orders"].items():
+                        if order["id"] == order_id:
+                            bucket_response["orders"] = {key:order}
+                            break
+                    # convert back to JSON for sending to Quasimodo
+                    # bucketResponseJson = json.dumps(bucket_response)
+                    # # space here to post and receive instance JSON from Quasimodo
+                    # instanceJson = requests.post(bucketResponseJson)
+                    # assuming jsonObject is called instanceJson
+                    # instance = instanceJson.json() to convert to dict
+                    # 'instance' is what we use here as a python object in instance_file.py
+                    
+                    # This part needs to be commented out in case you try to run
+                    # since there is no instance json available from quasimodo,
+                    # but is certainly part of the code.
 
-                order_type = str('{0:08b}'.format(trade['flags'])) # convert flags value to binary to extract L.S.B (Least Sigificant Byte)
-                win_surplus = self.get_surplus(trade, sell_token_clearing_price, buy_token_clearing_price, order_type[-1])
-                order_id = comp_data["solutions"][-1]["orders"][decoded_settlement.trades.index(trade)]["id"]
-                for key, order in bucket_response["orders"].items():
-                    if order["id"] == order_id:
-                        bucket_response["orders"] = {key:order}
-                        break
-
-                # convert back to JSON for sending to Quasimodo
-                # bucketResponseJson = json.dumps(bucket_response)
-                # # space here to post and receive instance JSON from Quasimodo
-                # instanceJson = requests.post(bucketResponseJson)
-                # assuming jsonObject is called instanceJson
-                # instance = instanceJson.json() to convert to dict
-                # 'instance' is what we use here as a python object in instance_file.py
-                
-                # This part needs to be commented out in case you try to run
-                # since there is no instance json available from quasimodo,
-                # but is certainly part of the code.
-
-                sell_token = order['sell_token']
-                buy_token = order['buy_token']
-                if len(instance["prices"]) > 0:
-                    sell_token_clearing_price = instance["prices"][sell_token]
-                    buy_token_clearing_price = instance["prices"][buy_token]
-                    qmdo_surplus = self.get_surplus(trade, sell_token_clearing_price, buy_token_clearing_price, order_type[-1])
-                    diff_surplus = win_surplus - qmdo_surplus
-                    (percent_deviation, diff_in_eth) = self.get_conversions(diff_surplus, trade, order_type[-1], bucket_response["tokens"], order)
-                    print(percent_deviation, diff_in_eth)
-                    if percent_deviation < 0.1 and diff_in_eth < 0.002:
-                        print("flag")
+                    sell_token = order['sell_token']
+                    buy_token = order['buy_token']
+                    if len(instance1["prices"]) > 0:
+                        sell_token_clearing_price = instance1["prices"][sell_token]
+                        buy_token_clearing_price = instance1["prices"][buy_token]
+                        qmdo_surplus = self.get_surplus(trade, sell_token_clearing_price, buy_token_clearing_price, order_type[-1])
+                        diff_surplus = winner_surplus - qmdo_surplus
+                        (percent_deviation, diff_in_eth) = self.get_conversions(diff_surplus, trade, order_type[-1], bucket_response["tokens"], order)
+                        print(percent_deviation, diff_in_eth)
+                        if percent_deviation < 0.1 and diff_in_eth < 0.002:
+                            print("flag")
+                except Exception as except_err:
+                    print(str(except_err))
 
 
     def get_conversions(self, diff_surplus, trade, order_type, tokens, order):
@@ -160,14 +171,16 @@ class OnChainEBBO:
         calcuate order flag condition values,
         (relative % deviation, absolute ETH difference) based on order type
         """
-        if order_type == '0': # implies a sell order
+        # implies a sell order
+        if order_type == '0': 
             percent_deviation = (diff_surplus * 100) / int(trade['buyAmount'])
             buy_token = order["buy_token"]
-            diff_in_eth = tokens[buy_token]["external_price"]/ (pow(10, 18)) * (diff_surplus)
-        elif order_type == '1': #implies a buy order
+            diff_in_eth = tokens[buy_token]["external_price"] / (pow(10, 18)) * (diff_surplus)
+        #implies a buy order
+        elif order_type == '1': 
             percent_deviation = (diff_surplus * 100) / int(trade['sellAmount'])
             sell_token = order["buy_token"]
-            diff_in_eth = tokens[sell_token]["external_price"]/ (pow(10, 18)) * (diff_surplus)
+            diff_in_eth = tokens[sell_token]["external_price"] / (pow(10, 18)) * (diff_surplus)
 
         return percent_deviation, diff_in_eth
 
@@ -177,13 +190,12 @@ class OnChainEBBO:
         Function calculates surplus using clearing prices,
         for winning order and from quasimodo
         """
-        # print(trade['executedAmount'])
-        # print(sell_token_clearing_price)
-        # print(buy_token_clearing_price)
-        if order_type == '0': # implies sell order
+        # implies sell order
+        if order_type == '0': 
             executed_volume = int(Fraction(trade['executedAmount']) * Fraction(sell_token_clearing_price) // Fraction(buy_token_clearing_price))
             Surplus = executed_volume - int(trade['buyAmount']) 
-        elif order_type == '1': # implies buy order
+        # implies buy order
+        elif order_type == '1': 
             executed_volume = int(Fraction(trade['executedAmount']) * Fraction(buy_token_clearing_price) // Fraction(sell_token_clearing_price))
             Surplus = int(trade['sellAmount']) - executed_volume
         return Surplus 
