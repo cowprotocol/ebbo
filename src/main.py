@@ -6,7 +6,7 @@ import time
 
 logging.basicConfig()
 logging.getLogger().setLevel(logging.DEBUG)
-#logging.basicConfig(level=logging.DEBUG)
+# logging.basicConfig(level=logging.DEBUG)
 
 
 def main() -> None:
