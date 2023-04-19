@@ -4,6 +4,8 @@ Test Deployment file
 import logging
 import time
 
+logging.basicConfig(level=logging.DEBUG)
+
 
 def main() -> None:
     """Main Method"""
