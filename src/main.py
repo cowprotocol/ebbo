@@ -4,11 +4,6 @@ Test Deployment File
 import logging
 import time
 
-logging.basicConfig()
-logging.getLogger().setLevel(logging.DEBUG)
-# logging.basicConfig(level=logging.DEBUG)
-
-
 def get_logger() -> logging.Logger:
     """
     get_logger() returns a logger object.
