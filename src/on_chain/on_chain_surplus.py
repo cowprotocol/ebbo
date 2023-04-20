@@ -11,11 +11,18 @@ import logging
 from web3 import Web3
 from src.on_chain.instance_file import instance1, instance2
 
-#GPv2 contract address
-address = '0x9008D19f58AAbD9eD0D60971565AA8510560ab41'
+# GPv2 contract address
+address = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
+
 
 class DecodedSettlement:
-    def __init__(self, tokens: List[str], clearing_prices: List[int], trades: List[Tuple[int, int, str, int, int, int, bytes, int, int, int, bytes]], interactions: List[List[Tuple[str, int, bytes]]]):
+    def __init__(
+        self,
+        tokens: List[str],
+        clearing_prices: List[int],
+        trades: List[Tuple[int, int, str, int, int, int, bytes, int, int, int, bytes]],
+        interactions: List[List[Tuple[str, int, bytes]]],
+    ):
         self.tokens = tokens
         self.clearing_prices = clearing_prices
         self.trades = trades
@@ -26,21 +33,23 @@ class DecodedSettlement:
         # Decode the function input
         decoded_input = contract_instance.decode_function_input(transaction)[1:]
         # Convert the decoded input to the expected types
-        tokens = decoded_input[0]['tokens']
-        clearing_prices = decoded_input[0]['clearingPrices']
-        trades = decoded_input[0]['trades']
-        interactions = decoded_input[0]['interactions']
+        tokens = decoded_input[0]["tokens"]
+        clearing_prices = decoded_input[0]["clearingPrices"]
+        trades = decoded_input[0]["trades"]
+        interactions = decoded_input[0]["interactions"]
 
         # Create and return a new instance of DecodedSettlement
         return cls(tokens, clearing_prices, trades, interactions)
 
-class OnChainEBBO:
 
+class OnChainEBBO:
     def __init__(self):
         """
         Makes ethereum node connection to Infura, and creates contract instance
         """
-        self.web_3 = Web3(Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}"))
+        self.web_3 = Web3(
+            Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}")
+        )
         self.contract_instance = self.web_3.eth.contract(address=address, abi=gpv2Abi)
         self.logger = get_logger()
 
@@ -49,21 +58,20 @@ class OnChainEBBO:
         Function filters hashes by contract address
         """
         filter_criteria = {
-            'fromBlock': int(start_block),
-            'toBlock': int(end_block),
-            'address': address,
+            "fromBlock": int(start_block),
+            "toBlock": int(end_block),
+            "address": address,
         }
         transactions = self.web_3.eth.filter(filter_criteria).get_all_entries()
         settlement_hashes_list = []
         for tx in transactions:
-            tx_hash = (tx['transactionHash']).hex()
+            tx_hash = (tx["transactionHash"]).hex()
             if tx_hash not in settlement_hashes_list:
                 settlement_hashes_list.append(tx_hash)
         settlement_hashes_list.reverse()
         return settlement_hashes_list
 
-
-    def get_tx_hashes(self, start_block = None, end_block = None, settlement_hash = None):
+    def get_tx_hashes(self, start_block=None, end_block=None, settlement_hash=None):
         """
         Puts transactions in list, calls required function in case of range of blocks.
         """
@@ -116,7 +124,6 @@ class OnChainEBBO:
             return comp_data["solutions"][-1]["orders"], bucket_response
         except ValueError as except_err:
             self.logger.error("Unhandled exception: %s", str(except_err))
-
 
     def decode_single_hash(self, settlement_hash):
         """
@@ -192,40 +199,53 @@ class OnChainEBBO:
             #         print("flag")
             return bucket_response
 
-
     def get_conversions(self, diff_surplus, trade, order_type, tokens, order):
         """
         calcuate order flag condition values,
         (relative % deviation, absolute ETH difference) based on order type
         """
         # implies a sell order
-        if order_type == '0': 
-            percent_deviation = (diff_surplus * 100) / int(trade['buyAmount'])
+        if order_type == "0":
+            percent_deviation = (diff_surplus * 100) / int(trade["buyAmount"])
             buy_token = order["buy_token"]
-            diff_in_eth = tokens[buy_token]["external_price"] / (pow(10, 18)) * (diff_surplus)
-        #implies a buy order
-        elif order_type == '1': 
-            percent_deviation = (diff_surplus * 100) / int(trade['sellAmount'])
+            diff_in_eth = (
+                tokens[buy_token]["external_price"] / (pow(10, 18)) * (diff_surplus)
+            )
+        # implies a buy order
+        elif order_type == "1":
+            percent_deviation = (diff_surplus * 100) / int(trade["sellAmount"])
             sell_token = order["buy_token"]
-            diff_in_eth = tokens[sell_token]["external_price"] / (pow(10, 18)) * (diff_surplus)
+            diff_in_eth = (
+                tokens[sell_token]["external_price"] / (pow(10, 18)) * (diff_surplus)
+            )
 
         return percent_deviation, diff_in_eth
 
-
-    def get_surplus(self, trade, sell_token_clearing_price, buy_token_clearing_price, order_type):
+    def get_surplus(
+        self, trade, sell_token_clearing_price, buy_token_clearing_price, order_type
+    ):
         """
         Function calculates surplus using clearing prices,
         for winning order and from quasimodo
         """
         # implies sell order
-        if order_type == '0': 
-            executed_volume = int(Fraction(trade['executedAmount']) * Fraction(sell_token_clearing_price) // Fraction(buy_token_clearing_price))
-            Surplus = executed_volume - int(trade['buyAmount']) 
+        if order_type == "0":
+            executed_volume = int(
+                Fraction(trade["executedAmount"])
+                * Fraction(sell_token_clearing_price)
+                // Fraction(buy_token_clearing_price)
+            )
+            Surplus = executed_volume - int(trade["buyAmount"])
         # implies buy order
-        elif order_type == '1': 
-            executed_volume = int(Fraction(trade['executedAmount']) * Fraction(buy_token_clearing_price) // Fraction(sell_token_clearing_price))
-            Surplus = int(trade['sellAmount']) - executed_volume
-        return Surplus 
+        elif order_type == "1":
+            executed_volume = int(
+                Fraction(trade["executedAmount"])
+                * Fraction(buy_token_clearing_price)
+                // Fraction(sell_token_clearing_price)
+            )
+            Surplus = int(trade["sellAmount"]) - executed_volume
+        return Surplus
+
 
 def get_logger() -> logging.Logger:
     """
@@ -252,4 +272,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main() 
+    main()
