@@ -4,6 +4,7 @@ Test Deployment File
 import logging
 import time
 
+
 def get_logger() -> logging.Logger:
     """
     get_logger() returns a logger object.
