@@ -7,7 +7,7 @@ import time
 
 def get_logger() -> logging.Logger:
     """
-    get_logger() returns a logger object.
+    logging
     """
     logging.basicConfig(format="%(levelname)s - %(message)s")
     logger = logging.getLogger()
