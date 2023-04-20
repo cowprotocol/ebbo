@@ -36,3 +36,12 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - uses: cowprotocol/autodeploy-action@v1
+        if: ${{ github.ref == 'refs/heads/main' }}
+        with:
+          pods:
+                "ebbo"
+          tag: ${{ secrets.AUTODEPLOY_TAG }}
+          url: ${{ secrets.AUTODEPLOY_URL }}
+          token: ${{ secrets.AUTODEPLOY_TOKEN }}
