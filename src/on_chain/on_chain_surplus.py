@@ -125,6 +125,25 @@ class OnChainEBBO:
         except ValueError as except_err:
             self.logger.error("Unhandled exception: %s", str(except_err))
 
+    def extract_win_trade_data(self, decoded_settlement, trade, order_type):
+        sell_token_index = trade["sellTokenIndex"]
+        buy_token_index = trade["buyTokenIndex"]
+        sell_token_clearing_price = decoded_settlement.clearing_prices[sell_token_index]
+        buy_token_clearing_price = decoded_settlement.clearing_prices[buy_token_index]
+        return self.get_surplus(
+            trade, sell_token_clearing_price, buy_token_clearing_price, order_type
+        )
+
+    def extract_qmdo_trade_data(self, trade, order, instance2, order_type):
+        sell_token = order["sell_token"]
+        buy_token = order["buy_token"]
+        sell_token_clearing_price = instance2["prices"][sell_token]
+        buy_token_clearing_price = instance2["prices"][buy_token]
+
+        return self.get_surplus(
+            trade, sell_token_clearing_price, buy_token_clearing_price, order_type
+        )
+
     def decode_single_hash(self, settlement_hash):
         """
         Need a better name for this function. Goes through all settlements fetched, decodes orders,
@@ -148,23 +167,11 @@ class OnChainEBBO:
         for trade in decoded_settlement.trades:
             del bucket_response
             bucket_response = deepcopy(Bucket_Response)
-            sell_token_index = trade["sellTokenIndex"]
-            buy_token_index = trade["buyTokenIndex"]
-            sell_token_clearing_price = decoded_settlement.clearing_prices[
-                sell_token_index
-            ]
-            buy_token_clearing_price = decoded_settlement.clearing_prices[
-                buy_token_index
-            ]
-
             order_type = str(
                 "{0:08b}".format(trade["flags"])
             )  # convert flags value to binary to extract L.S.B (Least Sigificant Byte)
-            winning_surplus = self.get_surplus(
-                trade,
-                sell_token_clearing_price,
-                buy_token_clearing_price,
-                order_type[-1],
+            winning_surplus = self.extract_win_trade_data(
+                decoded_settlement, trade, order_type[-1]
             )
             order_id = winning_orders[decoded_settlement.trades.index(trade)]["id"]
             for key, order in bucket_response["orders"].items():
@@ -186,18 +193,32 @@ class OnChainEBBO:
             # instance = instanceJson.json() to convert to dict
             # 'instance' is what we use here as a python object in instance_file.py
 
-            # sell_token = order['sell_token']
-            # buy_token = order['buy_token']
-            # if len(instance2["prices"]) > 0:
-            #     sell_token_clearing_price = instance2["prices"][sell_token]
-            #     buy_token_clearing_price = instance2["prices"][buy_token]
-            #     qmdo_surplus = self.get_surplus(trade, sell_token_clearing_price, buy_token_clearing_price, order_type[-1])
-            #     diff_surplus = winning_surplus - qmdo_surplus
-            #     (percent_deviation, diff_in_eth) = self.get_conversions(diff_surplus, trade, order_type[-1], bucket_response["tokens"], order)
-            #     print(percent_deviation, diff_in_eth)
-            #     if percent_deviation < 0.1 and diff_in_eth < 0.002:
-            #         print("flag")
-            return bucket_response
+            if len(instance2["prices"]) > 0:
+                qmdo_surplus = self.extract_qmdo_trade_data(
+                    trade, order, instance2, order_type[-1]
+                )
+                diff_surplus = winning_surplus - qmdo_surplus
+                (percent_deviation, diff_in_eth) = self.get_conversions(
+                    diff_surplus,
+                    trade,
+                    order_type[-1],
+                    bucket_response["tokens"],
+                    order,
+                )
+                if percent_deviation < 0.1 and diff_in_eth < 0.002:
+                    self.print_logs(
+                        settlement_hash, order_id, diff_in_eth, percent_deviation
+                    )
+        return bucket_response
+
+    def print_logs(self, settlement_hash, order_id, diff_in_eth, percent_deviation):
+        self.logger.info(
+            "Settlement Hash: %s\nFor order: %s\nAbsolute ETH Difference: %s\nRelative Percent Difference: %s\n",
+            settlement_hash,
+            order_id,
+            str(format(diff_in_eth, ".5f")),
+            str(format(percent_deviation, ".4f")),
+        )
 
     def get_conversions(self, diff_surplus, trade, order_type, tokens, order):
         """
