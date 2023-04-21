@@ -12,6 +12,7 @@ load_dotenv()
 DUNE_KEY = os.getenv("DUNE_KEY")
 
 
+
 def get_solver_dict() -> Dict[str, List[int]]:
     """
     Function prepares a solver dictionary by fetching solver names from a Dune query.

@@ -20,6 +20,7 @@ load_dotenv()
 INFURA_KEY = os.getenv("INFURA_KEY")
 
 
+
 class DaemonEBBO:
     """
     Initialization of EBBOAnalysis class object and logger object.

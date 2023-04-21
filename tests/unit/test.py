@@ -23,7 +23,7 @@ class TestSurplusCalculation(unittest.TestCase):
         """
         Test that function works with a start and end block input
         """
-        self.start_block = 17075658
+        self.start_block = 17075358
         self.end_block = 17075960
         self.file_name = str(self.start_block) + "_surplusTo_" + str(self.end_block)
         instance = EBBOAnalysis(self.file_name)
@@ -63,6 +63,7 @@ class TestSurplusCalculation(unittest.TestCase):
             self.surplus_token,
         ) = get_surplus_difference(self.order_data, self.clearingPrices, self.order)
         self.assertEqual(self.diff_surplus, -123572507, "Not equivalent!")
+
 
 
 if __name__ == "__main__":

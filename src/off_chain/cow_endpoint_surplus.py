@@ -14,6 +14,7 @@ load_dotenv()
 ETHERSCAN_KEY = os.getenv("ETHERSCAN_KEY")
 
 
+
 class EBBOAnalysis:
     """
     initialization of logging object, and vars for analytics report.
