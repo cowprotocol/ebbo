@@ -3,11 +3,15 @@ EBBO Historical Data Testing via block number inputs or a single settlement hash
 Uses CoW Endpoint provided callData.
 """
 import json
+import os
 from fractions import Fraction
 from typing import List, Dict, Tuple, Any, Optional
+from dotenv import load_dotenv
 import requests
-from config import ETHERSCAN_KEY
 from src.off_chain.configuration import get_solver_dict, header, get_logger
+
+load_dotenv()
+ETHERSCAN_KEY = os.getenv("ETHERSCAN_KEY")
 
 
 class EBBOAnalysis:
