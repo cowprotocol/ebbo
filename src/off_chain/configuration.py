@@ -3,14 +3,13 @@ This file contains functions used by cow_endpoint_surplus.
 """
 import logging
 import os
-from dotenv import load_dotenv
 from typing import Dict, List, Optional
+from dotenv import load_dotenv
 from dune_client.client import DuneClient
 from dune_client.query import Query
 
 load_dotenv()
 DUNE_KEY = os.getenv("DUNE_KEY")
-
 
 
 def get_solver_dict() -> Dict[str, List[int]]:

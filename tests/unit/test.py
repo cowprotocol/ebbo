@@ -65,6 +65,5 @@ class TestSurplusCalculation(unittest.TestCase):
         self.assertEqual(self.diff_surplus, -123572507, "Not equivalent!")
 
 
-
 if __name__ == "__main__":
     unittest.main()
