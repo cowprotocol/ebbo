@@ -9,11 +9,15 @@ the previous end block + 1 becomes the start block for the next cycle, and the l
 the new end block. Daemon sleeps for 30 mins and continue checking.
 """
 import time
+import os
+from dotenv import load_dotenv
 from typing import List, Optional
 from web3 import Web3
-from config import INFURA_KEY
 from src.off_chain.cow_endpoint_surplus import EBBOAnalysis
 from src.off_chain.configuration import get_logger
+
+load_dotenv()
+INFURA_KEY = os.getenv("INFURA_KEY")
 
 
 class DaemonEBBO:

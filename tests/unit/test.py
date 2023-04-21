@@ -23,7 +23,7 @@ class TestSurplusCalculation(unittest.TestCase):
         """
         Test that function works with a start and end block input
         """
-        self.start_block = 17075358
+        self.start_block = 17075658
         self.end_block = 17075960
         self.file_name = str(self.start_block) + "_surplusTo_" + str(self.end_block)
         instance = EBBOAnalysis(self.file_name)
@@ -63,29 +63,6 @@ class TestSurplusCalculation(unittest.TestCase):
             self.surplus_token,
         ) = get_surplus_difference(self.order_data, self.clearingPrices, self.order)
         self.assertEqual(self.diff_surplus, -123572507, "Not equivalent!")
-
-    # def onchain_test_hash_input(self) -> None:
-    #     """
-    #     Test that function works with a hash
-    #     """
-    #     self.hash = "0xa5ee470bd261ba2d17394718e6c42b8230eea8d6f444f5ee609621936fe10bd5"
-    #     self.file_name = str(self.hash)
-    #     instance = EBBOAnalysis(self.file_name)
-    #     self.assertIsNone(instance.get_surplus_by_input(settlement_hash=self.hash))
-
-    # def onchain_test_block_range_input(self) -> None:
-    #     """
-    #     Test that function works with a start and end block input
-    #     """
-    #     self.start_block = 16991373
-    #     self.end_block = 16992833
-    #     self.file_name = str(self.start_block) + "_surplusTo_" + str(self.end_block)
-    #     instance = EBBOAnalysis(self.file_name)
-    #     self.assertIsNone(
-    #         instance.get_surplus_by_input(
-    #             start_block=self.start_block, end_block=self.end_block
-    #         )
-    #     )
 
 
 if __name__ == "__main__":
