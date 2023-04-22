@@ -8,19 +8,17 @@ This tool monitors all settlements that happen on-chain, focusing on EBBO testin
   
 ## Scripts
 
-The project consists of 3 main components:
+The project consists of 3 main components: <br>
 
   
 1. In the first component, for each auction, we look at all solutions that did NOT win and check whether any of them actually provided a better deal to an order that got executed by the winning solution. This currently is best used for analyzing historical data. This script utilizes the callData of all solutions.
-
 The output consists of all orders that could have provided the user a better surplus with corresponding solver and absolute/relative values of the surplus difference. It also provides the error rate of each solver. The competition endpoint is used for this. To run this, set start_block, end_block or tx_hash in `test.py`.
 
-
 <br>
-2. The second component is a spin-off from the first that serves as a live logging tool which gathers the most recent settlements on CowSwap available, and checks them for EBBO. 
 
-
- <br> 
+2. The second component is a spin-off from the first that serves as a live logging tool which gathers the most recent settlements on CowSwap available, and checks them for EBBO.
+<br>
+<br>
 3. The third component relies on onchain data and the instance.json describing the auction. This component parses all settlements that happened on-chain, recovers the surplus that each order got, and for each executed order, calls Quasimodo and asks for a solution that only executes that order. Then, it checks what surplus Quasimodo gives to that order and compares with what happened on-chain.
 
   
@@ -28,7 +26,10 @@ The output consists of all orders that could have provided the user a better sur
 ## Setup Project
 
 Clone Repository: <br>
+  
+
     git clone https://github.com/cowprotocol/ebbo.git
+
 
 Version python 3.10 is used. <br>
 
