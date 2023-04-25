@@ -1,21 +1,32 @@
 """
-on_chain file
+This component of EBBO testing parses all settlements happening on-chain and recovers 
+each orders' surplus. We call Quasimodo to provide a solution for the same order, 
+and then a comparison is made to determine whether the order should be flagged.
 """
-from config import INFURA_KEY
-from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from fractions import Fraction
 from copy import deepcopy
-import requests
+import os
+from dotenv import load_dotenv
 import logging
+import requests
 from web3 import Web3
 from src.on_chain.instance_file import instance1, instance2
+from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
 # GPv2 contract address
-address = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
+ADDRESS = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
 
+# fetch keys
+load_dotenv()
+INFURA_KEY = os.getenv("INFURA_KEY")
+ETHERSCAN_KEY = os.getenv("ETHERSCAN_KEY")
 
 class DecodedSettlement:
+    """
+    Decodes transaction fetched from blockchain using web3.py for GPV2 settlement
+    """
+
     def __init__(
         self,
         tokens: List[str],
@@ -30,6 +41,9 @@ class DecodedSettlement:
 
     @classmethod
     def new(cls, contract_instance, transaction):
+        """
+        Returns decoded settlement
+        """
         # Decode the function input
         decoded_input = contract_instance.decode_function_input(transaction)[1:]
         # Convert the decoded input to the expected types
@@ -43,52 +57,68 @@ class DecodedSettlement:
 
 
 class OnChainEBBO:
-    def __init__(self):
+    """
+    Functions required for on-chain quasimodo calling functionality
+    """
+
+    def __init__(self) -> None:
         """
-        Makes ethereum node connection to Infura, and creates contract instance
+        Makes ethereum node connection to Infura, creates contract
+        and logger instance
         """
         self.web_3 = Web3(
             Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}")
         )
-        self.contract_instance = self.web_3.eth.contract(address=address, abi=gpv2Abi)
+        self.contract_instance = self.web_3.eth.contract(address=ADDRESS, abi=gpv2Abi)
         self.logger = get_logger()
 
-    def get_hashes_by_block(self, start_block, end_block):
+    def get_tx_hashes_by_block(self, start_block: int, end_block: int) -> List[str]:
         """
-        Function filters hashes by contract address
+        Function filters hashes by contract address, and block ranges
         """
         filter_criteria = {
             "fromBlock": int(start_block),
             "toBlock": int(end_block),
-            "address": address,
+            "address": ADDRESS,
         }
+        # transactions may have repeating hashes, since even event logs are filtered
+        # therefore, check if hash has already been added to the list
+
+        # successful transactions are filtered
         transactions = self.web_3.eth.filter(filter_criteria).get_all_entries()
         settlement_hashes_list = []
-        for tx in transactions:
-            tx_hash = (tx["transactionHash"]).hex()
+        for transaction in transactions:
+            tx_hash = (transaction["transactionHash"]).hex()
             if tx_hash not in settlement_hashes_list:
                 settlement_hashes_list.append(tx_hash)
-        settlement_hashes_list.reverse()
         return settlement_hashes_list
 
-    def get_tx_hashes(self, start_block=None, end_block=None, settlement_hash=None):
+    def create_tx_list(
+        self,
+        start_block: Optional[int] = None,
+        end_block: Optional[int] = None,
+        settlement_hash: Optional[str] = None,
+    ) -> None:
         """
         Puts transactions in list, calls required function in case of range of blocks.
         """
         settlement_hashes_list = []
         if settlement_hash is not None:
             settlement_hashes_list = [settlement_hash]
+
         elif start_block is not None and end_block is not None:
-            settlement_hashes_list = self.get_hashes_by_block(start_block, end_block)
+            settlement_hashes_list = self.get_tx_hashes_by_block(start_block, end_block)
             # At this point we have all the needed hashes
         self.decoder(settlement_hashes_list)
 
-    def decoder(self, settlement_hashes_list):
+    def decoder(self, settlement_hashes_list: List[str]) -> None:
+        """
+        Decode each hash which also calculates surplus
+        """
         for settlement_hash in settlement_hashes_list:
             self.decode_single_hash(settlement_hash)
-        return
 
-    def get_order_data_by_hash(self, settlement_hash):
+    def get_order_data_by_hash(self, settlement_hash: str) -> Tuple:
         """
         Returns competition endpoint data since we need order_id and auction_id, and also AWS
         Bucket response.
@@ -96,6 +126,7 @@ class OnChainEBBO:
         bucket_response = None
         comp_data = None
         try:
+            # first fetch from production environment
             comp_data = requests.get(
                 f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{settlement_hash}"
             )
@@ -109,6 +140,7 @@ class OnChainEBBO:
                     ).json()
                 )
             elif status_code == 404:
+                # attempt fetch from staging environment, if prod failed.
                 comp_data = requests.get(
                     f"https://barn.api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{settlement_hash}"
                 )
@@ -125,7 +157,11 @@ class OnChainEBBO:
         except ValueError as except_err:
             self.logger.error("Unhandled exception: %s", str(except_err))
 
-    def extract_win_trade_data(self, decoded_settlement, trade, order_type):
+    def get_win_trade_surplus(self, decoded_settlement, trade, order_type):
+        """
+        Extracts necessary data from trade, and clearing prices of on-chain settlement.
+        Makes call to surplus calculating function.
+        """
         sell_token_index = trade["sellTokenIndex"]
         buy_token_index = trade["buyTokenIndex"]
         sell_token_clearing_price = decoded_settlement.clearing_prices[sell_token_index]
@@ -134,7 +170,12 @@ class OnChainEBBO:
             trade, sell_token_clearing_price, buy_token_clearing_price, order_type
         )
 
-    def extract_qmdo_trade_data(self, trade, order, instance2, order_type):
+
+    def get_solver_trade_surplus(self, trade, order, instance2, order_type):
+        """
+        Extracts necessary data from trade, and clearing prices returned by Quasimodo.
+        Makes call to surplus calculating function.
+        """
         sell_token = order["sell_token"]
         buy_token = order["buy_token"]
         sell_token_clearing_price = instance2["prices"][sell_token]
@@ -144,13 +185,16 @@ class OnChainEBBO:
             trade, sell_token_clearing_price, buy_token_clearing_price, order_type
         )
 
+
     def decode_single_hash(self, settlement_hash):
         """
         Need a better name for this function. Goes through all settlements fetched, decodes orders,
-        gets AWS Bucket response and makes call to quasimodo for required orders.
+        gets response from AWS bucket and makes call to Quasimodo for required orders.
         """
         try:
             encoded_transaction = self.web_3.eth.get_transaction(settlement_hash)
+            solver_address = encoded_transaction["from"]
+            print(solver_address)
             decoded_settlement = DecodedSettlement.new(
                 self.contract_instance, encoded_transaction.input
             )
@@ -161,66 +205,92 @@ class OnChainEBBO:
             return None
         (winning_orders, bucket_response) = self.get_order_data_by_hash(settlement_hash)
         if bucket_response is None:
-            return bucket_response
+            return None
+        self.solve_orders_in_settlement(bucket_response, winning_orders, settlement_hash, decoded_settlement)
+        return "200"
+
+
+    def get_solver_response(order_id, bucket_response):
+        for key, order in bucket_response["orders"].items():
+            if order["id"] == order_id:
+                bucket_response["orders"] = {key: order}
+                break
+
+        # convert back to JSON for sending to Quasimodo
+        # bucket_response_json = json.dumps(bucket_response)
+
+        # # space here to post and receive instance JSON from Quasimodo
+        # solution_json = requests.post(bucket_response_json)
+
+        # assuming jsonObject is called solution_json
+        # solution = solutions_json.json() to convert to dict
+
+        # 'solution' is what we use here as a python object in instance_file.py
+        # return quasimodo solved solution
+        # return solution, order
+
+
+    def solve_orders_in_settlement(self, bucket_response, winning_orders, settlement_hash, decoded_settlement):
         # there can be multiple orders/trades in a single settlement
         Bucket_Response = deepcopy(bucket_response)
         for trade in decoded_settlement.trades:
             del bucket_response
             bucket_response = deepcopy(Bucket_Response)
+            sell_token_index = trade["sellTokenIndex"]
+            buy_token_index = trade["buyTokenIndex"]
+            sell_token_clearing_price = decoded_settlement.clearing_prices[
+                sell_token_index
+            ]
+            buy_token_clearing_price = decoded_settlement.clearing_prices[
+                buy_token_index
+            ]
             order_type = str(
                 "{0:08b}".format(trade["flags"])
             )  # convert flags value to binary to extract L.S.B (Least Sigificant Byte)
-            winning_surplus = self.extract_win_trade_data(
-                decoded_settlement, trade, order_type[-1]
+            winning_surplus = self.get_surplus(
+                trade,
+                sell_token_clearing_price,
+                buy_token_clearing_price,
+                order_type[-1],
             )
             order_id = winning_orders[decoded_settlement.trades.index(trade)]["id"]
-            for key, order in bucket_response["orders"].items():
-                if order["id"] == order_id:
-                    bucket_response["orders"] = {key: order}
-                    break
-            self.logger.info(
-                "Settlement Hash: %s\nFor order: %s\nWinning Surplus: %s",
-                settlement_hash,
-                order_id,
-                str(winning_surplus),
-            )
+            solver_solution, order = self.get_solver_response(order_id, bucket_response)
 
-            # convert back to JSON for sending to Quasimodo
-            # bucketResponseJson = json.dumps(bucket_response)
-            # # space here to post and receive instance JSON from Quasimodo
-            # instanceJson = requests.post(bucketResponseJson)
-            # assuming jsonObject is called instanceJson
-            # instance = instanceJson.json() to convert to dict
-            # 'instance' is what we use here as a python object in instance_file.py
-
-            if len(instance2["prices"]) > 0:
-                qmdo_surplus = self.extract_qmdo_trade_data(
-                    trade, order, instance2, order_type[-1]
-                )
+            sell_token = order['sell_token']
+            buy_token = order['buy_token']
+            # if a valid solution is returned by solver
+            if len(solver_solution["prices"]) > 0:
+                sell_token_clearing_price = solver_solution["prices"][sell_token]
+                buy_token_clearing_price = solver_solution["prices"][buy_token]
+                qmdo_surplus = self.get_surplus(trade, sell_token_clearing_price, buy_token_clearing_price, order_type[-1])
                 diff_surplus = winning_surplus - qmdo_surplus
-                (percent_deviation, diff_in_eth) = self.get_conversions(
-                    diff_surplus,
-                    trade,
-                    order_type[-1],
-                    bucket_response["tokens"],
-                    order,
-                )
-                if percent_deviation < 0.1 and diff_in_eth < 0.002:
-                    self.print_logs(
-                        settlement_hash, order_id, diff_in_eth, percent_deviation
-                    )
+                self.check_flag_condition(diff_surplus, trade, order_type[-1], bucket_response["tokens"], order)
         return bucket_response
 
-    def print_logs(self, settlement_hash, order_id, diff_in_eth, percent_deviation):
-        self.logger.info(
-            "Settlement Hash: %s\nFor order: %s\nAbsolute ETH Difference: %s\nRelative Percent Difference: %s\n",
-            settlement_hash,
-            order_id,
-            str(format(diff_in_eth, ".5f")),
-            str(format(percent_deviation, ".4f")),
-        )
 
-    def get_conversions(self, diff_surplus, trade, order_type, tokens, order):
+    def check_flag_condition(self, diff_surplus, trade, order_type, tokens, order):
+        percent_deviation, diff_in_eth = self.percent_and_eth_conversions(diff_surplus, trade, order_type[-1], tokens, order)
+        if percent_deviation < 0.1 and diff_in_eth < get_eth_value():
+            print("flag")
+
+
+    def print_logs(self, settlement_hash, order_id, winning_surplus):
+        """
+        print logs if order is flagged
+        """
+        # flag_log = "Settlement Hash: {}\nFor order: {}\nAbsolute ETH Difference: {}\nRelative Percent Difference: {}\n".format(
+        #     settlement_hash,
+        #     order_id,
+        #     str(format(diff_in_eth, ".5f")),
+        #     str(format(percent_deviation, ".4f")),
+        # )
+        flag_log = "Settlement Hash: {}\nFor order: {}\nWinning surplus: {}\n".format(
+            settlement_hash, order_id, winning_surplus
+        )
+        self.logger.info(flag_log)
+
+
+    def percent_and_eth_conversions(self, diff_surplus, trade, order_type, tokens, order):
         """
         calcuate order flag condition values,
         (relative % deviation, absolute ETH difference) based on order type
@@ -256,7 +326,7 @@ class OnChainEBBO:
                 * Fraction(sell_token_clearing_price)
                 // Fraction(buy_token_clearing_price)
             )
-            Surplus = executed_volume - int(trade["buyAmount"])
+            surplus = executed_volume - int(trade["buyAmount"])
         # implies buy order
         elif order_type == "1":
             executed_volume = int(
@@ -264,33 +334,33 @@ class OnChainEBBO:
                 * Fraction(buy_token_clearing_price)
                 // Fraction(sell_token_clearing_price)
             )
-            Surplus = int(trade["sellAmount"]) - executed_volume
-        return Surplus
+            surplus = int(trade["sellAmount"]) - executed_volume
+        return surplus
 
 
-def get_logger() -> logging.Logger:
-    """
-    get_logger() returns a logger object.
-    """
-    logging.basicConfig(format="%(levelname)s - %(message)s")
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    return logger
+def get_eth_value():
+    eth_price_url = f"https://api.etherscan.io/api?module=stats&action=ethprice&apikey={ETHERSCAN_KEY}"
+    eth_price = requests.get(eth_price_url).json()["result"]["ethusd"]
+    min_flag_usd = 4.00
+    eth_absolute_check = str(format(min_flag_usd / float(eth_price), ".6f"))
+    print(eth_absolute_check)
 
 
 # ---------------------------- TESTING --------------------------------
 def main():
+    """
+    Main loop, to be deleted.
+    """
     instance = OnChainEBBO()
-    optionInput = input("b for block input, h for hash input: ")
-    match optionInput:
-        case "b":
-            start_block = input("Start Block: ")
-            end_block = input("End Block: ")
-            instance.get_tx_hashes(start_block, end_block, None)
-        case "h":
-            settlement_hash = input("Settlement Hash: ")
-            instance.get_tx_hashes(None, None, settlement_hash)
-
+    # option_input = input("b for block input, h for hash input: ")
+    # match option_input:
+    #     case "b":
+    #         start_block = input("Start Block: ")
+    #         end_block = input("End Block: ")
+    #         instance.create_tx_list(start_block, end_block, None)
+    #     case "h":
+    #         settlement_hash = input("Settlement Hash: ")
+    #         instance.create_tx_list(None, None, settlement_hash)
 
 if __name__ == "__main__":
     main()
