@@ -14,7 +14,7 @@ from typing import List, Optional
 from dotenv import load_dotenv
 from web3 import Web3
 from src.off_chain.cow_endpoint_surplus import EBBOAnalysis
-from src.off_chain.configuration import get_logger
+from src.configuration import get_logger, get_tx_hashes_by_block
 
 load_dotenv()
 INFURA_KEY = os.getenv("INFURA_KEY")
@@ -41,7 +41,7 @@ class DaemonEBBO:
         while True:
             time.sleep(sleep_time)
             end_block = web_3.eth.block_number
-            fetched_hashes = self.instance.get_settlement_hashes(start_block, end_block)
+            fetched_hashes = get_tx_hashes_by_block(web_3, start_block, end_block)
             all_hashes = fetched_hashes + unchecked_hashes
             unchecked_hashes = []
             while len(all_hashes) > 0:
