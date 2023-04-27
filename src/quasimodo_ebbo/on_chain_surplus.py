@@ -1,5 +1,5 @@
 """
-This component of EBBO testing parses all settlements happening on-chain and recovers 
+This component of EBBO testing parses all settlements happening on-chain and recovers
 each orders' surplus. We call Quasimodo to provide a solution for the same order, 
 and then a comparison is made to determine whether the order should be flagged.
 """
