@@ -4,12 +4,23 @@ Uses CoW Endpoint provided callData.
 """
 import json
 import traceback
-from web3 import Web3
 from typing import List, Dict, Tuple, Any, Optional
+from web3 import Web3
 import requests
-from src.configuration import *
+from src.configuration import (
+    get_logger,
+    get_tx_hashes_by_block,
+    get_surplus_order,
+    percent_eth_conversions_order,
+)
 from src.quasimodo_ebbo.on_chain_surplus import DecodedSettlement
-from src.constants import *
+from src.constants import (
+    INFURA_KEY,
+    header,
+    ADDRESS,
+    ABSOLUTE_ETH_FLAG_AMOUNT,
+    REL_DEVIATION_FLAG_PERCENT,
+)
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
 
@@ -99,7 +110,10 @@ class EndpointSolutionsEBBO:
 
         return solver_competition_data
 
-    def get_decoded_settlement(self, tx_hash):
+    def get_decoded_settlement(self, tx_hash: str):
+        """
+        Takes settlement hash as input, returns decoded settlement data.
+        """
         encoded_transaction = self.web_3.eth.get_transaction(tx_hash)
         decoded_settlement = DecodedSettlement.new(
             self.contract_instance, encoded_transaction.input
@@ -111,6 +125,10 @@ class EndpointSolutionsEBBO:
         )
 
     def get_onchain_order_data(self, trade, onchain_clearing_prices, tokens):
+        """
+        Returns required data to calculate surplus for winning order
+        using onchain data from decoded settlement.
+        """
         return {
             "sell_token_clearing_price": onchain_clearing_prices[
                 trade["sellTokenIndex"]
@@ -118,7 +136,7 @@ class EndpointSolutionsEBBO:
             "buy_token_clearing_price": onchain_clearing_prices[trade["buyTokenIndex"]],
             "sell_token": tokens[trade["sellTokenIndex"]].lower(),
             "buy_token": tokens[trade["buyTokenIndex"]].lower(),
-            "order_type": str("{0:08b}".format(trade["flags"]))[-1],
+            "order_type": str(f"{trade['flags']:08b}")[-1],
             "executed_amount": trade["executedAmount"],
             "sell_amount": trade["sellAmount"],
             "buy_amount": trade["buyAmount"],
@@ -193,8 +211,8 @@ class EndpointSolutionsEBBO:
         )
         sorted_values = sorted(sorted_dict.values(), key=lambda x: x[0])
         if (
-            sorted_values[0][0] < -absolute_eth_flag_amount
-            and sorted_values[0][1] < -rel_deviation_flag_percent
+            sorted_values[0][0] < -ABSOLUTE_ETH_FLAG_AMOUNT
+            and sorted_values[0][1] < -REL_DEVIATION_FLAG_PERCENT
         ):
             for key, value in sorted_dict.items():
                 if value == sorted_values[0]:
@@ -239,6 +257,11 @@ class EndpointSolutionsEBBO:
 def get_flagging_values(
     onchain_order_data, executed_amount, clearing_prices, external_prices
 ):
+    """
+    This function calculates surplus for solution, compares to winning
+    solution to get surplus difference, and finally returns percent_deviations
+    and surplus difference in eth based on external prices.
+    """
     if onchain_order_data["order_type"] == "1":  # buy order
         buy_or_sell_amount = int(onchain_order_data["sell_amount"])
         conversion_external_price = int(

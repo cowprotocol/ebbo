@@ -14,7 +14,7 @@ from web3 import Web3
 from src.quasimodo_ebbo.on_chain_surplus import QuasimodoTestEBBO
 from src.off_chain.cow_endpoint_surplus import EndpointSolutionsEBBO
 from src.configuration import get_logger, get_tx_hashes_by_block
-from src.constants import *
+from src.constants import INFURA_KEY
 
 
 class DaemonEBBO:
@@ -51,18 +51,25 @@ class DaemonEBBO:
             self.logger.info("going to sleep...")
             start_block = end_block + 1
 
-    def onchain_quasimodo_test(self, single_hash):
+    def onchain_quasimodo_test(self, single_hash: str) -> bool:
+        """
+        Function checks if quasimodo test can successfully decode hash,
+        if not, return None = None i.e. True
+        """
         return self.quasimodo_test_instance.decode_single_hash(single_hash) is None
 
-    def cow_endpoint_test(self, single_hash):
+    def cow_endpoint_test(self, single_hash: str):
+        """
+        Function checks if solver competition data is retrievable and runs
+        EBBO test, else returns True to add to list of unchecked hashes
+        """
         response_data = self.cow_endpoint_test_instance.get_solver_competition_data(
             [single_hash]
         )
         if len(response_data) != 0:
             self.cow_endpoint_test_instance.get_order_surplus(response_data[0])
             return False
-        else:
-            return True
+        return True
 
 
 if __name__ == "__main__":

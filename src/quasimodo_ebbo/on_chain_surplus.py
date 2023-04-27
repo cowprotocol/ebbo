@@ -10,7 +10,11 @@ from dotenv import load_dotenv
 import requests
 from web3 import Web3
 from src.configuration import *
-from src.constants import *
+from src.constants import (
+    INFURA_KEY,
+    ABSOLUTE_ETH_FLAG_AMOUNT,
+    REL_DEVIATION_FLAG_PERCENT,
+)
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
 # fetch keys
@@ -105,13 +109,19 @@ class QuasimodoTestEBBO:
                 auction_id = comp_data["auctionId"]
                 bucket_response = dict(
                     requests.get(
-                        f"https://solver-instances.s3.eu-central-1.amazonaws.com/prod-mainnet/{auction_id}.json"
+                        (
+                            "https://solver-instances.s3.eu-central-1.amazonaws.com/"
+                            f"prod-mainnet/{auction_id}.json"
+                        )
                     ).json()
                 )
             elif status_code == 404:
                 # attempt fetch from staging environment, if prod failed.
                 comp_data = requests.get(
-                    f"https://barn.api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{settlement_hash}"
+                    (
+                        "https://barn.api.cow.fi/mainnet/api/v1/solver_competition/"
+                        f"by_tx_hash/{settlement_hash}"
+                    )
                 )
                 status_code = comp_data.status_code
                 if comp_data.status_code == 200:
@@ -119,7 +129,10 @@ class QuasimodoTestEBBO:
                     auction_id = comp_data["auctionId"]
                     bucket_response = dict(
                         requests.get(
-                            f"https://solver-instances.s3.eu-central-1.amazonaws.com/staging-mainnet/{auction_id}.json"
+                            (
+                                "https://solver-instances.s3.eu-central-1.amazonaws.com/"
+                                f"staging-mainnet/{auction_id}.json"
+                            )
                         ).json()
                     )
             return comp_data["solutions"][-1]["orders"], bucket_response
@@ -127,6 +140,10 @@ class QuasimodoTestEBBO:
             self.logger.error("Unhandled exception: %s", str(except_err))
 
     def get_solver_response(order_id: str, bucket_response: dict):
+        """
+        Updates AWS bucket response to a single order for posting
+        to quasimodo, in order to get the solutions JSON.
+        """
         solver_instance = deepcopy(bucket_response)
         for key, order in solver_instance["orders"].items():
             if order["id"] == order_id:
@@ -158,6 +175,12 @@ class QuasimodoTestEBBO:
         settlement_hash: str,
         decoded_settlement,
     ):
+        """
+        This function goes over orders in settlement,
+        calculates surplus difference by making calls to
+        surplus calculating functions for on-chain solution, and
+        quasimodo solution.
+        """
         # there can be multiple orders/trades in a single settlement
         for trade in decoded_settlement.trades:
             sell_token_clearing_price = decoded_settlement.clearing_prices[
@@ -166,15 +189,14 @@ class QuasimodoTestEBBO:
             buy_token_clearing_price = decoded_settlement.clearing_prices[
                 trade["buyTokenIndex"]
             ]
-            order_type = str(
-                "{0:08b}".format(trade["flags"])
-            )  # convert flags value to binary to extract L.S.B (Least Sigificant Byte)
+            # convert flags value to binary to extract L.S.B (Least Sigificant Byte)
+            order_type = str(f"{trade['flags']:08b}")[-1]
             winning_surplus = get_surplus_order(
                 trade["executedAmount"],
                 trade["sellAmount"],
                 sell_token_clearing_price,
                 buy_token_clearing_price,
-                order_type[-1],
+                order_type,
             )
             order_id = winning_orders[decoded_settlement.trades.index(trade)]["id"]
             solver_solution, order = self.get_solver_response(order_id, bucket_response)
@@ -190,18 +212,22 @@ class QuasimodoTestEBBO:
                     trade["sellAmount"],
                     sell_token_clearing_price,
                     buy_token_clearing_price,
-                    order_type[-1],
+                    order_type,
                 )
                 diff_surplus = winning_surplus - quasimodo_surplus
                 self.check_flag_condition(
                     diff_surplus,
                     trade,
-                    order_type[-1],
+                    order_type,
                     bucket_response["tokens"],
                     order,
                 )
 
     def check_flag_condition(self, diff_surplus: int, trade, order_type, tokens, order):
+        """
+        Based on order type, this function fetches percent_deviation,
+        and surplus difference in ETH to flag or NOT flag orders.
+        """
         if order_type == "1":
             buy_or_sell_amount = int(trade["sellAmount"])
             external_price = int(tokens[order["sell_token"]]["external_price"])
@@ -215,8 +241,8 @@ class QuasimodoTestEBBO:
             external_price,
         )
         if (
-            percent_deviation < -rel_deviation_flag_percent
-            and diff_in_eth < -absolute_eth_flag_amount
+            percent_deviation < -REL_DEVIATION_FLAG_PERCENT
+            and diff_in_eth < -ABSOLUTE_ETH_FLAG_AMOUNT
         ):
             print("flag")
 
@@ -224,7 +250,8 @@ class QuasimodoTestEBBO:
         """
         print logs if order is flagged
         """
-        # flag_log = "Settlement Hash: {}\nFor order: {}\nAbsolute ETH Difference: {}\nRelative Percent Difference: {}\n".format(
+        # flag_log = "Settlement Hash: {}\nFor order: {}\nAbsolute ETH Difference: {}\n
+        # Relative Percent Difference: {}\n".format(
         #     settlement_hash,
         #     order_id,
         #     str(format(diff_in_eth, ".5f")),

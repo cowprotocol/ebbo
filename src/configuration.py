@@ -2,12 +2,13 @@
 This file contains functions used by cow_endpoint_surplus and quasimodo_test_surplus.
 """
 import logging
-import requests
 from fractions import Fraction
-from src.constants import *
-from typing import Any, Dict, List, Optional, Tuple
-from dune_client.client import DuneClient
-from dune_client.query import Query
+from typing import List, Optional, Tuple
+import requests
+
+# from dune_client.client import DuneClient
+# from dune_client.query import Query
+from src.constants import ADDRESS, ETHERSCAN_KEY
 
 
 def get_logger(filename: Optional[str] = None) -> logging.Logger:
@@ -50,7 +51,13 @@ def get_tx_hashes_by_block(web_3, start_block: int, end_block: int) -> List[str]
 
 
 def get_eth_value():
-    eth_price_url = f"https://api.etherscan.io/api?module=stats&action=ethprice&apikey={ETHERSCAN_KEY}"
+    """
+    Returns live eth price using etherscan API
+    """
+    eth_price_url = (
+        "https://api.etherscan.io/api?module=stats&"
+        f"action=ethprice&apikey={ETHERSCAN_KEY}"
+    )
     eth_price = requests.get(eth_price_url).json()["result"]["ethusd"]
     # min_flag_usd = 4.00
     # eth_absolute_check = str(format(min_flag_usd / float(eth_price), ".6f"))
@@ -58,6 +65,9 @@ def get_eth_value():
 
 
 def percent_eth_conversions_order(diff_surplus, buy_or_sell_amount, external_price):
+    """
+    Returns conversions required for flagging orders.
+    """
     percent_deviation = (diff_surplus * 100) / buy_or_sell_amount
     diff_in_eth = (external_price / (pow(10, 18))) * (diff_surplus)
     # diff_in_eth = (external_price/(pow(10, 18))) * (diff_surplus/(pow(10, 18)))
@@ -71,6 +81,12 @@ def get_surplus_order(
     buy_token_clearing_price,
     order_type,
 ):
+    """
+    Returns surplus using:
+    executed amount,
+    buy amount if sell order OR sell amount if buy order,
+    token clearing prices, and the type of order.
+    """
     if order_type == "1":  # buy order
         exec_amt = int(
             Fraction(executed_amount)
