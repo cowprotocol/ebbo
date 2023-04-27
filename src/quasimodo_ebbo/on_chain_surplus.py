@@ -9,11 +9,18 @@ import os
 from dotenv import load_dotenv
 import requests
 from web3 import Web3
-from src.configuration import *
+from src.configuration import (
+    get_logger,
+    get_tx_hashes_by_block,
+    get_surplus_order,
+    percent_eth_conversions_order,
+    DecodedSettlement,
+)
 from src.constants import (
     INFURA_KEY,
     ABSOLUTE_ETH_FLAG_AMOUNT,
     REL_DEVIATION_FLAG_PERCENT,
+    ADDRESS,
 )
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
@@ -213,9 +220,8 @@ class QuasimodoTestEBBO:
                     buy_token_clearing_price,
                     order_type,
                 )
-                diff_surplus = winning_surplus - quasimodo_surplus
                 self.check_flag_condition(
-                    diff_surplus,
+                    winning_surplus - quasimodo_surplus,
                     trade,
                     order_type,
                     bucket_response["tokens"],
@@ -256,9 +262,8 @@ class QuasimodoTestEBBO:
         #     str(format(diff_in_eth, ".5f")),
         #     str(format(percent_deviation, ".4f")),
         # )
-        flag_log = "Settlement Hash: {}\nFor order: {}\nWinning surplus: {}\n".format(
-            settlement_hash, order_id, winning_surplus
-        )
+        flag_log = f"Settlement Hash: {settlement_hash}\nFor order: {order_id}\n \
+                        Winning surplus: {winning_surplus}\n"
         self.logger.info(flag_log)
 
 
