@@ -1,6 +1,6 @@
 """
-This component of EBBO testing parses all settlements happening on-chain and recovers 
-each orders' surplus. We call Quasimodo to provide a solution for the same order, 
+This component of EBBO testing parses all settlements happening on-chain and recovers
+each orders' surplus. We call Quasimodo to provide a solution for the same order,
 and then a comparison is made to determine whether the order should be flagged.
 """
 from typing import List, Tuple, Optional
@@ -85,7 +85,7 @@ class QuasimodoTestEBBO:
         if bucket_response is None:
             return None
         self.solve_orders_in_settlement(
-            bucket_response, winning_orders, settlement_hash, decoded_settlement
+            bucket_response, winning_orders, decoded_settlement
         )
         return True
 
@@ -139,7 +139,7 @@ class QuasimodoTestEBBO:
         except ValueError as except_err:
             self.logger.error("Unhandled exception: %s", str(except_err))
 
-    def get_solver_response(order_id: str, bucket_response: dict):
+    def get_solver_response(self, order_id: str, bucket_response: dict):
         """
         Updates AWS bucket response to a single order for posting
         to quasimodo, in order to get the solutions JSON.
@@ -172,7 +172,6 @@ class QuasimodoTestEBBO:
         self,
         bucket_response: dict,
         winning_orders,
-        settlement_hash: str,
         decoded_settlement,
     ):
         """
