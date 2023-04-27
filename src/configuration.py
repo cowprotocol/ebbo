@@ -2,50 +2,12 @@
 This file contains functions used by cow_endpoint_surplus and quasimodo_test_surplus.
 """
 import logging
-import os
 import requests
 from fractions import Fraction
+from src.constants import *
 from typing import Any, Dict, List, Optional, Tuple
-from dotenv import load_dotenv
 from dune_client.client import DuneClient
 from dune_client.query import Query
-
-load_dotenv()
-DUNE_KEY = os.getenv("DUNE_KEY")
-ETHERSCAN_KEY = os.getenv("ETHERSCAN_KEY")
-
-ADDRESS = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
-
-def get_solver_dict() -> Dict[str, List[int]]:
-    """
-    Function prepares a solver dictionary by fetching solver names from a Dune query.
-    """
-    solver_dict = {}
-    query = Query(
-        name="Solver Dictionary",
-        query_id=1372857,
-    )
-    if DUNE_KEY is not None:
-        dune = DuneClient(DUNE_KEY)
-        results = dune.refresh(query)
-        solvers = results.get_rows()
-        for solver in solvers:
-            solver_dict[solver["name"]] = [0, 0]
-
-        # These names need to be updated since Dune and Orderbook Endpoint have different names.
-        # Example, "1Inch: [0, 0]" is a specific row, the first value is the number of solutions
-        # won, second value is number of solutions of that solver with higher surplus found.
-
-        solver_dict["BaselineSolver"] = solver_dict.pop("Baseline")
-        solver_dict["1Inch"] = solver_dict.pop("Gnosis_1inch")
-        solver_dict["0x"] = solver_dict.pop("Gnosis_0x")
-        solver_dict["BalancerSOR"] = solver_dict.pop("Gnosis_BalancerSOR")
-        solver_dict["ParaSwap"] = solver_dict.pop("Gnosis_ParaSwap")
-        solver_dict["SeaSolver"] = solver_dict.pop("Seasolver")
-        solver_dict["CowDexAg"] = solver_dict.pop("DexCowAgg")
-        solver_dict["NaiveSolver"] = solver_dict.pop("Naive")
-
-    return solver_dict
 
 
 def get_logger(filename: Optional[str] = None) -> logging.Logger:
@@ -87,79 +49,73 @@ def get_tx_hashes_by_block(web_3, start_block: int, end_block: int) -> List[str]
     return settlement_hashes_list
 
 
-
 def get_eth_value():
     eth_price_url = f"https://api.etherscan.io/api?module=stats&action=ethprice&apikey={ETHERSCAN_KEY}"
     eth_price = requests.get(eth_price_url).json()["result"]["ethusd"]
-    min_flag_usd = 4.00
-    eth_absolute_check = str(format(min_flag_usd / float(eth_price), ".6f"))
-    return eth_absolute_check
+    # min_flag_usd = 4.00
+    # eth_absolute_check = str(format(min_flag_usd / float(eth_price), ".6f"))
+    return eth_price
 
 
-def percent_eth_conversions_sell_order(diff_surplus, buy_amount, external_price):
-    """
-    calcuate order flag condition values,
-    (relative % deviation, absolute ETH difference) for sell orders
-    """
-    # implies a sell order
-    percent_deviation = (diff_surplus * 100) / buy_amount
-    # diff_in_eth = (
-    #     external_price / (pow(10, 18)) * (diff_surplus)
-    # )
-    diff_in_eth = (external_price/(pow(10, 18))) * (diff_surplus/(pow(10, 18)))
+def percent_eth_conversions_order(diff_surplus, buy_or_sell_amount, external_price):
+    percent_deviation = (diff_surplus * 100) / buy_or_sell_amount
+    diff_in_eth = (external_price / (pow(10, 18))) * (diff_surplus)
+    # diff_in_eth = (external_price/(pow(10, 18))) * (diff_surplus/(pow(10, 18)))
     return percent_deviation, diff_in_eth
 
 
-def percent_eth_conversions_buy_order(diff_surplus, sell_amount, external_price):
-    """
-    calcuate order flag condition values,
-    (relative % deviation, absolute ETH difference) for buy orders
-    """
-    # implies a buy order
-    percent_deviation = (diff_surplus * 100) / sell_amount
-    # diff_in_eth = (
-    #     external_price / (pow(10, 18)) * (diff_surplus)
-    # )
-    diff_in_eth = (external_price/(pow(10, 18))) * (diff_surplus/(pow(10, 18)))
-
-    return percent_deviation, diff_in_eth
-
-
-def get_surplus_buy_order(
+def get_surplus_order(
     executed_amount,
-    sell_amount,
+    buy_or_sell_amount,
     sell_token_clearing_price,
-    buy_token_clearing_price):
-
-    exec_amt = int(
-        Fraction(executed_amount)
-        * Fraction(buy_token_clearing_price)
-        // Fraction(sell_token_clearing_price)
-    )
-    surplus = sell_amount - exec_amt
+    buy_token_clearing_price,
+    order_type,
+):
+    if order_type == "1":  # buy order
+        exec_amt = int(
+            Fraction(executed_amount)
+            * Fraction(buy_token_clearing_price)
+            // Fraction(sell_token_clearing_price)
+        )
+        # sell amount here
+        surplus = buy_or_sell_amount - exec_amt
+    elif order_type == "0":  # sell order
+        exec_amt = int(
+            Fraction(executed_amount)
+            * Fraction(sell_token_clearing_price)
+            // Fraction(buy_token_clearing_price)
+        )
+        # buy amount here
+        surplus = exec_amt - buy_or_sell_amount
     return surplus
 
 
-def get_surplus_sell_order(
-    executed_amount,
-    buy_amount,
-    sell_token_clearing_price,
-    buy_token_clearing_price):
-
+class DecodedSettlement:
     """
-    computes surplus difference given non-winning solution data and winning solution data.
+    Decodes transaction fetched from blockchain using web3.py for GPV2 settlement
     """
 
-    exec_amt = int(
-        Fraction(executed_amount)
-        * Fraction(sell_token_clearing_price)
-        // Fraction(buy_token_clearing_price)
-    )
-    surplus = exec_amt - buy_amount
-    return surplus
+    def __init__(
+        self,
+        tokens: List[str],
+        clearing_prices: List[int],
+        trades: List[Tuple[int, int, str, int, int, int, bytes, int, int, int, bytes]],
+    ):
+        self.tokens = tokens
+        self.clearing_prices = clearing_prices
+        self.trades = trades
 
+    @classmethod
+    def new(cls, contract_instance, transaction):
+        """
+        Returns decoded settlement
+        """
+        # Decode the function input
+        decoded_input = contract_instance.decode_function_input(transaction)[1:]
+        # Convert the decoded input to the expected types
+        tokens = decoded_input[0]["tokens"]
+        clearing_prices = decoded_input[0]["clearingPrices"]
+        trades = decoded_input[0]["trades"]
 
-header = {
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-    "(KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
-}
+        # Create and return a new instance of DecodedSettlement
+        return cls(tokens, clearing_prices, trades)

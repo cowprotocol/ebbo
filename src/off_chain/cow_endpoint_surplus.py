@@ -3,30 +3,24 @@ EBBO Historical Data Testing via block number inputs or a single settlement hash
 Uses CoW Endpoint provided callData.
 """
 import json
-import os
+import traceback
 from web3 import Web3
 from typing import List, Dict, Tuple, Any, Optional
-from dotenv import load_dotenv
 import requests
 from src.configuration import *
-from src.on_chain.on_chain_surplus import DecodedSettlement
+from src.quasimodo_ebbo.on_chain_surplus import DecodedSettlement
+from src.constants import *
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
-load_dotenv()
-INFURA_KEY = os.getenv("INFURA_KEY")
 
-
-class EBBOAnalysis:
+class EndpointSolutionsEBBO:
     """
     initialization of logging object, and vars for analytics report.
     """
 
     def __init__(self, file_name: Optional[str] = None) -> None:
-        self.total_orders = 0
-        self.higher_surplus_orders = 0
         self.total_surplus_eth = 0.0
         self.logger = get_logger(f"{file_name}")
-        self.solver_dict = get_solver_dict()
         self.web_3 = Web3(
             Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}")
         )
@@ -105,47 +99,6 @@ class EBBOAnalysis:
 
         return solver_competition_data
 
-    def get_order_data(
-        self, individual_win_order_id: str
-    ) -> Tuple[Dict[str, Any], int]:
-        """
-        This function uses an orderUID to fetch order data from CoW endpoint.
-        Checks both production and staging.
-        """
-
-        individual_order_data = {}
-        status_code = 0
-        try:
-            prod_order_data_url = (
-                f"https://api.cow.fi/mainnet/api/v1/orders/{individual_win_order_id}"
-            )
-            prod_order = requests.get(
-                prod_order_data_url,
-                headers=header,
-                timeout=30,
-            )
-            if prod_order.status_code == 200:
-                individual_order_data = json.loads(prod_order.text)
-                status_code = prod_order.status_code
-
-            elif prod_order.status_code == 404:
-                barn_order_data_url = (
-                    "https://barn.api.cow.fi/mainnet/api/v1"
-                    f"/orders/{individual_win_order_id}"
-                )
-                barn_order = requests.get(
-                    barn_order_data_url, headers=header, timeout=30
-                )
-                if barn_order.status_code == 200:
-                    individual_order_data = json.loads(barn_order.text)
-                    status_code = barn_order.status_code
-        except ValueError as except_err:
-            self.logger.error(
-                "Endpoint might be down, Unhandled exception: %s.", str(except_err)
-            )
-
-        return (individual_order_data, status_code)
-
     def get_decoded_settlement(self, tx_hash):
         encoded_transaction = self.web_3.eth.get_transaction(tx_hash)
         decoded_settlement = DecodedSettlement.new(
@@ -154,18 +107,23 @@ class EBBOAnalysis:
         return (
             decoded_settlement.trades,
             decoded_settlement.clearing_prices,
+            decoded_settlement.tokens,
         )
-    
-    def get_onchain_order_data(trade, onchain_clearing_prices):
+
+    def get_onchain_order_data(self, trade, onchain_clearing_prices, tokens):
         return {
-            "sell_token_clearing_price": onchain_clearing_prices[trade["sellTokenIndex"]],
+            "sell_token_clearing_price": onchain_clearing_prices[
+                trade["sellTokenIndex"]
+            ],
             "buy_token_clearing_price": onchain_clearing_prices[trade["buyTokenIndex"]],
-            "order_type": str("{0:08b}".format(trade["flags"])),
+            "sell_token": tokens[trade["sellTokenIndex"]].lower(),
+            "buy_token": tokens[trade["buyTokenIndex"]].lower(),
+            "order_type": str("{0:08b}".format(trade["flags"]))[-1],
             "executed_amount": trade["executedAmount"],
             "sell_amount": trade["sellAmount"],
             "buy_amount": trade["buyAmount"],
+            "fee_amount": trade["feeAmount"],
         }
-
 
     def get_order_surplus(self, competition_data: Dict[str, Any]) -> None:
         """
@@ -173,28 +131,24 @@ class EBBOAnalysis:
         and finds non-winning solutions that executed the same order and
         calculates surplus difference between that pair (winning and non-winning solution).
         """
-        winning_solver = competition_data["solutions"][-1]["solver"]
-        trades, onchain_clearing_prices = self.get_decoded_settlement(competition_data["transactionHash"])
-        for trade in trades:
-            onchain_order_data = self.get_onchain_order_data(trade, onchain_clearing_prices)
-
-        for individual_win_order in competition_data["solutions"][-1]["orders"]:
-            self.solver_dict[winning_solver][0] += 1
-            self.total_orders += 1
-            (individual_order_data, status_code) = self.get_order_data(
-                individual_win_order["id"]
+        trades, onchain_clearing_prices, tokens = self.get_decoded_settlement(
+            competition_data["transactionHash"]
+        )
+        for trade, individual_win_order in zip(
+            trades, competition_data["solutions"][-1]["orders"]
+        ):
+            onchain_order_data = self.get_onchain_order_data(
+                trade, onchain_clearing_prices, tokens
             )
             try:
-                if (
-                    individual_order_data["isLiquidityOrder"]
-                    or individual_order_data["class"] == "limit"
-                    or status_code != 200
-                ):
+                # ignore limit orders
+                if onchain_order_data["fee_amount"] == 0:
                     continue
 
                 surplus_deviation_dict = {}
                 soln_count = 0
                 for soln in competition_data["solutions"]:
+                    # ignore negative objective solutions
                     if soln["objective"]["total"] < 0:
                         surplus_deviation_dict[soln_count] = 0.0, 0.0
                         soln_count += 1
@@ -203,9 +157,9 @@ class EBBOAnalysis:
                         if individual_win_order["id"] == order["id"]:
                             # order data, executed amount, clearing price vector, and
                             # external prices are passed
-                            percent_deviation, surplus_eth = get_flagging_values(
-                                individual_order_data,
-                                order["executedAmount"],
+                            surplus_eth, percent_deviation = get_flagging_values(
+                                onchain_order_data,
+                                int(order["executedAmount"]),
                                 soln["clearingPrices"],
                                 competition_data["auction"]["prices"],
                             )
@@ -221,6 +175,7 @@ class EBBOAnalysis:
                 )
             except TypeError as except_err:
                 self.logger.error("Unhandled exception: %s.", str(except_err))
+                self.logger.error(traceback.format_exc())
 
     def flagging_order_check(
         self,
@@ -237,15 +192,15 @@ class EBBOAnalysis:
             sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0])
         )
         sorted_values = sorted(sorted_dict.values(), key=lambda x: x[0])
-        if sorted_values[0][0] < -0.002 and sorted_values[0][1] < -0.1:
+        if (
+            sorted_values[0][0] < -absolute_eth_flag_amount
+            and sorted_values[0][1] < -rel_deviation_flag_percent
+        ):
             for key, value in sorted_dict.items():
                 if value == sorted_values[0]:
                     first_key = key
                     break
-
-            self.higher_surplus_orders += 1
             solver = competition_data["solutions"][-1]["solver"]
-            self.solver_dict[solver][1] += 1
             self.total_surplus_eth += sorted_values[0][0]
 
             self.logging_function(
@@ -280,87 +235,42 @@ class EBBOAnalysis:
             str(format(sorted_values[0][0], ".5f")) + " ETH",
         )
 
-    def statistics_output(self, start_block: int, end_block: int) -> None:
-        """
-        statistics_output() provides an analytics report over the range of blocks searched for
-        finding better surplus. Includes percent error by solvers, percent of all orders with
-        better surplus, total ETH value potentially missed, etc.
-        """
-
-        self.logger.info(
-            "Better Surplus Potential orders percent: %s,      total missed ETH value: %s",
-            self.get_percent_better_orders(),
-            str(format(self.total_surplus_eth, ".5f")),
-        )
-        self.logger.info(
-            "Total Orders = %s over %s blocks from %s to %s",
-            str(self.total_orders),
-            str(int(end_block) - int(start_block)),
-            str(start_block),
-            str(end_block),
-        )
-        for key, value in self.solver_dict.items():
-            if value[0] == 0:
-                error_percent = 0.0
-            else:
-                error_percent = (value[1] * 100) / (value[0])
-            self.logger.info(
-                "Solver: %s errored: %s%%", key, format(error_percent, ".3f")
-            )
-
-    def get_percent_better_orders(self) -> str:
-        """
-        get_percent_better_orders() returns the percent of better orders.
-        """
-        try:
-            percent = (self.higher_surplus_orders * 100) / self.total_orders
-            string_percent = str(format(percent, ".3f")) + "%"
-        except ValueError as except_err:
-            self.logger.error(
-                "Possibly no. of orders = 0, Unhandled exception: %s.", str(except_err)
-            )
-        return string_percent
-
 
 def get_flagging_values(
-    individual_order_data, executed_amount, clearing_prices, external_prices
+    onchain_order_data, executed_amount, clearing_prices, external_prices
 ):
-    order_type = individual_order_data["kind"]
-    sell_token = individual_order_data["sellToken"]
-    buy_token = individual_order_data["buyToken"]
+    if onchain_order_data["order_type"] == "1":  # buy order
+        buy_or_sell_amount = int(onchain_order_data["sell_amount"])
+        conversion_external_price = int(
+            external_prices[onchain_order_data["sell_token"]]
+        )
+    elif onchain_order_data["order_type"] == "0":
+        buy_or_sell_amount = int(onchain_order_data["buy_amount"])
+        conversion_external_price = int(
+            external_prices[onchain_order_data["buy_token"]]
+        )
 
-    if order_type == "buy":
-        win_surplus = int(individual_order_data["sellAmount"]) - int(
-            individual_order_data["executedSellAmountBeforeFees"]
-        )
-        soln_surplus = get_surplus_buy_order(
-            executed_amount,
-            int(individual_order_data["sellAmount"]),
-            clearing_prices[sell_token],
-            clearing_prices[buy_token],
-        )
-        diff_surplus = win_surplus - soln_surplus
-        # surplus_token is sell_token for buy order
-        percent_deviation, surplus_eth = percent_eth_conversions_buy_order(
-            diff_surplus,
-            int(individual_order_data["sellAmount"]),
-            int(external_prices[sell_token]),
-        )
-    elif order_type == "sell":
-        win_surplus = int(individual_order_data["executedBuyAmount"]) - int(
-            individual_order_data["buyAmount"]
-        )
-        soln_surplus = get_surplus_sell_order(
-            executed_amount,
-            int(individual_order_data["buyAmount"]),
-            clearing_prices[sell_token],
-            clearing_prices[buy_token],
-        )
-        diff_surplus = win_surplus - soln_surplus
-        # surplus_token is buy_token for sell order
-        percent_deviation, surplus_eth = percent_eth_conversions_sell_order(
-            diff_surplus,
-            int(individual_order_data["buyAmount"]),
-            int(external_prices[buy_token]),
-        )
-    return percent_deviation, surplus_eth
+    win_surplus = get_surplus_order(
+        executed_amount,
+        buy_or_sell_amount,
+        onchain_order_data["sell_token_clearing_price"],
+        onchain_order_data["buy_token_clearing_price"],
+        onchain_order_data["order_type"],
+    )
+
+    soln_surplus = get_surplus_order(
+        executed_amount,
+        buy_or_sell_amount,
+        clearing_prices[onchain_order_data["sell_token"]],
+        clearing_prices[onchain_order_data["buy_token"]],
+        onchain_order_data["order_type"],
+    )
+    diff_surplus = win_surplus - soln_surplus
+
+    percent_deviation, surplus_eth = percent_eth_conversions_order(
+        diff_surplus,
+        buy_or_sell_amount,
+        conversion_external_price,
+    )
+    surplus_eth = surplus_eth / pow(10, 18)
+    return surplus_eth, percent_deviation

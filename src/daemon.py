@@ -9,15 +9,12 @@ the previous end block + 1 becomes the start block for the next cycle, and the l
 the new end block. Daemon sleeps for 30 mins and continue checking.
 """
 import time
-import os
-from typing import List, Optional
-from dotenv import load_dotenv
+from typing import List
 from web3 import Web3
-from src.off_chain.cow_endpoint_surplus import EBBOAnalysis
+from src.quasimodo_ebbo.on_chain_surplus import QuasimodoTestEBBO
+from src.off_chain.cow_endpoint_surplus import EndpointSolutionsEBBO
 from src.configuration import get_logger, get_tx_hashes_by_block
-
-load_dotenv()
-INFURA_KEY = os.getenv("INFURA_KEY")
+from src.constants import *
 
 
 class DaemonEBBO:
@@ -25,9 +22,10 @@ class DaemonEBBO:
     Initialization of EBBOAnalysis class object and logger object.
     """
 
-    def __init__(self, file_name: Optional[str] = None):
-        self.instance = EBBOAnalysis()
-        self.logger = get_logger(f"{file_name}")
+    def __init__(self):
+        self.quasimodo_test_instance = QuasimodoTestEBBO()
+        self.cow_endpoint_test_instance = EndpointSolutionsEBBO()
+        self.logger = get_logger()
 
     def main(self, sleep_time: int) -> None:
         """
@@ -46,17 +44,28 @@ class DaemonEBBO:
             unchecked_hashes = []
             while len(all_hashes) > 0:
                 single_hash = all_hashes.pop(0)
-                response_data = self.instance.get_solver_competition_data([single_hash])
-                if len(response_data) != 0:
-                    self.instance.get_order_surplus(response_data[0])
-                else:
+                if self.onchain_quasimodo_test(single_hash) or self.cow_endpoint_test(
+                    single_hash
+                ):
                     unchecked_hashes.append(single_hash)
-
             self.logger.info("going to sleep...")
             start_block = end_block + 1
+
+    def onchain_quasimodo_test(self, single_hash):
+        return self.quasimodo_test_instance.decode_single_hash(single_hash) is None
+
+    def cow_endpoint_test(self, single_hash):
+        response_data = self.cow_endpoint_test_instance.get_solver_competition_data(
+            [single_hash]
+        )
+        if len(response_data) != 0:
+            self.cow_endpoint_test_instance.get_order_surplus(response_data[0])
+            return False
+        else:
+            return True
 
 
 if __name__ == "__main__":
     checker = DaemonEBBO()
     # sleep time can be set here in seconds
-    checker.main(600)
+    checker.main(6)
