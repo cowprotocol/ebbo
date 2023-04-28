@@ -271,7 +271,7 @@ class EBBOAnalysis:
         Logs to terminal (and file iff file_name is passed).
         """
 
-        self.logger.info(
+        self.logger.warning(
             "Transaction Hash: %s\nFor order: %s\nWinning Solver: %s\n"
             "More surplus Corresponding Solver: %s\nDeviation: %s\n"
             "absolute difference: %s\n",
