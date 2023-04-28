@@ -1,6 +1,6 @@
 """
 This component of EBBO testing parses all settlements happening on-chain and recovers
-each orders' surplus. We call Quasimodo to provide a solution for the same order, 
+each orders' surplus. We call Quasimodo to provide a solution for the same order,
 and then a comparison is made to determine whether the order should be flagged.
 """
 from typing import List, Tuple, Optional
@@ -9,11 +9,18 @@ import os
 from dotenv import load_dotenv
 import requests
 from web3 import Web3
-from src.configuration import *
+from src.configuration import (
+    get_logger,
+    get_tx_hashes_by_block,
+    get_surplus_order,
+    percent_eth_conversions_order,
+    DecodedSettlement,
+)
 from src.constants import (
     INFURA_KEY,
     ABSOLUTE_ETH_FLAG_AMOUNT,
     REL_DEVIATION_FLAG_PERCENT,
+    ADDRESS,
 )
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
@@ -85,7 +92,7 @@ class QuasimodoTestEBBO:
         if bucket_response is None:
             return None
         self.solve_orders_in_settlement(
-            bucket_response, winning_orders, settlement_hash, decoded_settlement
+            bucket_response, winning_orders, decoded_settlement
         )
         return True
 
@@ -139,7 +146,7 @@ class QuasimodoTestEBBO:
         except ValueError as except_err:
             self.logger.error("Unhandled exception: %s", str(except_err))
 
-    def get_solver_response(order_id: str, bucket_response: dict):
+    def get_solver_response(self, order_id: str, bucket_response: dict):
         """
         Updates AWS bucket response to a single order for posting
         to quasimodo, in order to get the solutions JSON.
@@ -172,7 +179,6 @@ class QuasimodoTestEBBO:
         self,
         bucket_response: dict,
         winning_orders,
-        settlement_hash: str,
         decoded_settlement,
     ):
         """
@@ -214,9 +220,8 @@ class QuasimodoTestEBBO:
                     buy_token_clearing_price,
                     order_type,
                 )
-                diff_surplus = winning_surplus - quasimodo_surplus
                 self.check_flag_condition(
-                    diff_surplus,
+                    winning_surplus - quasimodo_surplus,
                     trade,
                     order_type,
                     bucket_response["tokens"],
@@ -257,9 +262,8 @@ class QuasimodoTestEBBO:
         #     str(format(diff_in_eth, ".5f")),
         #     str(format(percent_deviation, ".4f")),
         # )
-        flag_log = "Settlement Hash: {}\nFor order: {}\nWinning surplus: {}\n".format(
-            settlement_hash, order_id, winning_surplus
-        )
+        flag_log = f"Settlement Hash: {settlement_hash}\nFor order: {order_id}\n \
+                        Winning surplus: {winning_surplus}\n"
         self.logger.info(flag_log)
 
 

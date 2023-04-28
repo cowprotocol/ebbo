@@ -1,8 +1,8 @@
 """
 At runtime, "main" function records the most recent block and initializes it as the start block.
-After the daemon is asleep for 30 mins, it gets the newest block as the end block.
-Since the competition endpoint has a lag of 30 mins (worst case), we wait 30 mins before we
-fetch comp. data and start checking for potential surplus.
+After the daemon is asleep for SLEEP_TIME_IN_SEC mins, it gets the newest block as the end block.
+Since the competition endpoint has a lag of SLEEP_TIME_IN_SEC mins (worst case), we wait 
+SLEEP_TIME_IN_SEC mins before we fetch comp. data and start checking for potential surplus.
 If the data was not retrievable for any reason, it adds it to the list of unchecked hashes
 to be checked in the next cycle. Once all hashes in the current cycle have been iterated through,
 the previous end block + 1 becomes the start block for the next cycle, and the latest block is
@@ -15,6 +15,7 @@ from src.quasimodo_ebbo.on_chain_surplus import QuasimodoTestEBBO
 from src.off_chain.cow_endpoint_surplus import EndpointSolutionsEBBO
 from src.configuration import get_logger, get_tx_hashes_by_block
 from src.constants import INFURA_KEY
+from src.constants import SLEEP_TIME_IN_SEC
 
 
 class DaemonEBBO:
@@ -75,4 +76,4 @@ class DaemonEBBO:
 if __name__ == "__main__":
     checker = DaemonEBBO()
     # sleep time can be set here in seconds
-    checker.main(6)
+    checker.main(SLEEP_TIME_IN_SEC)
