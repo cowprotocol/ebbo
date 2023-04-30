@@ -1,6 +1,7 @@
 """
-EBBO Historical Data Testing via block number inputs or a single settlement hash.
-Uses CoW Endpoint provided callData.
+This class is the first component of the EBBO Monitoring Suite. Orders of the winning
+settlement are tested for EBBO relative to all other solutions provided.
+Competition Data is fetched via the CoW API. 
 """
 import json
 import traceback
@@ -20,6 +21,8 @@ from src.constants import (
     ADDRESS,
     ABSOLUTE_ETH_FLAG_AMOUNT,
     REL_DEVIATION_FLAG_PERCENT,
+    SUCCESS_CODE,
+    FAIL_CODE,
 )
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
@@ -30,7 +33,6 @@ class EndpointSolutionsEBBO:
     """
 
     def __init__(self, file_name: Optional[str] = None) -> None:
-        self.total_surplus_eth = 0.0
         self.logger = get_logger(f"{file_name}")
         self.web_3 = Web3(
             Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}")
@@ -46,7 +48,7 @@ class EndpointSolutionsEBBO:
         """
         Below function takes start, end blocks as an input or solely the tx hash for EBBO testing.
         Adds all hashes to a list (between blocks or single hash) and fetches competition endpoint
-        data for all of the hashes.
+        data for all of the hashes, and calls on get_order_surplus by passing the list.
         """
         settlement_hashes_list = []
 
@@ -88,12 +90,12 @@ class EndpointSolutionsEBBO:
                     headers=header,
                     timeout=30,
                 )
-                if json_competition_data.status_code == 200:
+                if json_competition_data.status_code == SUCCESS_CODE:
                     solver_competition_data.append(
                         json.loads(json_competition_data.text)
                     )
                     # print(tx_hash)
-                elif json_competition_data.status_code == 404:
+                elif json_competition_data.status_code == FAIL_CODE:
                     barn_endpoint_url = (
                         "https://barn.api.cow.fi/mainnet/api/v1"
                         f"/solver_competition/by_tx_hash/{tx_hash}"
@@ -101,7 +103,7 @@ class EndpointSolutionsEBBO:
                     barn_competition_data = requests.get(
                         barn_endpoint_url, headers=header, timeout=30
                     )
-                    if barn_competition_data.status_code == 200:
+                    if barn_competition_data.status_code == SUCCESS_CODE:
                         solver_competition_data.append(
                             json.loads(barn_competition_data.text)
                         )
@@ -152,6 +154,11 @@ class EndpointSolutionsEBBO:
         trades, onchain_clearing_prices, tokens = self.get_decoded_settlement(
             competition_data["transactionHash"]
         )
+        # this loop iterates over a single trade from on-chain trades (decoded data)
+        # and order from the list of settled orders in the winning solution. We
+        # do this since the corresponding order ID for the trade needs to be chosen.
+
+        # zip is used for simultaneous iteration.
         for trade, individual_win_order in zip(
             trades, competition_data["solutions"][-1]["orders"]
         ):
@@ -159,7 +166,7 @@ class EndpointSolutionsEBBO:
                 trade, onchain_clearing_prices, tokens
             )
             try:
-                # ignore limit orders
+                # ignore limit orders, represented by zero fee amount
                 if onchain_order_data["fee_amount"] == 0:
                     continue
 
@@ -168,6 +175,7 @@ class EndpointSolutionsEBBO:
                 for soln in competition_data["solutions"]:
                     # ignore negative objective solutions
                     if soln["objective"]["total"] < 0:
+                        # this adds ETH surplus, percent deviation for a solution
                         surplus_deviation_dict[soln_count] = 0.0, 0.0
                         soln_count += 1
                         continue
@@ -218,13 +226,12 @@ class EndpointSolutionsEBBO:
                 if value == sorted_values[0]:
                     first_key = key
                     break
-            solver = competition_data["solutions"][-1]["solver"]
-            self.total_surplus_eth += sorted_values[0][0]
+            winning_solver = competition_data["solutions"][-1]["solver"]
 
             self.logging_function(
                 individual_order_id,
                 first_key,
-                solver,
+                winning_solver,
                 competition_data,
                 sorted_values,
             )
@@ -233,7 +240,7 @@ class EndpointSolutionsEBBO:
         self,
         individual_order_id: str,
         first_key: int,
-        solver: str,
+        winning_solver: str,
         competition_data: Dict[str, Any],
         sorted_values: List[Tuple[float, float]],
     ) -> None:
@@ -247,7 +254,7 @@ class EndpointSolutionsEBBO:
             "absolute difference: %s\n",
             competition_data["transactionHash"],
             individual_order_id,
-            solver,
+            winning_solver,
             competition_data["solutions"][first_key]["solver"],
             str(format(sorted_values[0][1], ".4f")) + "%",
             str(format(sorted_values[0][0], ".5f")) + " ETH",
@@ -263,11 +270,13 @@ def get_flagging_values(
     and surplus difference in eth based on external prices.
     """
     if onchain_order_data["order_type"] == "1":  # buy order
+        # in this case, it is sell amount
         buy_or_sell_amount = int(onchain_order_data["sell_amount"])
         conversion_external_price = int(
             external_prices[onchain_order_data["sell_token"]]
         )
-    elif onchain_order_data["order_type"] == "0":
+    elif onchain_order_data["order_type"] == "0":  # sell order
+        # in this case, it is buy amount
         buy_or_sell_amount = int(onchain_order_data["buy_amount"])
         conversion_external_price = int(
             external_prices[onchain_order_data["buy_token"]]
@@ -288,6 +297,7 @@ def get_flagging_values(
         clearing_prices[onchain_order_data["buy_token"]],
         onchain_order_data["order_type"],
     )
+    # difference in surplus
     diff_surplus = win_surplus - soln_surplus
 
     percent_deviation, surplus_eth = percent_eth_conversions_order(
@@ -295,5 +305,6 @@ def get_flagging_values(
         buy_or_sell_amount,
         conversion_external_price,
     )
+    # divide by 10**18 to convert to ETH, consistent with quasimodo test
     surplus_eth = surplus_eth / pow(10, 18)
     return surplus_eth, percent_deviation

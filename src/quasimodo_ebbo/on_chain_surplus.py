@@ -3,6 +3,7 @@ This component of EBBO testing parses all settlements happening on-chain and rec
 each orders' surplus. We call Quasimodo to provide a solution for the same order,
 and then a comparison is made to determine whether the order should be flagged.
 """
+import json
 from typing import List, Tuple, Optional
 from copy import deepcopy
 import os
@@ -21,6 +22,8 @@ from src.constants import (
     ABSOLUTE_ETH_FLAG_AMOUNT,
     REL_DEVIATION_FLAG_PERCENT,
     ADDRESS,
+    SUCCESS_CODE,
+    FAIL_CODE,
 )
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
@@ -70,9 +73,9 @@ class QuasimodoTestEBBO:
         Decode each hash which also calculates surplus
         """
         for settlement_hash in settlement_hashes_list:
-            self.decode_single_hash(settlement_hash)
+            self.process_single_hash(settlement_hash)
 
-    def decode_single_hash(self, settlement_hash: str) -> Optional[bool]:
+    def process_single_hash(self, settlement_hash: str) -> Optional[bool]:
         """
         Goes through all settlements fetched, decodes orders,
         gets response from AWS bucket.
@@ -87,10 +90,10 @@ class QuasimodoTestEBBO:
             self.logger.error(
                 "Unhandled exception, possibly can't decode: %s", str(except_err)
             )
-            return None
+            return False
         (winning_orders, bucket_response) = self.get_order_data_by_hash(settlement_hash)
         if bucket_response is None:
-            return None
+            return False
         self.solve_orders_in_settlement(
             bucket_response, winning_orders, decoded_settlement
         )
@@ -111,7 +114,7 @@ class QuasimodoTestEBBO:
                 f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{settlement_hash}"
             )
             status_code = comp_data.status_code
-            if status_code == 200:
+            if status_code == SUCCESS_CODE:
                 comp_data = comp_data.json()
                 auction_id = comp_data["auctionId"]
                 bucket_response = dict(
@@ -122,7 +125,7 @@ class QuasimodoTestEBBO:
                         )
                     ).json()
                 )
-            elif status_code == 404:
+            elif status_code == FAIL_CODE:
                 # attempt fetch from staging environment, if prod failed.
                 comp_data = requests.get(
                     (
@@ -131,7 +134,7 @@ class QuasimodoTestEBBO:
                     )
                 )
                 status_code = comp_data.status_code
-                if comp_data.status_code == 200:
+                if comp_data.status_code == SUCCESS_CODE:
                     comp_data = comp_data.json()
                     auction_id = comp_data["auctionId"]
                     bucket_response = dict(
@@ -156,24 +159,18 @@ class QuasimodoTestEBBO:
             if order["id"] == order_id:
                 solver_instance["orders"] = {key: order}
                 break
-
-        # convert back to JSON for sending to Quasimodo
-        # bucket_response_json = json.dumps(solver_instance)
-
-        # # space here to post and receive instance JSON from Quasimodo
-        # data = {
-        # "time_limit": "20",
-        # "use_internal_buffers": "false",
-        # "objective": "surplusfeescosts"
-        # }
-        # solution_json = requests.post(solver_instance_json, params=data)
-
-        # assuming jsonObject is called solution_json
-        # solution = solution_json.json() to convert to dict
-
-        # 'solution' is what we use here as a python object in instance_file.py
+        # convert back to JSON as post data
+        bucket_response_json = json.dumps(solver_instance)
+        solver_url = (
+            QUASIMODO_SOLVER_URL
+            + "/solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts"
+        )
+        # make solution request to quasimodo
+        solution = requests.post(
+            solver_url, json=bucket_response_json, timeout=30
+        ).json()
         # return quasimodo solved solution
-        # return solution, order
+        return solution, order
 
     def solve_orders_in_settlement(
         self,
@@ -196,6 +193,7 @@ class QuasimodoTestEBBO:
                 trade["buyTokenIndex"]
             ]
             # convert flags value to binary to extract L.S.B (Least Sigificant Byte)
+            # 1 implies buy order, 0 implies sell order
             order_type = str(f"{trade['flags']:08b}")[-1]
             winning_surplus = get_surplus_order(
                 trade["executedAmount"],
@@ -210,34 +208,39 @@ class QuasimodoTestEBBO:
             sell_token = order["sell_token"]
             buy_token = order["buy_token"]
             # if a valid solution is returned by solver
-            if len(solver_solution["prices"]) > 0:
-                sell_token_clearing_price = solver_solution["prices"][sell_token]
-                buy_token_clearing_price = solver_solution["prices"][buy_token]
-                quasimodo_surplus = get_surplus_order(
-                    trade["executedAmount"],
-                    trade["sellAmount"],
-                    sell_token_clearing_price,
-                    buy_token_clearing_price,
-                    order_type,
-                )
-                self.check_flag_condition(
-                    winning_surplus - quasimodo_surplus,
-                    trade,
-                    order_type,
-                    bucket_response["tokens"],
-                    order,
-                )
+            if not len(solver_solution["prices"]) > 0:
+                continue
+            sell_token_clearing_price = solver_solution["prices"][sell_token]
+            buy_token_clearing_price = solver_solution["prices"][buy_token]
+            quasimodo_surplus = get_surplus_order(
+                trade["executedAmount"],
+                trade["sellAmount"],
+                sell_token_clearing_price,
+                buy_token_clearing_price,
+                order_type,
+            )
+            self.check_flag_condition(
+                winning_surplus - quasimodo_surplus,
+                trade,
+                order_type,
+                bucket_response["tokens"],
+                order,
+            )
 
     def check_flag_condition(self, diff_surplus: int, trade, order_type, tokens, order):
         """
         Based on order type, this function fetches percent_deviation,
         and surplus difference in ETH to flag or NOT flag orders.
         """
-        if order_type == "1":
+        if order_type == "1":  # buy order
+            # in this case, sell amount
             buy_or_sell_amount = int(trade["sellAmount"])
+            # external price is in the sell token for buy orders
             external_price = int(tokens[order["sell_token"]]["external_price"])
-        elif order_type == "0":
+        elif order_type == "0":  # sell order
+            # in this case, buy amount
             buy_or_sell_amount = int(trade["buyAmount"])
+            # external price is in the buy token for sell orders
             external_price = int(tokens[order["buy_token"]]["external_price"])
 
         percent_deviation, diff_in_eth = percent_eth_conversions_order(

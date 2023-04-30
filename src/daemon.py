@@ -45,9 +45,9 @@ class DaemonEBBO:
             unchecked_hashes = []
             while len(all_hashes) > 0:
                 single_hash = all_hashes.pop(0)
-                if self.onchain_quasimodo_test(single_hash) or self.cow_endpoint_test(
+                if not self.onchain_quasimodo_test(
                     single_hash
-                ):
+                ) or not self.cow_endpoint_test(single_hash):
                     unchecked_hashes.append(single_hash)
             self.logger.info("going to sleep...")
             start_block = end_block + 1
@@ -57,7 +57,7 @@ class DaemonEBBO:
         Function checks if quasimodo test can successfully decode hash,
         if not, return None = None i.e. True
         """
-        return self.quasimodo_test_instance.decode_single_hash(single_hash) is None
+        return self.quasimodo_test_instance.process_single_hash(single_hash)
 
     def cow_endpoint_test(self, single_hash: str):
         """
@@ -69,8 +69,8 @@ class DaemonEBBO:
         )
         if len(response_data) != 0:
             self.cow_endpoint_test_instance.get_order_surplus(response_data[0])
-            return False
-        return True
+            return True
+        return False
 
 
 if __name__ == "__main__":
