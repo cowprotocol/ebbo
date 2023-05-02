@@ -1,7 +1,7 @@
 """
 This class is the first component of the EBBO Monitoring Suite. Orders of the winning
 settlement are tested for EBBO relative to all other solutions provided.
-Competition Data is fetched via the CoW API. 
+Competition Data is fetched via the CoW API.
 """
 import json
 import traceback
