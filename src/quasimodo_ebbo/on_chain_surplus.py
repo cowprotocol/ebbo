@@ -232,7 +232,7 @@ class QuasimodoTestEBBO:
             )
 
     @staticmethod
-    def check_flag_condition( diff_surplus: int, trade, order_type, tokens, order):
+    def check_flag_condition(diff_surplus: int, trade, order_type, tokens, order):
         """
         Based on order type, this function fetches percent_deviation,
         and surplus difference in ETH to flag or NOT flag orders.
