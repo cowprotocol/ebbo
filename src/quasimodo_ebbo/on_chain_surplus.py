@@ -155,9 +155,11 @@ class QuasimodoTestEBBO:
         to quasimodo, in order to get the solutions JSON.
         """
         solver_instance = deepcopy(bucket_response)
-        for key, order in solver_instance["orders"].items():
+        order = {}
+        for key, order_ in solver_instance["orders"].items():
             if order["id"] == order_id:
-                solver_instance["orders"] = {key: order}
+                solver_instance["orders"] = {key: order_}
+                order = order_
                 break
         # convert back to JSON as post data
         bucket_response_json = json.dumps(solver_instance)
