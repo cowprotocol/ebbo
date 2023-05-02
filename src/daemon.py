@@ -1,7 +1,7 @@
 """
 At runtime, "main" function records the most recent block and initializes it as the start block.
 After the daemon is asleep for SLEEP_TIME_IN_SEC mins, it gets the newest block as the end block.
-Since the competition endpoint has a lag of SLEEP_TIME_IN_SEC mins (worst case), we wait 
+Since the competition endpoint has a lag of SLEEP_TIME_IN_SEC mins (worst case), we wait
 SLEEP_TIME_IN_SEC mins before we fetch comp. data and start checking for potential surplus.
 If the data was not retrievable for any reason, it adds it to the list of unchecked hashes
 to be checked in the next cycle. Once all hashes in the current cycle have been iterated through,
