@@ -166,7 +166,7 @@ class QuasimodoTestEBBO:
         # convert back to JSON as post data
         bucket_response_json = json.dumps(solver_instance)
         solver_url = (
-            QUASIMODO_SOLVER_URL
+            str(QUASIMODO_SOLVER_URL)
             + "/solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts"
         )
         # make solution request to quasimodo
@@ -179,7 +179,7 @@ class QuasimodoTestEBBO:
     def solve_orders_in_settlement(
         self,
         bucket_response: dict,
-        winning_orders,
+        winning_orders: List[str],
         decoded_settlement,
     ):
         """
@@ -259,7 +259,7 @@ class QuasimodoTestEBBO:
         ):
             print("flag")
 
-    def print_logs(self, settlement_hash, order_id, winning_surplus):
+    def print_logs(self, settlement_hash: str, order_id, winning_surplus: int) -> None:
         """
         print logs if order is flagged
         """
@@ -276,7 +276,7 @@ class QuasimodoTestEBBO:
 
 
 # ---------------------------- TESTING --------------------------------
-def main():
+def main() -> None:
     """
     Main loop, to be deleted.
     """
@@ -286,7 +286,7 @@ def main():
         case "b":
             start_block = input("Start Block: ")
             end_block = input("End Block: ")
-            instance.create_tx_list(start_block, end_block, None)
+            instance.create_tx_list(int(start_block), int(end_block), None)
         case "h":
             settlement_hash = input("Settlement Hash: ")
             instance.create_tx_list(None, None, settlement_hash)

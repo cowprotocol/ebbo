@@ -5,6 +5,7 @@ import logging
 from fractions import Fraction
 from typing import List, Optional, Tuple
 import requests
+from web3 import Web3
 
 # from dune_client.client import DuneClient
 # from dune_client.query import Query
@@ -28,7 +29,7 @@ def get_logger(filename: Optional[str] = None) -> logging.Logger:
     return logger
 
 
-def get_tx_hashes_by_block(web_3, start_block: int, end_block: int) -> List[str]:
+def get_tx_hashes_by_block(web_3: Web3, start_block: int, end_block: int) -> List[str]:
     """
     Function filters hashes by contract address, and block ranges
     """
@@ -50,18 +51,18 @@ def get_tx_hashes_by_block(web_3, start_block: int, end_block: int) -> List[str]
     return settlement_hashes_list
 
 
-def get_eth_value():
-    """
-    Returns live eth price using etherscan API
-    """
-    eth_price_url = (
-        "https://api.etherscan.io/api?module=stats&"
-        f"action=ethprice&apikey={ETHERSCAN_KEY}"
-    )
-    eth_price = requests.get(eth_price_url).json()["result"]["ethusd"]
-    # min_flag_usd = 4.00
-    # eth_absolute_check = str(format(min_flag_usd / float(eth_price), ".6f"))
-    return eth_price
+# def get_eth_value():
+#    """
+#    Returns live eth price using etherscan API
+#    """
+#    eth_price_url = (
+#        "https://api.etherscan.io/api?module=stats&"
+#        f"action=ethprice&apikey={ETHERSCAN_KEY}"
+#    )
+#    eth_price = requests.get(eth_price_url).json()["result"]["ethusd"]
+#    # min_flag_usd = 4.00
+#    # eth_absolute_check = str(format(min_flag_usd / float(eth_price), ".6f"))
+#    return eth_price
 
 
 def percent_eth_conversions_order(diff_surplus, buy_or_sell_amount, external_price):
@@ -80,13 +81,14 @@ def get_surplus_order(
     sell_token_clearing_price,
     buy_token_clearing_price,
     order_type,
-):
+) -> int:
     """
     Returns surplus using:
     executed amount,
     buy amount if sell order OR sell amount if buy order,
     token clearing prices, and the type of order.
     """
+    surplus = 0
     if order_type == "1":  # buy order
         exec_amt = int(
             Fraction(executed_amount)
