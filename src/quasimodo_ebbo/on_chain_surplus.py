@@ -148,7 +148,6 @@ class QuasimodoTestEBBO:
             return comp_data["solutions"][-1]["orders"], bucket_response
         except ValueError as except_err:
             self.logger.error("Unhandled exception: %s", str(except_err))
-            return []
 
     def get_solver_response(self, order_id: str, bucket_response: dict):
         """
