@@ -148,8 +148,10 @@ class QuasimodoTestEBBO:
             return comp_data["solutions"][-1]["orders"], bucket_response
         except ValueError as except_err:
             self.logger.error("Unhandled exception: %s", str(except_err))
+            return [], None
 
-    def get_solver_response(self, order_id: str, bucket_response: dict):
+    @staticmethod
+    def get_solver_response(order_id: str, bucket_response: dict):
         """
         Updates AWS bucket response to a single order for posting
         to quasimodo, in order to get the solutions JSON.
@@ -229,7 +231,8 @@ class QuasimodoTestEBBO:
                 order,
             )
 
-    def check_flag_condition(self, diff_surplus: int, trade, order_type, tokens, order):
+    @staticmethod
+    def check_flag_condition( diff_surplus: int, trade, order_type, tokens, order):
         """
         Based on order type, this function fetches percent_deviation,
         and surplus difference in ETH to flag or NOT flag orders.

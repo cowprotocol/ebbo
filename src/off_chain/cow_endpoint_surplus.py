@@ -126,7 +126,8 @@ class EndpointSolutionsEBBO:
             decoded_settlement.tokens,
         )
 
-    def get_onchain_order_data(self, trade, onchain_clearing_prices, tokens):
+    @staticmethod
+    def get_onchain_order_data(trade, onchain_clearing_prices, tokens):
         """
         Returns required data to calculate surplus for winning order
         using onchain data from decoded settlement.
