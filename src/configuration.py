@@ -1,15 +1,15 @@
 """
 This file contains functions used by cow_endpoint_surplus and quasimodo_test_surplus.
 """
+from __future__ import annotations
 import logging
 from fractions import Fraction
 from typing import List, Optional, Tuple
-import requests
 from web3 import Web3
 
 # from dune_client.client import DuneClient
 # from dune_client.query import Query
-from src.constants import ADDRESS, ETHERSCAN_KEY
+from src.constants import ADDRESS
 
 
 def get_logger(filename: Optional[str] = None) -> logging.Logger:
@@ -65,7 +65,9 @@ def get_tx_hashes_by_block(web_3: Web3, start_block: int, end_block: int) -> Lis
 #    return eth_price
 
 
-def percent_eth_conversions_order(diff_surplus, buy_or_sell_amount, external_price):
+def percent_eth_conversions_order(
+    diff_surplus: int, buy_or_sell_amount: int, external_price: float
+) -> Tuple[float, float]:
     """
     Returns conversions required for flagging orders.
     """
@@ -76,11 +78,11 @@ def percent_eth_conversions_order(diff_surplus, buy_or_sell_amount, external_pri
 
 
 def get_surplus_order(
-    executed_amount,
-    buy_or_sell_amount,
-    sell_token_clearing_price,
-    buy_token_clearing_price,
-    order_type,
+    executed_amount: int,
+    buy_or_sell_amount: int,
+    sell_token_clearing_price: int,
+    buy_token_clearing_price: int,
+    order_type: str,
 ) -> int:
     """
     Returns surplus using:
@@ -124,7 +126,7 @@ class DecodedSettlement:
         self.trades = trades
 
     @classmethod
-    def new(cls, contract_instance, transaction):
+    def new(cls, contract_instance, transaction) -> DecodedSettlement:
         """
         Returns decoded settlement
         """
