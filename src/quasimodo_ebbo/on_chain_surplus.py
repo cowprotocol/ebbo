@@ -180,8 +180,8 @@ class QuasimodoTestEBBO:
         self,
         bucket_response: dict,
         winning_orders: List[str],
-        decoded_settlement,
-    ):
+        decoded_settlement: DecodedSettlement,
+    ) -> None:
         """
         This function goes over orders in settlement,
         calculates surplus difference by making calls to
@@ -232,7 +232,9 @@ class QuasimodoTestEBBO:
             )
 
     @staticmethod
-    def check_flag_condition(diff_surplus: int, trade, order_type, tokens, order):
+    def check_flag_condition(
+        diff_surplus: int, trade, order_type: str, tokens, order
+    ) -> None:
         """
         Based on order type, this function fetches percent_deviation,
         and surplus difference in ETH to flag or NOT flag orders.
