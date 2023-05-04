@@ -36,7 +36,7 @@ class DaemonEBBO:
         infura_connection = f"https://mainnet.infura.io/v3/{INFURA_KEY}"
         web_3 = Web3(Web3.HTTPProvider(infura_connection))
         start_block = web_3.eth.block_number
-        self.logger.info("starting...")
+        # self.logger.info("starting...")
         unchecked_hashes: List[str] = []
         while True:
             time.sleep(sleep_time)
@@ -52,11 +52,11 @@ class DaemonEBBO:
                 else:
                     unchecked_hashes.append(single_hash)
 
-            self.logger.info("going to sleep...")
+            # self.logger.info("going to sleep...")
             start_block = end_block + 1
 
 
 if __name__ == "__main__":
     checker = DaemonEBBO()
     # sleep time can be set here in seconds
-    checker.main(600)
+    checker.main(300)

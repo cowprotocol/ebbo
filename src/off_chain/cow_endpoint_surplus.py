@@ -270,18 +270,26 @@ class EBBOAnalysis:
         """
         Logs to terminal (and file iff file_name is passed).
         """
-
-        self.logger.error(
-            "Transaction Hash: %s\nFor order: %s\nWinning Solver: %s\n"
-            "More surplus Corresponding Solver: %s\nDeviation: %s\n"
-            "absolute difference: %s\n",
-            competition_data["transactionHash"],
-            individual_order_id,
-            solver,
-            competition_data["solutions"][first_key]["solver"],
-            str(format(sorted_values[0][1], ".4f")) + "%",
-            str(format(sorted_values[0][0], ".5f")) + " ETH",
+        log_output = (
+            "Tx hash: "
+            + competition_data["transactionHash"]
+            + "\t\t"
+            + "Order: "
+            + individual_order_id
+            + "\t\t"
+            + "Winning Solver: "
+            + solver
+            + "\t\t"
+            + "Solver providing more surplus: "
+            + competition_data["solutions"][first_key]["solver"]
+            + "\t\t"
+            + "Relative deviation: "
+            + (str(format(sorted_values[0][1], ".4f")) + "%")
+            + "\t\t"
+            + "Absolute difference: "
+            + (str(format(sorted_values[0][0], ".5f")) + " ETH")
         )
+        self.logger.error(log_output)
 
     def statistics_output(self, start_block: int, end_block: int) -> None:
         """
