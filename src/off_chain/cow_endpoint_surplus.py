@@ -271,23 +271,23 @@ class EBBOAnalysis:
         Logs to terminal (and file iff file_name is passed).
         """
         log_output = (
-            "Transaction Hash: "
+            "Tx hash: "
             + competition_data["transactionHash"]
-            + "\n"
+            + "\t\t"
             + "Order: "
             + individual_order_id
-            + "\n"
+            + "\t\t"
             + "Winning Solver: "
             + solver
-            + "\n"
-            + "More surplus Corresponding Solver: "
+            + "\t\t"
+            + "Solver providing more surplus: "
             + competition_data["solutions"][first_key]["solver"]
-            + "\n"
-            + "Deviation: "
+            + "\t\t"
+            + "Relative deviation: "
             + (str(format(sorted_values[0][1], ".4f")) + "%")
-            + "\n"
+            + "\t\t"
             + "Absolute difference: "
-            + (str(format(sorted_values[0][0], ".5f")) + " ETH\n")
+            + (str(format(sorted_values[0][0], ".5f")) + " ETH")
         )
         self.logger.error(log_output)
 
