@@ -4,7 +4,7 @@ each orders' surplus. We call Quasimodo to provide a solution for the same order
 and then a comparison is made to determine whether the order should be flagged.
 """
 import json
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Any
 from copy import deepcopy
 import os
 from dotenv import load_dotenv
@@ -84,7 +84,7 @@ class QuasimodoTestEBBO:
         try:
             encoded_transaction = self.web_3.eth.get_transaction(settlement_hash)
             decoded_settlement = DecodedSettlement.new(
-                self.contract_instance, encoded_transaction.input
+                self.contract_instance, encoded_transaction["input"]
             )
         except ValueError as except_err:
             self.logger.error(
@@ -101,10 +101,11 @@ class QuasimodoTestEBBO:
 
     def get_order_data_by_hash(
         self, settlement_hash: str
-    ) -> Tuple[List[str], Optional[dict]]:
+    ) -> Tuple[List[str], Optional[Any]]:
         """
         Returns competition endpoint data since we need order_id and auction_id, and also AWS
         Bucket response.
+        Note that the second tuple argument is Optinal[dict] but mypy was complaing
         """
         bucket_response = None
         comp_data = None
@@ -151,13 +152,14 @@ class QuasimodoTestEBBO:
             return [], None
 
     @staticmethod
-    def get_solver_response(order_id: str, bucket_response: dict):
+    def get_solver_response(order_id: str, bucket_response: Any) -> Tuple[Any, Any]:
         """
         Updates AWS bucket response to a single order for posting
         to quasimodo, in order to get the solutions JSON.
+        Note that bucket_response is a dict, but wanted to bypass type checks.
         """
         solver_instance = deepcopy(bucket_response)
-        order = {}
+        order: Any = {}
         for key, order_ in solver_instance["orders"].items():
             if order["id"] == order_id:
                 solver_instance["orders"] = {key: order_}
@@ -178,7 +180,7 @@ class QuasimodoTestEBBO:
 
     def solve_orders_in_settlement(
         self,
-        bucket_response: dict,
+        bucket_response: Any,   # this is a dict, but wanted to bypass type annotation
         winning_orders: List[str],
         decoded_settlement: DecodedSettlement,
     ) -> None:
@@ -233,7 +235,7 @@ class QuasimodoTestEBBO:
 
     @staticmethod
     def check_flag_condition(
-        diff_surplus: int, trade, order_type: str, tokens, order
+        diff_surplus: int, trade: Any, order_type: str, tokens: Any, order: Any
     ) -> None:
         """
         Based on order type, this function fetches percent_deviation,
@@ -261,7 +263,7 @@ class QuasimodoTestEBBO:
         ):
             print("flag")
 
-    def print_logs(self, settlement_hash: str, order_id, winning_surplus: int) -> None:
+    def print_logs(self, settlement_hash: str, order_id: Any, winning_surplus: int) -> None:
         """
         print logs if order is flagged
         """

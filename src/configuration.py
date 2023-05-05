@@ -4,7 +4,7 @@ This file contains functions used by cow_endpoint_surplus and quasimodo_test_sur
 from __future__ import annotations
 import logging
 from fractions import Fraction
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Any
 from web3 import Web3
 
 # from dune_client.client import DuneClient
@@ -119,14 +119,14 @@ class DecodedSettlement:
         self,
         tokens: List[str],
         clearing_prices: List[int],
-        trades: List[Tuple[int, int, str, int, int, int, bytes, int, int, int, bytes]],
+        trades: Any,  # List[Tuple[int, int, str, int, int, int, bytes, int, int, int, bytes]],
     ):
         self.tokens = tokens
         self.clearing_prices = clearing_prices
         self.trades = trades
 
     @classmethod
-    def new(cls, contract_instance, transaction) -> DecodedSettlement:
+    def new(cls, contract_instance: Any, transaction: Any) -> DecodedSettlement:
         """
         Returns decoded settlement
         """
