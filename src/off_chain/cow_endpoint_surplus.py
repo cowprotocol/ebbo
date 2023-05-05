@@ -267,6 +267,7 @@ class EndpointSolutionsEBBO:
             + "\t\t"
             + "Absolute difference: "
             + (str(format(sorted_values[0][0], ".5f")) + " ETH")
+        )
         self.logger.error(log_output)
 
 
