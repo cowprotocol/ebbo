@@ -180,7 +180,7 @@ class QuasimodoTestEBBO:
 
     def solve_orders_in_settlement(
         self,
-        bucket_response: Any,   # this is a dict, but wanted to bypass type annotation
+        bucket_response: Any,  # this is a dict, but wanted to bypass type annotation
         winning_orders: List[str],
         decoded_settlement: DecodedSettlement,
     ) -> None:
@@ -263,7 +263,9 @@ class QuasimodoTestEBBO:
         ):
             print("flag")
 
-    def print_logs(self, settlement_hash: str, order_id: Any, winning_surplus: int) -> None:
+    def print_logs(
+        self, settlement_hash: str, order_id: Any, winning_surplus: int
+    ) -> None:
         """
         print logs if order is flagged
         """
