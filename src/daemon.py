@@ -49,7 +49,7 @@ class DaemonEBBO:
                     single_hash
                 ) or not self.cow_endpoint_test(single_hash):
                     unchecked_hashes.append(single_hash)
-            self.logger.info("going to sleep...")
+            # self.logger.info("going to sleep...")
             start_block = end_block + 1
 
     def onchain_quasimodo_test(self, single_hash: str) -> bool:
