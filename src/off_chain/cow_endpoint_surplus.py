@@ -257,7 +257,7 @@ class EndpointSolutionsEBBO:
             + individual_order_id
             + "\t\t"
             + "Winning Solver: "
-            + solver
+            + winning_solver
             + "\t\t"
             + "Solver providing more surplus: "
             + competition_data["solutions"][first_key]["solver"]
