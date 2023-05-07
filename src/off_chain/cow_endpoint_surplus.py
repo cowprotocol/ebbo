@@ -191,7 +191,7 @@ class EBBOAnalysis:
                 surplus_deviation_dict = {}
                 soln_count = 0
                 for soln in competition_data["solutions"]:
-                    if soln["objective"]["total"] < 0:
+                    if soln["objective"]["fees"] < 0.9 * soln["objective"]["cost"]:
                         surplus_deviation_dict[soln_count] = 0.0, 0.0
                         soln_count += 1
                         continue
