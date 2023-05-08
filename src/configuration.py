@@ -119,7 +119,7 @@ class DecodedSettlement:
         self,
         tokens: List[str],
         clearing_prices: List[int],
-        trades: Any#List[Tuple[int, int, str, int, int, int, bytes, int, int, int, bytes]],
+        trades: Any,  # List[Tuple[int, int, str, int, int, int, bytes, int, int, int, bytes]],
     ):
         self.tokens = tokens
         self.clearing_prices = clearing_prices

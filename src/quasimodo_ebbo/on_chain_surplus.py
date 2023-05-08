@@ -49,7 +49,9 @@ class QuasimodoTestEBBO:
         self.web_3 = Web3(
             Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}")
         )
-        self.contract_instance = self.web_3.eth.contract(address=Address(HexBytes(ADDRESS)), abi=gpv2Abi)
+        self.contract_instance = self.web_3.eth.contract(
+            address=Address(HexBytes(ADDRESS)), abi=gpv2Abi
+        )
         self.logger = get_logger()
 
     def create_tx_list(
@@ -86,7 +88,9 @@ class QuasimodoTestEBBO:
         Returns `None` in case data cannot be fetched, a not-None value "True" otherwise.
         """
         try:
-            encoded_transaction = self.web_3.eth.get_transaction(HexStr(settlement_hash))
+            encoded_transaction = self.web_3.eth.get_transaction(
+                HexStr(settlement_hash)
+            )
             decoded_settlement = DecodedSettlement.new(
                 self.contract_instance, encoded_transaction["input"]
             )
