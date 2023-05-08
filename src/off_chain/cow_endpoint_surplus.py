@@ -1,30 +1,47 @@
 """
-EBBO Historical Data Testing via block number inputs or a single settlement hash.
-Uses CoW Endpoint provided callData.
+This class is the first component of the EBBO Monitoring Suite. Orders of the winning
+settlement are tested for EBBO relative to all other solutions provided.
+Competition Data is fetched via the CoW API.
 """
 import json
-import os
-from fractions import Fraction
+import traceback
 from typing import List, Dict, Tuple, Any, Optional
-from dotenv import load_dotenv
+from eth_typing import Address, HexStr
+from hexbytes import HexBytes
+from web3 import Web3
 import requests
-from src.off_chain.configuration import get_solver_dict, header, get_logger
+from src.configuration import (
+    get_logger,
+    get_tx_hashes_by_block,
+    get_surplus_order,
+    percent_eth_conversions_order,
+)
+from src.quasimodo_ebbo.on_chain_surplus import DecodedSettlement
+from src.constants import (
+    INFURA_KEY,
+    header,
+    ADDRESS,
+    ABSOLUTE_ETH_FLAG_AMOUNT,
+    REL_DEVIATION_FLAG_PERCENT,
+    SUCCESS_CODE,
+    FAIL_CODE,
+)
+from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
-load_dotenv()
-ETHERSCAN_KEY = os.getenv("ETHERSCAN_KEY")
 
-
-class EBBOAnalysis:
+class EndpointSolutionsEBBO:
     """
     initialization of logging object, and vars for analytics report.
     """
 
     def __init__(self, file_name: Optional[str] = None) -> None:
-        self.total_orders = 0
-        self.higher_surplus_orders = 0
-        self.total_surplus_eth = 0.0
         self.logger = get_logger(f"{file_name}")
-        self.solver_dict = get_solver_dict()
+        self.web_3 = Web3(
+            Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}")
+        )
+        self.contract_instance = self.web_3.eth.contract(
+            address=Address(HexBytes(ADDRESS)), abi=gpv2Abi
+        )
 
     def get_surplus_by_input(
         self,
@@ -35,17 +52,18 @@ class EBBOAnalysis:
         """
         Below function takes start, end blocks as an input or solely the tx hash for EBBO testing.
         Adds all hashes to a list (between blocks or single hash) and fetches competition endpoint
-        data for all of the hashes.
+        data for all of the hashes, and calls on get_order_surplus by passing the list.
         """
-
         settlement_hashes_list = []
 
         if settlement_hash is not None:
             settlement_hashes_list.append(settlement_hash)
 
         elif start_block is not None and end_block is not None:
-            # Etherscan endpoint call for settlements between start and end block
-            settlement_hashes_list = self.get_settlement_hashes(start_block, end_block)
+            # get list of hashes within a range of blocks for GPV2 Settlement Contract
+            settlement_hashes_list = get_tx_hashes_by_block(
+                self.web_3, start_block, end_block
+            )
         if not settlement_hashes_list:
             raise ValueError("No settlement hashes found")
 
@@ -54,35 +72,6 @@ class EBBOAnalysis:
         )
         for comp_data in solver_competition_data:
             self.get_order_surplus(comp_data)
-
-    def get_settlement_hashes(self, start_block: int, end_block: int) -> List[str]:
-        """
-        This function gets all hashes for a contract address between two blocks
-        """
-        etherscan_url = (
-            "https://api.etherscan.io/api?module=account&action=txlist"
-            "&address=0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
-            f"&startblock={start_block}&endblock={end_block}&sort=desc"
-            f"&apikey={ETHERSCAN_KEY}"
-        )
-        # all "result" go into results (based on API return value names from docs)
-        try:
-            settlements = json.loads(
-                (
-                    requests.get(
-                        etherscan_url,
-                        headers=header,
-                        timeout=30,
-                    )
-                ).text
-            )["result"]
-            settlement_hashes_list = []
-            for settlement in settlements:
-                settlement_hashes_list.append(settlement["hash"])
-        except ValueError as except_err:
-            self.logger.error("Unhandled exception: %s.", str(except_err))
-
-        return settlement_hashes_list
 
     def get_solver_competition_data(
         self, settlement_hashes_list: List[str]
@@ -105,12 +94,12 @@ class EBBOAnalysis:
                     headers=header,
                     timeout=30,
                 )
-                if json_competition_data.status_code == 200:
+                if json_competition_data.status_code == SUCCESS_CODE:
                     solver_competition_data.append(
                         json.loads(json_competition_data.text)
                     )
                     # print(tx_hash)
-                elif json_competition_data.status_code == 404:
+                elif json_competition_data.status_code == FAIL_CODE:
                     barn_endpoint_url = (
                         "https://barn.api.cow.fi/mainnet/api/v1"
                         f"/solver_competition/by_tx_hash/{tx_hash}"
@@ -118,56 +107,48 @@ class EBBOAnalysis:
                     barn_competition_data = requests.get(
                         barn_endpoint_url, headers=header, timeout=30
                     )
-                    if barn_competition_data.status_code == 200:
+                    if barn_competition_data.status_code == SUCCESS_CODE:
                         solver_competition_data.append(
                             json.loads(barn_competition_data.text)
                         )
-                        # print(tx_hash)
             except ValueError as except_err:
                 self.logger.error("Unhandled exception: %s.", str(except_err))
 
         return solver_competition_data
 
-    def get_order_data(
-        self, individual_win_order_id: str
-    ) -> Tuple[Dict[str, Any], int]:
+    def get_decoded_settlement(self, tx_hash: str):
         """
-        This function uses an orderUID to fetch order data from CoW endpoint.
-        Checks both production and staging.
+        Takes settlement hash as input, returns decoded settlement data.
         """
+        encoded_transaction = self.web_3.eth.get_transaction(HexStr(tx_hash))
+        decoded_settlement = DecodedSettlement.new(
+            self.contract_instance, encoded_transaction
+        )
+        return (
+            decoded_settlement.trades,
+            decoded_settlement.clearing_prices,
+            decoded_settlement.tokens,
+        )
 
-        individual_order_data = {}
-        status_code = 0
-        try:
-            prod_order_data_url = (
-                f"https://api.cow.fi/mainnet/api/v1/orders/{individual_win_order_id}"
-            )
-            prod_order = requests.get(
-                prod_order_data_url,
-                headers=header,
-                timeout=30,
-            )
-            if prod_order.status_code == 200:
-                individual_order_data = json.loads(prod_order.text)
-                status_code = prod_order.status_code
-
-            elif prod_order.status_code == 404:
-                barn_order_data_url = (
-                    "https://barn.api.cow.fi/mainnet/api/v1"
-                    f"/orders/{individual_win_order_id}"
-                )
-                barn_order = requests.get(
-                    barn_order_data_url, headers=header, timeout=30
-                )
-                if barn_order.status_code == 200:
-                    individual_order_data = json.loads(barn_order.text)
-                    status_code = barn_order.status_code
-        except ValueError as except_err:
-            self.logger.error(
-                "Endpoint might be down, Unhandled exception: %s.", str(except_err)
-            )
-
-        return (individual_order_data, status_code)
+    @staticmethod
+    def get_onchain_order_data(trade, onchain_clearing_prices, tokens):
+        """
+        Returns required data to calculate surplus for winning order
+        using onchain data from decoded settlement.
+        """
+        return {
+            "sell_token_clearing_price": onchain_clearing_prices[
+                trade["sellTokenIndex"]
+            ],
+            "buy_token_clearing_price": onchain_clearing_prices[trade["buyTokenIndex"]],
+            "sell_token": tokens[trade["sellTokenIndex"]].lower(),
+            "buy_token": tokens[trade["buyTokenIndex"]].lower(),
+            "order_type": str(f"{trade['flags']:08b}")[-1],
+            "executed_amount": trade["executedAmount"],
+            "sell_amount": trade["sellAmount"],
+            "buy_amount": trade["buyAmount"],
+            "fee_amount": trade["feeAmount"],
+        }
 
     def get_order_surplus(self, competition_data: Dict[str, Any]) -> None:
         """
@@ -175,17 +156,23 @@ class EBBOAnalysis:
         and finds non-winning solutions that executed the same order and
         calculates surplus difference between that pair (winning and non-winning solution).
         """
+        trades, onchain_clearing_prices, tokens = self.get_decoded_settlement(
+            competition_data["transactionHash"]
+        )
+        # this loop iterates over a single trade from on-chain trades (decoded data)
+        # and order from the list of settled orders in the winning solution. We
+        # do this since the corresponding order ID for the trade needs to be chosen.
 
-        winning_solver = competition_data["solutions"][-1]["solver"]
-
-        for individual_win_order in competition_data["solutions"][-1]["orders"]:
-            self.solver_dict[winning_solver][0] += 1
-            self.total_orders += 1
-            (individual_order_data, status_code) = self.get_order_data(
-                individual_win_order["id"]
+        # zip is used for simultaneous iteration.
+        for trade, individual_win_order in zip(
+            trades, competition_data["solutions"][-1]["orders"]
+        ):
+            onchain_order_data = self.get_onchain_order_data(
+                trade, onchain_clearing_prices, tokens
             )
             try:
-                if individual_order_data["isLiquidityOrder"] or status_code != 200:
+                # ignore limit orders, represented by zero fee amount
+                if onchain_order_data["fee_amount"] == 0:
                     continue
 
                 surplus_deviation_dict = {}
@@ -197,19 +184,14 @@ class EBBOAnalysis:
                         continue
                     for order in soln["orders"]:
                         if individual_win_order["id"] == order["id"]:
-                            (
-                                diff_surplus,
-                                percent_deviation,
-                                surplus_token,
-                            ) = get_surplus_difference(
-                                individual_order_data, soln["clearingPrices"], order
+                            # order data, executed amount, clearing price vector, and
+                            # external prices are passed
+                            surplus_eth, percent_deviation = get_flagging_values(
+                                onchain_order_data,
+                                int(order["executedAmount"]),
+                                soln["clearingPrices"],
+                                competition_data["auction"]["prices"],
                             )
-                            surplus_eth = (
-                                int(
-                                    competition_data["auction"]["prices"][surplus_token]
-                                )
-                                / (pow(10, 18))
-                            ) * (diff_surplus / pow(10, 18))
                             surplus_deviation_dict[soln_count] = (
                                 surplus_eth,
                                 percent_deviation,
@@ -222,8 +204,7 @@ class EBBOAnalysis:
                 )
             except TypeError as except_err:
                 self.logger.error("Unhandled exception: %s.", str(except_err))
-
-                self.logger.error(individual_win_order["id"])
+                self.logger.error(traceback.format_exc())
 
     def flagging_order_check(
         self,
@@ -240,21 +221,20 @@ class EBBOAnalysis:
             sorted(surplus_deviation_dict.items(), key=lambda x: x[1][0])
         )
         sorted_values = sorted(sorted_dict.values(), key=lambda x: x[0])
-        if sorted_values[0][0] < -0.002 and sorted_values[0][1] < -0.1:
+        if (
+            sorted_values[0][0] < -ABSOLUTE_ETH_FLAG_AMOUNT
+            and sorted_values[0][1] < -REL_DEVIATION_FLAG_PERCENT
+        ):
             for key, value in sorted_dict.items():
                 if value == sorted_values[0]:
                     first_key = key
                     break
-
-            self.higher_surplus_orders += 1
-            solver = competition_data["solutions"][-1]["solver"]
-            self.solver_dict[solver][1] += 1
-            self.total_surplus_eth += sorted_values[0][0]
+            winning_solver = competition_data["solutions"][-1]["solver"]
 
             self.logging_function(
                 individual_order_id,
                 first_key,
-                solver,
+                winning_solver,
                 competition_data,
                 sorted_values,
             )
@@ -263,13 +243,14 @@ class EBBOAnalysis:
         self,
         individual_order_id: str,
         first_key: int,
-        solver: str,
+        winning_solver: str,
         competition_data: Dict[str, Any],
         sorted_values: List[Tuple[float, float]],
     ) -> None:
         """
         Logs to terminal (and file iff file_name is passed).
         """
+
         log_output = (
             "Tx hash: "
             + competition_data["transactionHash"]
@@ -278,7 +259,7 @@ class EBBOAnalysis:
             + individual_order_id
             + "\t\t"
             + "Winning Solver: "
-            + solver
+            + winning_solver
             + "\t\t"
             + "Solver providing more surplus: "
             + competition_data["solutions"][first_key]["solver"]
@@ -291,112 +272,51 @@ class EBBOAnalysis:
         )
         self.logger.error(log_output)
 
-    def statistics_output(self, start_block: int, end_block: int) -> None:
-        """
-        statistics_output() provides an analytics report over the range of blocks searched for
-        finding better surplus. Includes percent error by solvers, percent of all orders with
-        better surplus, total ETH value potentially missed, etc.
-        """
 
-        self.logger.info(
-            "Better Surplus Potential orders percent: %s,      total missed ETH value: %s",
-            self.get_percent_better_orders(),
-            str(format(self.total_surplus_eth, ".5f")),
-        )
-        self.logger.info(
-            "Total Orders = %s over %s blocks from %s to %s",
-            str(self.total_orders),
-            str(int(end_block) - int(start_block)),
-            str(start_block),
-            str(end_block),
-        )
-        for key, value in self.solver_dict.items():
-            if value[0] == 0:
-                error_percent = 0.0
-            else:
-                error_percent = (value[1] * 100) / (value[0])
-            self.logger.info(
-                "Solver: %s errored: %s%%", key, format(error_percent, ".3f")
-            )
-
-    def get_percent_better_orders(self) -> str:
-        """
-        get_percent_better_orders() returns the percent of better orders.
-        """
-        try:
-            percent = (self.higher_surplus_orders * 100) / self.total_orders
-            string_percent = str(format(percent, ".3f")) + "%"
-        except ValueError as except_err:
-            self.logger.error(
-                "Possibly no. of orders = 0, Unhandled exception: %s.", str(except_err)
-            )
-        return string_percent
-
-
-def get_surplus_difference(
-    individual_order_data: Dict[str, Any],
-    soln_clearing_price: Dict[str, Any],
-    order: Dict[str, Any],
-) -> Tuple[int, float, str]:
+def get_flagging_values(
+    onchain_order_data, executed_amount, clearing_prices, external_prices
+):
     """
-    computes surplus difference given non-winning solution data and winning solution data.
+    This function calculates surplus for solution, compares to winning
+    solution to get surplus difference, and finally returns percent_deviations
+    and surplus difference in eth based on external prices.
     """
-
-    buy_amount = int(individual_order_data["buyAmount"])
-    sell_amount = int(individual_order_data["sellAmount"])
-    sell_token = individual_order_data["sellToken"]
-    buy_token = individual_order_data["buyToken"]
-    kind = individual_order_data["kind"]
-
-    if kind == "sell":
-        win_surplus = int(individual_order_data["executedBuyAmount"]) - buy_amount
-        if individual_order_data["class"] == "limit":
-            exec_amt = (
-                (
-                    int(Fraction(order["executedAmount"]))
-                    - int(individual_order_data["executedSurplusFee"])
-                )
-                * Fraction(soln_clearing_price[sell_token])
-                // Fraction(soln_clearing_price[buy_token])
-            )
-            surplus = exec_amt - buy_amount
-        else:
-            exec_amt = int(
-                Fraction(order["executedAmount"])
-                * Fraction(soln_clearing_price[sell_token])
-                // Fraction(soln_clearing_price[buy_token])
-            )
-            surplus = exec_amt - buy_amount
-
-        diff_surplus = win_surplus - surplus
-        percent_deviation = (diff_surplus * 100) / buy_amount
-        surplus_token = individual_order_data["buyToken"]
-
-    elif kind == "buy":
-        win_surplus = sell_amount - int(
-            individual_order_data["executedSellAmountBeforeFees"]
+    if onchain_order_data["order_type"] == "1":  # buy order
+        # in this case, it is sell amount
+        buy_or_sell_amount = int(onchain_order_data["sell_amount"])
+        conversion_external_price = int(
+            external_prices[onchain_order_data["sell_token"]]
         )
-        if individual_order_data["class"] == "limit":
-            exec_amt = (
-                (int(Fraction(order["executedAmount"])))
-                * Fraction(soln_clearing_price[buy_token])
-                // Fraction(soln_clearing_price[sell_token])
-            )
-            surplus = (
-                sell_amount
-                - int(individual_order_data["executedSurplusFee"])
-                - exec_amt
-            )
-        else:
-            exec_amt = int(
-                Fraction(order["executedAmount"])
-                * Fraction(soln_clearing_price[buy_token])
-                // Fraction(soln_clearing_price[sell_token])
-            )
-            surplus = sell_amount - exec_amt
+    elif onchain_order_data["order_type"] == "0":  # sell order
+        # in this case, it is buy amount
+        buy_or_sell_amount = int(onchain_order_data["buy_amount"])
+        conversion_external_price = int(
+            external_prices[onchain_order_data["buy_token"]]
+        )
 
-        diff_surplus = win_surplus - surplus
-        percent_deviation = (diff_surplus * 100) / sell_amount
-        surplus_token = individual_order_data["sellToken"]
+    win_surplus = get_surplus_order(
+        executed_amount,
+        buy_or_sell_amount,
+        onchain_order_data["sell_token_clearing_price"],
+        onchain_order_data["buy_token_clearing_price"],
+        onchain_order_data["order_type"],
+    )
 
-    return (diff_surplus, percent_deviation, surplus_token)
+    soln_surplus = get_surplus_order(
+        executed_amount,
+        buy_or_sell_amount,
+        clearing_prices[onchain_order_data["sell_token"]],
+        clearing_prices[onchain_order_data["buy_token"]],
+        onchain_order_data["order_type"],
+    )
+    # difference in surplus
+    diff_surplus = win_surplus - soln_surplus
+
+    percent_deviation, surplus_eth = percent_eth_conversions_order(
+        diff_surplus,
+        buy_or_sell_amount,
+        conversion_external_price,
+    )
+    # divide by 10**18 to convert to ETH, consistent with quasimodo test
+    surplus_eth = surplus_eth / pow(10, 18)
+    return surplus_eth, percent_deviation
