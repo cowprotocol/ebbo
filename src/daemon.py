@@ -1,8 +1,8 @@
 """
 At runtime, "main" function records the most recent block and initializes it as the start block.
-After the daemon is asleep for SLEEP_TIME_IN_SEC mins, it gets the newest block as the end block.
-Since the competition endpoint has a lag of SLEEP_TIME_IN_SEC mins (worst case), we wait
-SLEEP_TIME_IN_SEC mins before we fetch comp. data and start checking for potential surplus.
+After the daemon is asleep for SLEEP_TIME_IN_SEC seconds, it gets the newest block as the end block.
+Since the competition endpoint has a lag of SLEEP_TIME_IN_SEC seconds (worst case), we wait
+SLEEP_TIME_IN_SEC seconds before we fetch comp. data and start checking for potential surplus.
 If the data was not retrievable for any reason, it adds it to the list of unchecked hashes
 to be checked in the next cycle. Once all hashes in the current cycle have been iterated through,
 the previous end block + 1 becomes the start block for the next cycle, and the latest block is
@@ -37,11 +37,16 @@ class DaemonEBBO:
         start_block = int(web_3.eth.block_number)
         # self.logger.info("starting...")
         unchecked_hashes: List[str] = []
+
+        # main infinite loop
         while True:
             time.sleep(sleep_time)
-            end_block = web_3.eth.block_number
+            end_block = int(web_3.eth.block_number)
             fetched_hashes = get_tx_hashes_by_block(web_3, start_block, end_block)
+
+            # here we store all unprocessed hashes
             all_hashes = fetched_hashes + unchecked_hashes
+
             unchecked_hashes = []
             while len(all_hashes) > 0:
                 single_hash = all_hashes.pop(0)
@@ -52,17 +57,20 @@ class DaemonEBBO:
             # self.logger.info("going to sleep...")
             start_block = end_block + 1
 
+    # main wrapper function that runs the Quasimodo test
     def onchain_quasimodo_test(self, single_hash: str) -> bool:
         """
-        Function checks if quasimodo test can successfully decode hash,
-        if not, return None = None i.e. True
+        Function that runs the Quasimodo check on each order of the settlement.
+        Returns TRUE if the test successfully completes, otherwise it returns FALSE.
         """
         return self.quasimodo_test_instance.process_single_hash(single_hash)
 
-    def cow_endpoint_test(self, single_hash: str):
+    # main wrapper function that runs the Competition Endpoint EBBO test
+    def cow_endpoint_test(self, single_hash: str) -> bool:
         """
         Function checks if solver competition data is retrievable and runs
-        EBBO test, else returns True to add to list of unchecked hashes
+        EBBO test. If the test successfully completes, it returns TRUE, otherwise
+        it returns FALSE.
         """
         response_data = self.cow_endpoint_test_instance.get_solver_competition_data(
             [single_hash]
