@@ -39,9 +39,7 @@ class EndpointSolutionsEBBO:
         self.web_3 = Web3(
             Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}")
         )
-        self.contract_instance = self.web_3.eth.contract(
-            address=Address(HexBytes(ADDRESS)), abi=gpv2Abi
-        )
+        self.contract_instance = self.web_3.eth.contract(address=Address(HexBytes(ADDRESS)), abi=gpv2Abi)
 
     def get_surplus_by_input(
         self,
@@ -122,7 +120,7 @@ class EndpointSolutionsEBBO:
         """
         encoded_transaction = self.web_3.eth.get_transaction(HexStr(tx_hash))
         decoded_settlement = DecodedSettlement.new(
-            self.contract_instance, encoded_transaction.input
+            self.contract_instance, encoded_transaction
         )
         return (
             decoded_settlement.trades,
