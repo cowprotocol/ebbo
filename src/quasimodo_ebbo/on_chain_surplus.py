@@ -3,7 +3,6 @@ This component of EBBO testing parses all settlements happening on-chain and rec
 each orders' surplus. We call Quasimodo to provide a solution for the same order,
 and then a comparison is made to determine whether the order should be flagged.
 """
-from ctypes import cast
 import json
 from typing import List, Tuple, Optional, Any
 from copy import deepcopy
@@ -12,7 +11,6 @@ from dotenv import load_dotenv
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 import requests
-from requests import Response
 from web3 import Web3
 from src.configuration import (
     get_logger,
