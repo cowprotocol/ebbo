@@ -73,49 +73,7 @@ class EndpointSolutionsEBBO:
         for comp_data in solver_competition_data:
             self.get_order_surplus(comp_data)
 
-    def get_solver_competition_data(
-        self, settlement_hashes_list: List[str]
-    ) -> List[Dict[str, Any]]:
-        """
-        This function uses a list of tx hashes to fetch and assemble competition data
-        for each of the tx hashes and returns it to get_surplus_by_input for further
-        surplus calculation.
-        """
-
-        solver_competition_data = []
-        for tx_hash in settlement_hashes_list:
-            try:
-                prod_endpoint_url = (
-                    "https://api.cow.fi/mainnet/api/v1/solver_competition"
-                    f"/by_tx_hash/{tx_hash}"
-                )
-                json_competition_data = requests.get(
-                    prod_endpoint_url,
-                    headers=header,
-                    timeout=30,
-                )
-                if json_competition_data.status_code == SUCCESS_CODE:
-                    solver_competition_data.append(
-                        json.loads(json_competition_data.text)
-                    )
-                    # print(tx_hash)
-                elif json_competition_data.status_code == FAIL_CODE:
-                    barn_endpoint_url = (
-                        "https://barn.api.cow.fi/mainnet/api/v1"
-                        f"/solver_competition/by_tx_hash/{tx_hash}"
-                    )
-                    barn_competition_data = requests.get(
-                        barn_endpoint_url, headers=header, timeout=30
-                    )
-                    if barn_competition_data.status_code == SUCCESS_CODE:
-                        solver_competition_data.append(
-                            json.loads(barn_competition_data.text)
-                        )
-            except ValueError as except_err:
-                self.logger.error("Unhandled exception: %s.", str(except_err))
-
-        return solver_competition_data
-
+ 
     def get_decoded_settlement(self, tx_hash: str):
         """
         Takes settlement hash as input, returns decoded settlement data.

@@ -12,7 +12,7 @@ from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 import requests
 from web3 import Web3
-from src.configuration import (
+from src.helper_functions import (
     get_logger,
     get_tx_hashes_by_block,
     get_surplus_order,
