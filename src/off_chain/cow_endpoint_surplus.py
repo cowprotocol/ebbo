@@ -174,9 +174,7 @@ class EndpointSolutionsEBBO:
                 surplus_deviation_dict = {}
                 soln_count = 0
                 for soln in competition_data["solutions"]:
-                    # ignore negative objective solutions
-                    if soln["objective"]["total"] < 0:
-                        # this adds ETH surplus, percent deviation for a solution
+                    if soln["objective"]["fees"] < 0.9 * soln["objective"]["cost"]:
                         surplus_deviation_dict[soln_count] = 0.0, 0.0
                         soln_count += 1
                         continue

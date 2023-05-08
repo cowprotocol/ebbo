@@ -34,7 +34,7 @@ class DaemonEBBO:
         """
         infura_connection = f"https://mainnet.infura.io/v3/{INFURA_KEY}"
         web_3 = Web3(Web3.HTTPProvider(infura_connection))
-        start_block = web_3.eth.block_number
+        start_block = int(web_3.eth.block_number)
         # self.logger.info("starting...")
         unchecked_hashes: List[str] = []
         while True:
