@@ -3,12 +3,16 @@ This component of EBBO testing parses all settlements happening on-chain and rec
 each orders' surplus. We call Quasimodo to provide a solution for the same order,
 and then a comparison is made to determine whether the order should be flagged.
 """
+from ctypes import cast
 import json
 from typing import List, Tuple, Optional, Any
 from copy import deepcopy
 import os
 from dotenv import load_dotenv
+from eth_typing import Address, HexStr
+from hexbytes import HexBytes
 import requests
+from requests import Response
 from web3 import Web3
 from src.configuration import (
     get_logger,
@@ -45,7 +49,7 @@ class QuasimodoTestEBBO:
         self.web_3 = Web3(
             Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}")
         )
-        self.contract_instance = self.web_3.eth.contract(address=ADDRESS, abi=gpv2Abi)
+        self.contract_instance = self.web_3.eth.contract(address=Address(HexBytes(ADDRESS)), abi=gpv2Abi)
         self.logger = get_logger()
 
     def create_tx_list(
@@ -82,7 +86,7 @@ class QuasimodoTestEBBO:
         Returns `None` in case data cannot be fetched, a not-None value "True" otherwise.
         """
         try:
-            encoded_transaction = self.web_3.eth.get_transaction(settlement_hash)
+            encoded_transaction = self.web_3.eth.get_transaction(HexStr(settlement_hash))
             decoded_settlement = DecodedSettlement.new(
                 self.contract_instance, encoded_transaction["input"]
             )
@@ -116,8 +120,8 @@ class QuasimodoTestEBBO:
             )
             status_code = comp_data.status_code
             if status_code == SUCCESS_CODE:
-                comp_data = comp_data.json()
-                auction_id = comp_data["auctionId"]
+                compete_data = comp_data.json()
+                auction_id = compete_data["auctionId"]
                 bucket_response = dict(
                     requests.get(
                         (
@@ -136,8 +140,8 @@ class QuasimodoTestEBBO:
                 )
                 status_code = comp_data.status_code
                 if comp_data.status_code == SUCCESS_CODE:
-                    comp_data = comp_data.json()
-                    auction_id = comp_data["auctionId"]
+                    compete_data = comp_data.json()
+                    auction_id = compete_data["auctionId"]
                     bucket_response = dict(
                         requests.get(
                             (
@@ -146,7 +150,7 @@ class QuasimodoTestEBBO:
                             )
                         ).json()
                     )
-            return comp_data["solutions"][-1]["orders"], bucket_response
+            return compete_data["solutions"][-1]["orders"], bucket_response
         except ValueError as except_err:
             self.logger.error("Unhandled exception: %s", str(except_err))
             return [], None

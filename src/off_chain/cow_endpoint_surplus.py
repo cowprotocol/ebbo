@@ -6,6 +6,8 @@ Competition Data is fetched via the CoW API.
 import json
 import traceback
 from typing import List, Dict, Tuple, Any, Optional
+from eth_typing import Address, HexStr
+from hexbytes import HexBytes
 from web3 import Web3
 import requests
 from src.configuration import (
@@ -37,7 +39,7 @@ class EndpointSolutionsEBBO:
         self.web_3 = Web3(
             Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}")
         )
-        self.contract_instance = self.web_3.eth.contract(address=ADDRESS, abi=gpv2Abi)
+        self.contract_instance = self.web_3.eth.contract(address=Address(HexBytes(ADDRESS)), abi=gpv2Abi)
 
     def get_surplus_by_input(
         self,
@@ -116,7 +118,7 @@ class EndpointSolutionsEBBO:
         """
         Takes settlement hash as input, returns decoded settlement data.
         """
-        encoded_transaction = self.web_3.eth.get_transaction(tx_hash)
+        encoded_transaction = self.web_3.eth.get_transaction(HexStr(tx_hash))
         decoded_settlement = DecodedSettlement.new(
             self.contract_instance, encoded_transaction.input
         )
