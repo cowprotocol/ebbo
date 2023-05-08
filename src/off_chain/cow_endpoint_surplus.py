@@ -3,28 +3,24 @@ This class is the first component of the EBBO Monitoring Suite. Orders of the wi
 settlement are tested for EBBO relative to all other solutions provided.
 Competition Data is fetched via the CoW API.
 """
-import json
 import traceback
 from typing import List, Dict, Tuple, Any, Optional
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 from web3 import Web3
-import requests
-from src.configuration import (
+from src.helper_functions import (
     get_logger,
     get_tx_hashes_by_block,
     get_surplus_order,
     percent_eth_conversions_order,
+    get_solver_competition_data,
 )
 from src.quasimodo_ebbo.on_chain_surplus import DecodedSettlement
 from src.constants import (
     INFURA_KEY,
-    header,
     ADDRESS,
     ABSOLUTE_ETH_FLAG_AMOUNT,
     REL_DEVIATION_FLAG_PERCENT,
-    SUCCESS_CODE,
-    FAIL_CODE,
 )
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
@@ -67,13 +63,10 @@ class EndpointSolutionsEBBO:
         if not settlement_hashes_list:
             raise ValueError("No settlement hashes found")
 
-        solver_competition_data = self.get_solver_competition_data(
-            settlement_hashes_list
-        )
+        solver_competition_data = get_solver_competition_data(settlement_hashes_list)
         for comp_data in solver_competition_data:
             self.get_order_surplus(comp_data)
 
- 
     def get_decoded_settlement(self, tx_hash: str):
         """
         Takes settlement hash as input, returns decoded settlement data.

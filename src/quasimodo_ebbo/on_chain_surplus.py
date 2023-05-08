@@ -79,11 +79,11 @@ class QuasimodoTestEBBO:
         for settlement_hash in settlement_hashes_list:
             self.process_single_hash(settlement_hash)
 
-    def process_single_hash(self, settlement_hash: str) -> Optional[bool]:
+    def process_single_hash(self, settlement_hash: str) -> bool:
         """
-        Goes through all settlements fetched, decodes orders,
-        gets response from AWS bucket.
-        Returns `None` in case data cannot be fetched, a not-None value "True" otherwise.
+        Goes over all orders in the winning settlement, decodes orders,
+        gets response from AWS bucket, and runs the main Quasimodo test for each order.
+        Returns FALSE in case data cannot be fetched, and TRUE, otherwise.
         """
         try:
             encoded_transaction = self.web_3.eth.get_transaction(

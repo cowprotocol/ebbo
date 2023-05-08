@@ -5,12 +5,15 @@ from __future__ import annotations
 import logging
 from fractions import Fraction
 from typing import List, Optional, Tuple, Dict, Any
+import json
+import requests
 from web3 import Web3
-
-
-# from dune_client.client import DuneClient
-# from dune_client.query import Query
-from src.constants import ADDRESS
+from src.constants import (
+    header,
+    ADDRESS,
+    SUCCESS_CODE,
+    FAIL_CODE,
+)
 
 
 def get_logger(filename: Optional[str] = None) -> logging.Logger:
@@ -79,7 +82,7 @@ def percent_eth_conversions_order(
 
 
 def get_solver_competition_data(
-    self, settlement_hashes_list: List[str]
+    settlement_hashes_list: List[str],
 ) -> List[Dict[str, Any]]:
     """
     This function uses a list of tx hashes to fetch and assemble competition data
@@ -87,6 +90,7 @@ def get_solver_competition_data(
     """
 
     solver_competition_data = []
+    logger = get_logger()
     for tx_hash in settlement_hashes_list:
         try:
             prod_endpoint_url = (
@@ -114,7 +118,7 @@ def get_solver_competition_data(
                         json.loads(barn_competition_data.text)
                     )
         except ValueError as except_err:
-            self.logger.error("Unhandled exception: %s.", str(except_err))
+            logger.error("Unhandled exception: %s.", str(except_err))
 
     return solver_competition_data
 
