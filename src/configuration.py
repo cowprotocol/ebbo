@@ -6,11 +6,7 @@ import logging
 from fractions import Fraction
 from typing import List, Optional, Tuple, Any
 from web3 import Web3
-
-
-# from dune_client.client import DuneClient
-# from dune_client.query import Query
-from src.constants import ADDRESS
+from constants import ADDRESS
 
 
 def get_logger(filename: Optional[str] = None) -> logging.Logger:

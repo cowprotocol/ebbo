@@ -10,14 +10,14 @@ from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 from web3 import Web3
 import requests
-from src.configuration import (
+from configuration import (
     get_logger,
     get_tx_hashes_by_block,
     get_surplus_order,
     percent_eth_conversions_order,
 )
-from src.quasimodo_ebbo.on_chain_surplus import DecodedSettlement
-from src.constants import (
+from quasimodo_ebbo.on_chain_surplus import DecodedSettlement
+from constants import (
     INFURA_KEY,
     header,
     ADDRESS,

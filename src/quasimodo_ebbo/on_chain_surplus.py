@@ -12,14 +12,14 @@ from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 import requests
 from web3 import Web3
-from src.configuration import (
+from configuration import (
     get_logger,
     get_tx_hashes_by_block,
     get_surplus_order,
     percent_eth_conversions_order,
     DecodedSettlement,
 )
-from src.constants import (
+from constants import (
     INFURA_KEY,
     ABSOLUTE_ETH_FLAG_AMOUNT,
     REL_DEVIATION_FLAG_PERCENT,

@@ -11,11 +11,10 @@ the new end block. Daemon sleeps for 30 mins and continue checking.
 import time
 from typing import List
 from web3 import Web3
-from src.quasimodo_ebbo.on_chain_surplus import QuasimodoTestEBBO
-from src.off_chain.cow_endpoint_surplus import EndpointSolutionsEBBO
-from src.configuration import get_logger, get_tx_hashes_by_block
-from src.constants import INFURA_KEY
-from src.constants import SLEEP_TIME_IN_SEC
+from quasimodo_ebbo.on_chain_surplus import QuasimodoTestEBBO
+from off_chain.cow_endpoint_surplus import EndpointSolutionsEBBO
+from configuration import get_logger, get_tx_hashes_by_block
+from constants import INFURA_KEY, SLEEP_TIME_IN_SEC
 
 
 class DaemonEBBO:
