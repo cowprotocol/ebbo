@@ -50,10 +50,14 @@ class DaemonEBBO:
             unchecked_hashes = []
             while len(all_hashes) > 0:
                 single_hash = all_hashes.pop(0)
-                if not self.onchain_quasimodo_test(
-                    single_hash
-                ) or not self.cow_endpoint_test(single_hash):
+
+                # tests ran on single_hash
+                quasimodo_success = self.onchain_quasimodo_test(single_hash)
+                endpoint_success = self.cow_endpoint_test(single_hash)
+
+                if not (quasimodo_success or endpoint_success):
                     unchecked_hashes.append(single_hash)
+
             # self.logger.info("going to sleep...")
             start_block = end_block + 1
 
