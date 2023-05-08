@@ -43,8 +43,7 @@ def get_tx_hashes_by_block(web_3: Web3, start_block: int, end_block: int) -> Lis
     # therefore, check if hash has already been added to the list
 
     # only successful transactions are filtered
-    event_filter = web_3.eth.filter(filter_criteria)
-    transactions = web_3.eth.filter(event_filter).get_all_entries()
+    transactions = web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
     settlement_hashes_list = []
     for transaction in transactions:
         tx_hash = (transaction["transactionHash"]).hex()
