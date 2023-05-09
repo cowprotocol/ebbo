@@ -3,28 +3,24 @@ This class is the first component of the EBBO Monitoring Suite. Orders of the wi
 settlement are tested for EBBO relative to all other solutions provided.
 Competition Data is fetched via the CoW API.
 """
-import json
 import traceback
 from typing import List, Dict, Tuple, Any, Optional
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 from web3 import Web3
-import requests
-from src.configuration import (
+from src.helper_functions import (
     get_logger,
     get_tx_hashes_by_block,
     get_surplus_order,
     percent_eth_conversions_order,
+    get_solver_competition_data,
 )
 from src.quasimodo_ebbo.on_chain_surplus import DecodedSettlement
 from src.constants import (
     INFURA_KEY,
-    header,
     ADDRESS,
     ABSOLUTE_ETH_FLAG_AMOUNT,
     REL_DEVIATION_FLAG_PERCENT,
-    SUCCESS_CODE,
-    FAIL_CODE,
 )
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
@@ -67,54 +63,9 @@ class EndpointSolutionsEBBO:
         if not settlement_hashes_list:
             raise ValueError("No settlement hashes found")
 
-        solver_competition_data = self.get_solver_competition_data(
-            settlement_hashes_list
-        )
+        solver_competition_data = get_solver_competition_data(settlement_hashes_list)
         for comp_data in solver_competition_data:
             self.get_order_surplus(comp_data)
-
-    def get_solver_competition_data(
-        self, settlement_hashes_list: List[str]
-    ) -> List[Dict[str, Any]]:
-        """
-        This function uses a list of tx hashes to fetch and assemble competition data
-        for each of the tx hashes and returns it to get_surplus_by_input for further
-        surplus calculation.
-        """
-
-        solver_competition_data = []
-        for tx_hash in settlement_hashes_list:
-            try:
-                prod_endpoint_url = (
-                    "https://api.cow.fi/mainnet/api/v1/solver_competition"
-                    f"/by_tx_hash/{tx_hash}"
-                )
-                json_competition_data = requests.get(
-                    prod_endpoint_url,
-                    headers=header,
-                    timeout=30,
-                )
-                if json_competition_data.status_code == SUCCESS_CODE:
-                    solver_competition_data.append(
-                        json.loads(json_competition_data.text)
-                    )
-                    # print(tx_hash)
-                elif json_competition_data.status_code == FAIL_CODE:
-                    barn_endpoint_url = (
-                        "https://barn.api.cow.fi/mainnet/api/v1"
-                        f"/solver_competition/by_tx_hash/{tx_hash}"
-                    )
-                    barn_competition_data = requests.get(
-                        barn_endpoint_url, headers=header, timeout=30
-                    )
-                    if barn_competition_data.status_code == SUCCESS_CODE:
-                        solver_competition_data.append(
-                            json.loads(barn_competition_data.text)
-                        )
-            except ValueError as except_err:
-                self.logger.error("Unhandled exception: %s.", str(except_err))
-
-        return solver_competition_data
 
     def get_decoded_settlement(self, tx_hash: str):
         """
@@ -122,7 +73,7 @@ class EndpointSolutionsEBBO:
         """
         encoded_transaction = self.web_3.eth.get_transaction(HexStr(tx_hash))
         decoded_settlement = DecodedSettlement.new(
-            self.contract_instance, encoded_transaction
+            self.contract_instance, encoded_transaction["input"]
         )
         return (
             decoded_settlement.trades,

@@ -4,13 +4,16 @@ This file contains functions used by cow_endpoint_surplus and quasimodo_test_sur
 from __future__ import annotations
 import logging
 from fractions import Fraction
-from typing import List, Optional, Tuple, Any
+from typing import List, Optional, Tuple, Dict, Any
+import json
+import requests
 from web3 import Web3
-
-
-# from dune_client.client import DuneClient
-# from dune_client.query import Query
-from src.constants import ADDRESS
+from src.constants import (
+    header,
+    ADDRESS,
+    SUCCESS_CODE,
+    FAIL_CODE,
+)
 
 
 def get_logger(filename: Optional[str] = None) -> logging.Logger:
@@ -76,6 +79,48 @@ def percent_eth_conversions_order(
     diff_in_eth = (external_price / (pow(10, 18))) * (diff_surplus)
     # diff_in_eth = (external_price/(pow(10, 18))) * (diff_surplus/(pow(10, 18)))
     return percent_deviation, diff_in_eth
+
+
+def get_solver_competition_data(
+    settlement_hashes_list: List[str],
+) -> List[Dict[str, Any]]:
+    """
+    This function uses a list of tx hashes to fetch and assemble competition data
+    for each of the tx hashes and returns it.
+    """
+
+    solver_competition_data = []
+    logger = get_logger()
+    for tx_hash in settlement_hashes_list:
+        try:
+            prod_endpoint_url = (
+                "https://api.cow.fi/mainnet/api/v1/solver_competition"
+                f"/by_tx_hash/{tx_hash}"
+            )
+            json_competition_data = requests.get(
+                prod_endpoint_url,
+                headers=header,
+                timeout=30,
+            )
+            if json_competition_data.status_code == SUCCESS_CODE:
+                solver_competition_data.append(json.loads(json_competition_data.text))
+                # print(tx_hash)
+            elif json_competition_data.status_code == FAIL_CODE:
+                barn_endpoint_url = (
+                    "https://barn.api.cow.fi/mainnet/api/v1"
+                    f"/solver_competition/by_tx_hash/{tx_hash}"
+                )
+                barn_competition_data = requests.get(
+                    barn_endpoint_url, headers=header, timeout=30
+                )
+                if barn_competition_data.status_code == SUCCESS_CODE:
+                    solver_competition_data.append(
+                        json.loads(barn_competition_data.text)
+                    )
+        except ValueError as except_err:
+            logger.error("Unhandled exception: %s.", str(except_err))
+
+    return solver_competition_data
 
 
 def get_surplus_order(
