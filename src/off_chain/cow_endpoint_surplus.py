@@ -73,7 +73,7 @@ class EndpointSolutionsEBBO:
         """
         encoded_transaction = self.web_3.eth.get_transaction(HexStr(tx_hash))
         decoded_settlement = DecodedSettlement.new(
-            self.contract_instance, encoded_transaction
+            self.contract_instance, encoded_transaction["input"]
         )
         return (
             decoded_settlement.trades,
