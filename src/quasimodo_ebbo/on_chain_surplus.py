@@ -183,7 +183,7 @@ class QuasimodoTestEBBO:
         # make solution request to quasimodo
         try:
             solution = requests.post(solver_url, data=bucket_response_json, timeout=30)
-        except requests.exceptions.RequestException as e:
+        except requests.exceptions.RequestException:
             # return empty response
             return {"prices": []}, None
         solution_json = solution.json()
