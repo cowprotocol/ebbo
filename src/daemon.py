@@ -39,7 +39,7 @@ class DaemonEBBO:
         infura_connection = f"https://mainnet.infura.io/v3/{INFURA_KEY}"
         web_3 = Web3(Web3.HTTPProvider(infura_connection))
         start_block = int(web_3.eth.block_number)
-        self.logger.info("starting...")
+        # self.logger.info("starting...")
         unchecked_hashes: List[str] = []
         while True:
             time.sleep(sleep_time)
@@ -53,7 +53,7 @@ class DaemonEBBO:
                 cow_endpoint_test_success = self.cow_endpoint_test(single_hash)
                 if not (quasimodo_test_success or cow_endpoint_test_success):
                     unchecked_hashes.append(single_hash)
-            self.logger.info("going to sleep...")
+            # self.logger.info("going to sleep...")
             start_block = end_block + 1
 
     def onchain_quasimodo_test(self, single_hash: str) -> bool:
