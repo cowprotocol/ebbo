@@ -13,6 +13,7 @@ from typing import List
 from web3 import Web3
 from src.quasimodo_ebbo.on_chain_surplus import QuasimodoTestEBBO
 from src.off_chain.cow_endpoint_surplus import EndpointSolutionsEBBO
+from src.fee_monitoring.fee_monitoring import FeeMonitoring
 from src.helper_functions import (
     get_logger,
     get_tx_hashes_by_block,
@@ -30,6 +31,7 @@ class DaemonEBBO:
     def __init__(self):
         self.quasimodo_test_instance = QuasimodoTestEBBO()
         self.cow_endpoint_test_instance = EndpointSolutionsEBBO()
+        self.fee_monitoring_test_instance = FeeMonitoring()
         self.logger = get_logger()
 
     def main(self, sleep_time: int) -> None:
@@ -73,6 +75,9 @@ class DaemonEBBO:
             self.cow_endpoint_test_instance.get_order_surplus(response_data[0])
             return True
         return False
+
+    def fee_monitoring_test(self, single_hash: str) -> bool:
+        return self.fee_monitoring_test_instance.fee_test(single_hash)
 
 
 if __name__ == "__main__":

@@ -3,6 +3,7 @@ File to run historical block/hash testing for EBBO
 """
 import unittest
 from src.off_chain.cow_endpoint_surplus import EndpointSolutionsEBBO
+from src.fee_monitoring.fee_monitoring import FeeMonitoring
 
 
 class TestSurplusCalculation(unittest.TestCase):
@@ -33,6 +34,19 @@ class TestSurplusCalculation(unittest.TestCase):
             )
         )
 
+class TestFeeMonitoring(unittest.TestCase):
+    """
+    Each function of this class runs a test
+    """
+
+    def test_hash_input(self) -> None:
+        """
+        Test that function works with a hash
+        """
+        self.hash = "0xb1add23c49fc99f1471b61e48a1f0e6eb18f88d190144cea80dfc290ad0bcc98"
+        # self.hash = "0x26bd983c653319851224d70d5cee2ac56605f1004fbf695b34358be482647466"
+        instance = FeeMonitoring()
+        self.assertTrue(instance.fee_test(self.hash))
 
 if __name__ == "__main__":
     unittest.main()
