@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 DUNE_KEY = os.getenv("DUNE_KEY")
 INFURA_KEY = os.getenv("INFURA_KEY")
-ETHERSCAN_KEY = os.getenv("INFURA_KEY")
+ETHERSCAN_KEY = os.getenv("ETHERSCAN_KEY")
 
 ADDRESS = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
 

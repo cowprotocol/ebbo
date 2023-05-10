@@ -111,10 +111,11 @@ class QuasimodoTestEBBO:
         """
         Returns competition endpoint data since we need order_id and auction_id, and also AWS
         Bucket response.
-        Note that the second tuple argument is Optinal[dict] but mypy was complaing
+        Note that the second tuple argument is Optional[dict] but mypy was complainig
         """
         bucket_response = None
         comp_data = None
+        compete_data = None
         try:
             # first fetch from production environment
             comp_data = requests.get(
@@ -152,7 +153,10 @@ class QuasimodoTestEBBO:
                             )
                         ).json()
                     )
-            return compete_data["solutions"][-1]["orders"], bucket_response
+            if compete_data != None:
+                return compete_data["solutions"][-1]["orders"], bucket_response
+            else:
+                return [], None
         except ValueError as except_err:
             self.logger.error("Unhandled exception: %s", str(except_err))
             return [], None
@@ -167,7 +171,7 @@ class QuasimodoTestEBBO:
         solver_instance = deepcopy(bucket_response)
         order: Any = {}
         for key, order_ in solver_instance["orders"].items():
-            if order["id"] == order_id:
+            if order_["id"] == order_id:
                 solver_instance["orders"] = {key: order_}
                 order = order_
                 break
@@ -175,14 +179,13 @@ class QuasimodoTestEBBO:
         bucket_response_json = json.dumps(solver_instance)
         solver_url = (
             str(QUASIMODO_SOLVER_URL)
-            + "/solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts"
+            + "/solve?time_limit=2&use_internal_buffers=false&objective=surplusfeescosts"
         )
         # make solution request to quasimodo
-        solution = requests.post(
-            solver_url, json=bucket_response_json, timeout=30
-        ).json()
+        solution = requests.post(solver_url, data=bucket_response_json, timeout=30)
+        solution_json = solution.json()
         # return quasimodo solved solution
-        return solution, order
+        return solution_json, order
 
     def solve_orders_in_settlement(
         self,
@@ -216,12 +219,11 @@ class QuasimodoTestEBBO:
             )
             order_id = winning_orders[decoded_settlement.trades.index(trade)]["id"]
             solver_solution, order = self.get_solver_response(order_id, bucket_response)
-
-            sell_token = order["sell_token"]
-            buy_token = order["buy_token"]
             # if a valid solution is returned by solver
             if not len(solver_solution["prices"]) > 0:
                 continue
+            sell_token = order["sell_token"]
+            buy_token = order["buy_token"]
             sell_token_clearing_price = solver_solution["prices"][sell_token]
             buy_token_clearing_price = solver_solution["prices"][buy_token]
             quasimodo_surplus = get_surplus_order(
