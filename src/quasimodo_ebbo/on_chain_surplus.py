@@ -111,7 +111,7 @@ class QuasimodoTestEBBO:
         """
         Returns competition endpoint data since we need order_id and auction_id, and also AWS
         Bucket response.
-        Note that the second tuple argument is Optional[dict] but mypy was complainig
+        Note that the second tuple argument is Optional[dict] but mypy was complaining
         """
         bucket_response = None
         comp_data = None
