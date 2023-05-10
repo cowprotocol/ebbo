@@ -155,7 +155,6 @@ class QuasimodoTestEBBO:
                     )
             if compete_data is not None:
                 return compete_data["solutions"][-1]["orders"], bucket_response
-            
             return [], None
         except ValueError as except_err:
             self.logger.error("Unhandled exception: %s", str(except_err))
