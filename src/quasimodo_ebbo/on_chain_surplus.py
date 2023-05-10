@@ -179,7 +179,7 @@ class QuasimodoTestEBBO:
         bucket_response_json = json.dumps(solver_instance)
         solver_url = (
             str(QUASIMODO_SOLVER_URL)
-            + "/solve?time_limit=2&use_internal_buffers=false&objective=surplusfeescosts"
+            + "/solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts"
         )
         # make solution request to quasimodo
         solution = requests.post(solver_url, data=bucket_response_json, timeout=30)
