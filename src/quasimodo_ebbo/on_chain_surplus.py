@@ -218,7 +218,7 @@ class QuasimodoTestEBBO:
             )
             order_id = winning_orders[decoded_settlement.trades.index(trade)]["id"]
             solver_solution, order = self.get_solver_response(order_id, bucket_response)
-            # if a valid solution is returned by solver
+            # Check if a valid solution is returned by solver
             if not len(solver_solution["prices"]) > 0:
                 continue
             sell_token = order["sell_token"]
