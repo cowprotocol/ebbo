@@ -181,7 +181,11 @@ class QuasimodoTestEBBO:
             + "/solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts"
         )
         # make solution request to quasimodo
-        solution = requests.post(solver_url, data=bucket_response_json, timeout=30)
+        try:
+            solution = requests.post(solver_url, data=bucket_response_json, timeout=30)
+        except requests.exceptions.RequestException as e:
+            # return empty response
+            return {"prices": []}, None
         solution_json = solution.json()
         # return quasimodo solved solution
         return solution_json, order
