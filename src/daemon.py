@@ -14,6 +14,7 @@ from typing import List
 from src.constants import SLEEP_TIME_IN_SEC
 from src.monitoring_tests.template_test import TemplateTest
 from src.monitoring_tests.competition_endpoint_test.endpoint_test import EndpointTest
+from src.monitoring_tests.fee_monitoring.fee_monitoring_test import FeeMonitoring
 
 # from src.monitoring_tests.quasimodo_ebbo_test.quasimodo_ebbo_test import (
 #    QuasimodoEbboTest,
@@ -27,6 +28,7 @@ def main(sleep_time: int) -> None:
     # here, we have one object per test that we will run
     endpoind_test = EndpointTest()  # the CoW Competition Endpoint Test
     # quasimodo_ebbo_test = QuasimodoEbboTest()
+    fee_monitoring_test = FeeMonitoring()
     ####
 
     start_block = TemplateTest.get_current_block_number()
@@ -44,11 +46,12 @@ def main(sleep_time: int) -> None:
             single_hash = all_hashes.pop(0)
             # quasimodo_ebbo_test_success = False
             endpoint_test_success = endpoind_test.cow_endpoint_test(single_hash)
+            fee_monitoring_test_success = fee_monitoring_test.fee_test(single_hash)
             # if endpoint_test_success:
             #    quasimodo_ebbo_test_success = quasimodo_ebbo_test.quasimodo_ebbo_test(
             #        single_hash
             #    )
-            if not endpoint_test_success:  # or not quasimodo_ebbo_test_success:
+            if not endpoint_test_success or not fee_monitoring_test_success:  # or not quasimodo_ebbo_test_success:
                 unchecked_hashes.append(single_hash)
             # else:
             # logging_msg = "Processed hash: " + single_hash
