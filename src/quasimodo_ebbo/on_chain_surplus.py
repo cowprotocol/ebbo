@@ -153,10 +153,10 @@ class QuasimodoTestEBBO:
                             )
                         ).json()
                     )
-            if compete_data != None:
+            if compete_data is not None:
                 return compete_data["solutions"][-1]["orders"], bucket_response
-            else:
-                return [], None
+            
+            return [], None
         except ValueError as except_err:
             self.logger.error("Unhandled exception: %s", str(except_err))
             return [], None
