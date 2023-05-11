@@ -8,24 +8,20 @@ from hexbytes import HexBytes
 from web3 import Web3
 import json
 import requests
-from src.constants import (
-    INFURA_KEY,
-    ADDRESS,
-    SUCCESS_CODE,
-    FAIL_CODE,
-    header
-)
+from src.constants import INFURA_KEY, ADDRESS, SUCCESS_CODE, FAIL_CODE, header
 from src.helper_functions import (
     get_logger,
     get_solver_competition_data,
-    DecodedSettlement
+    DecodedSettlement,
 )
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
+
 
 class FeeMonitoring:
     """
     Class for fee monitoring.
     """
+
     def __init__(self) -> None:
         """
         TODO: Merge this with the setup of the other classes.
@@ -55,15 +51,17 @@ class FeeMonitoring:
 
     def get_orders(self, tx_hash: str):
         prod_endpoint_url = (
-                "https://api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
-            )
+            "https://api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
+        )
         orders_response = requests.get(
             prod_endpoint_url,
             headers=header,
             timeout=30,
         )
         if orders_response.status_code != SUCCESS_CODE:
-            self.logger.error("Error loading orders from mainnet: ", orders_response.status_code)
+            self.logger.error(
+                "Error loading orders from mainnet: ", orders_response.status_code
+            )
 
         orders = json.loads(orders_response.text)
 
@@ -73,10 +71,12 @@ class FeeMonitoring:
         return int(receipt["gasUsed"]), int(encoded_transaction["gasPrice"])
 
     def get_fee(self, tx_hash, order_uid) -> int:
-        return 0 # TODO: get from data base
+        return 0  # TODO: get from data base
 
     def get_order_execution(self, tx_hash, order_uid):
-        prod_endpoint_url = "https://api.cow.fi/mainnet/api/v1/trades?orderUid=" + order_uid
+        prod_endpoint_url = (
+            "https://api.cow.fi/mainnet/api/v1/trades?orderUid=" + order_uid
+        )
         trades_response = requests.get(
             prod_endpoint_url,
             headers=header,
@@ -116,13 +116,11 @@ class FeeMonitoring:
             "signingScheme": "eip712",
             "onchainOrder": False,
             "kind": kind,
-            "sellAmountBeforeFee": str(trade["executedAmount"])
+            "sellAmountBeforeFee": str(trade["executedAmount"]),
         }
 
         try:
-            prod_endpoint_url = (
-                "https://api.cow.fi/mainnet/api/v1/quote"
-            )
+            prod_endpoint_url = "https://api.cow.fi/mainnet/api/v1/quote"
             quote_response = requests.post(
                 prod_endpoint_url,
                 headers=header,
@@ -130,11 +128,12 @@ class FeeMonitoring:
                 timeout=30,
             )
             if quote_response.status_code != SUCCESS_CODE:
-                barn_endpoint_url = (
-                    "https://barn.api.cow.fi/mainnet/api/v1/quote"
-                )
+                barn_endpoint_url = "https://barn.api.cow.fi/mainnet/api/v1/quote"
                 quote_response = requests.post(
-                    barn_endpoint_url, headers=header, json=json.dumps(request_dict), timeout=30
+                    barn_endpoint_url,
+                    headers=header,
+                    json=json.dumps(request_dict),
+                    timeout=30,
                 )
                 if quote_response.status_code != SUCCESS_CODE:
                     logger.error("Quote error: %s.", quote_response.status_code)
@@ -167,7 +166,9 @@ class FeeMonitoring:
 
         partially_fillable_indices = []
         for i in range(len(orders)):
-            if orders[i]["partiallyFillable"]: # second least significant bit "1" iff order is partially fillable
+            if orders[i][
+                "partiallyFillable"
+            ]:  # second least significant bit "1" iff order is partially fillable
                 partially_fillable_indices.append(i)
 
         if len(partially_fillable_indices) > 0:
@@ -177,9 +178,19 @@ class FeeMonitoring:
 
             for i in partially_fillable_indices:
                 # get additional data for the trade
-                buy_amount, sell_amount, fee_amount = self.get_order_execution(tx_hash, orders[i]["uid"])
-                quote_buy_amount, quote_sell_amount, quote_fee_amount = self.get_quote(decoded_settlement, i)
-                solver_buy_amount, solver_sell_amount, solver_fee_amount = self.get_solver_solution(decoded_settlement, i) # TODO: use those values
+                buy_amount, sell_amount, fee_amount = self.get_order_execution(
+                    tx_hash, orders[i]["uid"]
+                )
+                quote_buy_amount, quote_sell_amount, quote_fee_amount = self.get_quote(
+                    decoded_settlement, i
+                )
+                (
+                    solver_buy_amount,
+                    solver_sell_amount,
+                    solver_fee_amount,
+                ) = self.get_solver_solution(
+                    decoded_settlement, i
+                )  # TODO: use those values
 
                 diff_fee_abs = fee_amount - quote_fee_amount
                 diff_fee_rel = (fee_amount - quote_fee_amount) / quote_fee_amount
@@ -207,12 +218,10 @@ class FeeMonitoring:
                     + "Relative difference: "
                     + (str(format(100 * diff_fee_rel, ".2f")) + "%")
                 )
-                if (abs(diff_fee_abs) > 1e15 or abs(diff_fee_rel) > 0.2):
+                if abs(diff_fee_abs) > 1e15 or abs(diff_fee_rel) > 0.2:
                     self.logger.warn(log_output)
                 else:
                     self.logger.info(log_output)
-
-
 
             # get batch costs
             gas_amount, gas_price = self.get_gas_costs(encoded_transaction, receipt)
@@ -246,7 +255,9 @@ class FeeMonitoring:
                 + (str(format(100 * a_rel, ".2f")) + "%")
             )
 
-            if (abs(a_abs) > 1e15 or abs(a_rel) > 0.2) and len(orders) == len(partially_fillable_indices):
+            if (abs(a_abs) > 1e15 or abs(a_rel) > 0.2) and len(orders) == len(
+                partially_fillable_indices
+            ):
                 self.logger.warn(log_output)
             else:
                 self.logger.info(log_output)
