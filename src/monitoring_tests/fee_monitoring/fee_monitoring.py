@@ -3,7 +3,7 @@ Fee Monitoring
 """
 
 import json
-from typing import Tuple, List, Dict, Any
+from typing import Tuple, List, Any
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 from web3 import Web3
@@ -78,21 +78,24 @@ class FeeMonitoring:
 
         return orders
 
-    def get_gas_costs(self, encoded_transaction: TxData, receipt: TxData) -> Tuple[int]:
+    def get_gas_costs(
+        self, encoded_transaction: TxData, receipt: TxReceipt
+    ) -> Tuple[int, int]:
         """
         Combine the transaction and receipt to return gas used and gas price.
         """
         return int(receipt["gasUsed"]), int(encoded_transaction["gasPrice"])
 
-    def get_fee(self, order: dict, tx_hash: str) -> int:
+    def get_fee(
+        self, order: dict, tx_hash: str  # pylint: disable=unused-argument
+    ) -> int:
         """
         Get the fee for the execution of an order in the transaction given hash.
         TODO: use database for this. atm only the fee of the last execution can be recovered.
-        tx_hash is ignored for now.
         """
         return int(order["executedSurplusFee"])
 
-    def get_order_execution(self, order, tx_hash) -> Tuple[int]:
+    def get_order_execution(self, order, tx_hash) -> Tuple[int, int, int]:
         """
         Given an order and a transaction hash, compute buy_amount, sell_amount, and fee_amount
         of the trade.
@@ -107,19 +110,19 @@ class FeeMonitoring:
             timeout=30,
         )
         trades = json.loads(trades_response.text)
-        for t in trades:
-            if t["txHash"] == tx_hash:
-                trade = t
+        for trade in trades:
+            if trade["txHash"] == tx_hash:
+                trade_0 = trade
                 break
             self.logger.error("Order not traded in transaction.")
 
         fee_amount = self.get_fee(order, tx_hash)
-        sell_amount = int(trade["sellAmount"]) - fee_amount
-        buy_amount = int(trade["buyAmount"])
+        sell_amount = int(trade_0["sellAmount"]) - fee_amount
+        buy_amount = int(trade_0["buyAmount"])
 
         return buy_amount, sell_amount, fee_amount
 
-    def get_quote(self, decoded_settlement, i) -> Tuple[int]:
+    def get_quote(self, decoded_settlement, i) -> Tuple[int, int, int]:
         """
         Given a trade, compute buy_amount, sell_amount, and fee_amount of the trade
         as proposed by our quoting infrastructure.
@@ -176,9 +179,11 @@ class FeeMonitoring:
 
         return quote_buy_amount, quote_sell_amount, quote_fee_amount
 
-    def get_solver_solution(
-        self, decoded_settlement: Tuple[Dict[str, Any]], i: int
-    ) -> Tuple[int]:
+    def get_solver_solution(  # pylint: disable=unused-argument
+        self,
+        decoded_settlement: DecodedSettlement,
+        i: int,
+    ) -> Tuple[int, int, int]:
         """
         Given a trade, compute buy_amount, sell_amount, and fee_amount of the trade
         as proposed by a solver resolving the instance with only that order.
@@ -217,13 +222,17 @@ class FeeMonitoring:
 
             for i in partially_fillable_indices:
                 # get additional data for the trade
-                buy_amount, sell_amount, fee_amount = self.get_order_execution(
-                    orders[i], tx_hash
-                )
-                quote_buy_amount, quote_sell_amount, quote_fee_amount = self.get_quote(
-                    decoded_settlement, i
-                )
-                (
+                (  # pylint: disable=unused-variable
+                    buy_amount,
+                    sell_amount,
+                    fee_amount,
+                ) = self.get_order_execution(orders[i], tx_hash)
+                (  # pylint: disable=unused-variable
+                    quote_buy_amount,
+                    quote_sell_amount,
+                    quote_fee_amount,
+                ) = self.get_quote(decoded_settlement, i)
+                (  # pylint: disable=unused-variable
                     solver_buy_amount,
                     solver_sell_amount,
                     solver_fee_amount,
