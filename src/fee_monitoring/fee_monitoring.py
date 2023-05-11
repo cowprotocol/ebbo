@@ -23,7 +23,7 @@ class FeeMonitoring:
     Class for fee monitoring.
     """
 
-    def __init__(self) -> None:
+    def __init__(self) -> None:  # pylint: disable=duplicate-code
         """
         TODO: Merge this with the setup of the other classes.
         """
@@ -196,7 +196,7 @@ class FeeMonitoring:
 
         return solver_buy_amount, solver_sell_amount, solver_fee_amount
 
-    def fee_test(self, tx_hash) -> bool:
+    def fee_test(self, tx_hash) -> bool:  # pylint: disable=too-many-locals
         """
         Given a transaction hash, check if there is a partially-fillable order in the settlement.
         If this is the case, perform multiple tests on the execution of those orders to check if
