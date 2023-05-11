@@ -34,6 +34,7 @@ class TestSurplusCalculation(unittest.TestCase):
             )
         )
 
+
 class TestFeeMonitoring(unittest.TestCase):
     """
     Each function of this class runs a test
