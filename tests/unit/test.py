@@ -40,10 +40,10 @@ class TestFeeMonitoring(unittest.TestCase):
         """
         Test that function works with a hash
         """
-        self.hash = "0xb1add23c49fc99f1471b61e48a1f0e6eb18f88d190144cea80dfc290ad0bcc98"
-        # self.hash = "0x26bd983c653319851224d70d5cee2ac56605f1004fbf695b34358be482647466"
+        # tx_hash = "0xb1add23c49fc99f1471b61e48a1f0e6eb18f88d190144cea80dfc290ad0bcc98"
+        tx_hash = "0x26bd983c653319851224d70d5cee2ac56605f1004fbf695b34358be482647466"
         instance = FeeMonitoring()
-        self.assertTrue(instance.fee_test(self.hash))
+        self.assertTrue(instance.fee_test(tx_hash))
 
 
 if __name__ == "__main__":
