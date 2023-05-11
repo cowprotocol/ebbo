@@ -48,5 +48,6 @@ class TestFeeMonitoring(unittest.TestCase):
         instance = FeeMonitoring()
         self.assertTrue(instance.fee_test(tx_hash))
 
+
 if __name__ == "__main__":
     unittest.main()
