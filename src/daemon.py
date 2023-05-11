@@ -77,6 +77,9 @@ class DaemonEBBO:
         return False
 
     def fee_monitoring_test(self, single_hash: str) -> bool:
+        """
+        Perform test on fees. Returns True for now.
+        """
         return self.fee_monitoring_test_instance.fee_test(single_hash)
 
 

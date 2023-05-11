@@ -2,13 +2,14 @@
 Fee Monitoring
 """
 
-from typing import Tuple
+import json
+from typing import Tuple, List, Dict, Any
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 from web3 import Web3
-import json
+from web3.types import TxData, TxReceipt
 import requests
-from src.constants import INFURA_KEY, ADDRESS, SUCCESS_CODE, FAIL_CODE, header
+from src.constants import INFURA_KEY, ADDRESS, SUCCESS_CODE, header
 from src.helper_functions import (
     get_logger,
     get_solver_competition_data,
@@ -41,15 +42,25 @@ class FeeMonitoring:
         """
         return self.web_3.eth.get_transaction(HexStr(tx_hash))
 
-    def get_decoded_settlement(self, encoded_transaction) -> DecodedSettlement:
+    def get_decoded_settlement(self, encoded_transaction: TxData) -> DecodedSettlement:
+        """
+        Decode settlement from transaction using the settlement contract.
+        """
         return DecodedSettlement.new(
             self.contract_instance, encoded_transaction["input"]
         )
 
-    def get_receipt(self, tx_hash: str):
+    def get_receipt(self, tx_hash: str) -> TxReceipt:
+        """
+        Get the receipt of a transaction from the transaction hash.
+        This is used to obtain the gas used for the transaction.
+        """
         return self.web_3.eth.wait_for_transaction_receipt(HexStr(tx_hash))
 
-    def get_orders(self, tx_hash: str):
+    def get_orders(self, tx_hash: str) -> List[Any]:
+        """
+        Get all orders in a transaction from the transaction hash.
+        """
         prod_endpoint_url = (
             "https://api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
         )
@@ -60,22 +71,32 @@ class FeeMonitoring:
         )
         if orders_response.status_code != SUCCESS_CODE:
             self.logger.error(
-                "Error loading orders from mainnet: ", orders_response.status_code
+                "Error loading orders from mainnet: %s", orders_response.status_code
             )
 
         orders = json.loads(orders_response.text)
 
         return orders
 
-    def get_gas_costs(self, encoded_transaction, receipt) -> Tuple[int]:
+    def get_gas_costs(self, encoded_transaction: TxData, receipt: TxData) -> Tuple[int]:
+        """
+        Combine the transaction and receipt to return gas used and gas price.
+        """
         return int(receipt["gasUsed"]), int(encoded_transaction["gasPrice"])
 
-    def get_fee(self, order, tx_hash) -> int:
-        return int(
-            order["executedSurplusFee"]
-        )  # just uses last executed fee and ignores tx_hash. TODO: use database for this
+    def get_fee(self, order: dict, tx_hash: str) -> int:
+        """
+        Get the fee for the execution of an order in the transaction given hash.
+        TODO: use database for this. atm only the fee of the last execution can be recovered.
+        tx_hash is ignored for now.
+        """
+        return int(order["executedSurplusFee"])
 
-    def get_order_execution(self, order, tx_hash):
+    def get_order_execution(self, order, tx_hash) -> Tuple[int]:
+        """
+        Given an order and a transaction hash, compute buy_amount, sell_amount, and fee_amount
+        of the trade.
+        """
         order_uid = order["uid"]
         prod_endpoint_url = (
             "https://api.cow.fi/mainnet/api/v1/trades?orderUid=" + order_uid
@@ -99,6 +120,10 @@ class FeeMonitoring:
         return buy_amount, sell_amount, fee_amount
 
     def get_quote(self, decoded_settlement, i) -> Tuple[int]:
+        """
+        Given a trade, compute buy_amount, sell_amount, and fee_amount of the trade
+        as proposed by our quoting infrastructure.
+        """
         trade = decoded_settlement.trades[i]
 
         if str(f"{trade['flags']:08b}")[-1] == "0":
@@ -139,9 +164,9 @@ class FeeMonitoring:
                     timeout=30,
                 )
                 if quote_response.status_code != SUCCESS_CODE:
-                    logger.error("Quote error: %s.", quote_response.status_code)
+                    self.logger.error("Quote error: %s.", quote_response.status_code)
         except ValueError as except_err:
-            logger.error("Unhandled exception: %s.", str(except_err))
+            self.logger.error("Unhandled exception: %s.", str(except_err))
 
         quote_json = json.loads(quote_response.text)
 
@@ -151,15 +176,28 @@ class FeeMonitoring:
 
         return quote_buy_amount, quote_sell_amount, quote_fee_amount
 
-    def get_solver_solution(self, decoded_settlement, i):
+    def get_solver_solution(
+        self, decoded_settlement: Tuple[Dict[str, Any]], i: int
+    ) -> Tuple[int]:
+        """
+        Given a trade, compute buy_amount, sell_amount, and fee_amount of the trade
+        as proposed by a solver resolving the instance with only that order.
+        """
         # solver_json = json.loads()
 
         solver_buy_amount = 0
         solver_sell_amount = 0
         solver_fee_amount = 0
+
         return solver_buy_amount, solver_sell_amount, solver_fee_amount
 
     def fee_test(self, tx_hash) -> bool:
+        """
+        Given a transaction hash, check if there is a partially-fillable order in the settlement.
+        If this is the case, perform multiple tests on the execution of those orders to check if
+        the fee was set correctly.
+        TODO: add more explanations
+        """
         # get trades via api
         orders = self.get_orders(tx_hash)
         # loop through trades
@@ -168,10 +206,8 @@ class FeeMonitoring:
         decoded_settlement = self.get_decoded_settlement(encoded_transaction)
 
         partially_fillable_indices = []
-        for i in range(len(orders)):
-            if orders[i][
-                "partiallyFillable"
-            ]:  # second least significant bit "1" iff order is partially fillable
+        for i, order in enumerate(orders):
+            if order["partiallyFillable"]:
                 partially_fillable_indices.append(i)
 
         if len(partially_fillable_indices) > 0:
@@ -222,7 +258,7 @@ class FeeMonitoring:
                     + (str(format(100 * diff_fee_rel, ".2f")) + "%")
                 )
                 if abs(diff_fee_abs) > 1e15 or abs(diff_fee_rel) > 0.2:
-                    self.logger.warn(log_output)
+                    self.logger.warning(log_output)
                 else:
                     self.logger.info(log_output)
 
@@ -261,7 +297,7 @@ class FeeMonitoring:
             if (abs(a_abs) > 1e15 or abs(a_rel) > 0.2) and len(orders) == len(
                 partially_fillable_indices
             ):
-                self.logger.warn(log_output)
+                self.logger.warning(log_output)
             else:
                 self.logger.info(log_output)
 
