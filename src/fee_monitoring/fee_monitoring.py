@@ -23,17 +23,17 @@ class FeeMonitoring:
     Class for fee monitoring.
     """
 
-    def __init__(self) -> None:  # pylint: disable=duplicate-code
+    def __init__(self) -> None:
         """
         TODO: Merge this with the setup of the other classes.
         """
         self.web_3 = Web3(
             Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}")
         )
+        self.logger = get_logger()
         self.contract_instance = self.web_3.eth.contract(
             address=Address(HexBytes(ADDRESS)), abi=gpv2Abi
         )
-        self.logger = get_logger()
 
     def get_encoded_transaction(self, tx_hash: str):
         """
