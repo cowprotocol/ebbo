@@ -70,10 +70,11 @@ class FeeMonitoring:
     def get_gas_costs(self, encoded_transaction, receipt) -> Tuple[int]:
         return int(receipt["gasUsed"]), int(encoded_transaction["gasPrice"])
 
-    def get_fee(self, tx_hash, order_uid) -> int:
-        return 0  # TODO: get from data base
+    def get_fee(self, order, tx_hash) -> int:
+        return int(order["executedSurplusFee"]) # just uses last executed fee and ignores tx_hash. TODO: use database for this
 
-    def get_order_execution(self, tx_hash, order_uid):
+    def get_order_execution(self, order, tx_hash):
+        order_uid = order["uid"]
         prod_endpoint_url = (
             "https://api.cow.fi/mainnet/api/v1/trades?orderUid=" + order_uid
         )
@@ -89,7 +90,7 @@ class FeeMonitoring:
                 break
             self.logger.error("Order not traded in transaction.")
 
-        fee_amount = self.get_fee(tx_hash, order_uid)
+        fee_amount = self.get_fee(order, tx_hash)
         sell_amount = int(trade["sellAmount"]) - fee_amount
         buy_amount = int(trade["buyAmount"])
 
@@ -179,7 +180,7 @@ class FeeMonitoring:
             for i in partially_fillable_indices:
                 # get additional data for the trade
                 buy_amount, sell_amount, fee_amount = self.get_order_execution(
-                    tx_hash, orders[i]["uid"]
+                    orders[i], tx_hash
                 )
                 quote_buy_amount, quote_sell_amount, quote_fee_amount = self.get_quote(
                     decoded_settlement, i
