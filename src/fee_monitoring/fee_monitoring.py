@@ -71,7 +71,9 @@ class FeeMonitoring:
         return int(receipt["gasUsed"]), int(encoded_transaction["gasPrice"])
 
     def get_fee(self, order, tx_hash) -> int:
-        return int(order["executedSurplusFee"]) # just uses last executed fee and ignores tx_hash. TODO: use database for this
+        return int(
+            order["executedSurplusFee"]
+        )  # just uses last executed fee and ignores tx_hash. TODO: use database for this
 
     def get_order_execution(self, order, tx_hash):
         order_uid = order["uid"]
