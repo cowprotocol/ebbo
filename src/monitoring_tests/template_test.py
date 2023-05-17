@@ -190,7 +190,7 @@ class TemplateTest:
         Returns competition endpoint data since we need order_id and auction_id
         """
         comp_data = None
-        compete_data = []
+        compete_data = {}
         try:
             # first fetch from production environment
             comp_data = requests.get(
