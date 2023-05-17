@@ -15,6 +15,7 @@ class EndpointTest(TemplateTest):
     """
     To be completed
     """
+
     @classmethod
     def compare_orders_surplus(cls, competition_data: Dict[str, Any]) -> None:
         """

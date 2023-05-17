@@ -27,6 +27,7 @@ class TemplateTest:
     """
     To be completed
     """
+
     load_dotenv()
 
     ###### class variables
