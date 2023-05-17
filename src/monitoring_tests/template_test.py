@@ -223,7 +223,7 @@ class TemplateTest:
         """
         data = cls.get_solver_competition_data([settlement_hash])
         if data:
-            return int(data["auctionId"])
+            return int(data[0]["auctionId"])
         return -1
 
     @classmethod
