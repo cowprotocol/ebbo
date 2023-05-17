@@ -1,3 +1,6 @@
+"""
+To be completed
+"""
 from typing import List, Tuple, Dict, Any
 from src.monitoring_tests.template_test import TemplateTest
 from src.helper_functions import (
@@ -9,6 +12,9 @@ from src.constants import ABSOLUTE_ETH_FLAG_AMOUNT, REL_DEVIATION_FLAG_PERCENT
 # this class implements the EBBO test based solely on the competition endpoint.
 # the way to run the test is by calling the cow_endpoint_test() method
 class EndpointTest(TemplateTest):
+    """
+    To be completed
+    """
     @classmethod
     def compare_orders_surplus(cls, competition_data: Dict[str, Any]) -> None:
         """

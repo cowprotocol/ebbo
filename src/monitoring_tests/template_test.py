@@ -1,3 +1,6 @@
+"""
+To be completed
+"""
 import json
 from typing import List, Dict, Any
 from fractions import Fraction
@@ -21,7 +24,9 @@ from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 # multiple tests might find useful. The intended usage is that every new test
 # is a subclass of this class.
 class TemplateTest:
-
+    """
+    To be completed
+    """
     load_dotenv()
 
     ###### class variables
