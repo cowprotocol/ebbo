@@ -212,6 +212,7 @@ class TemplateTest:
             if comp_data.status_code == SUCCESS_CODE:
                 compete_data = comp_data.json()
                 return compete_data["solutions"][-1]["orders"]
+            return []
         except ValueError as except_err:
             TemplateTest.logger.error("Unhandled exception: %s", str(except_err))
             return []
@@ -248,6 +249,7 @@ class TemplateTest:
             )
             if bucket_response.status_code == SUCCESS_CODE:
                 return dict(bucket_response.json())
+            return None
         except ValueError as except_err:
             TemplateTest.logger.error("Unhandled exception: %s", str(except_err))
             return None
