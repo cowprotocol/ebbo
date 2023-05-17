@@ -30,7 +30,7 @@ class QuasimodoEbboTest(TemplateTest):
         solver_instance = deepcopy(bucket_response)
         order: Any = {}
         for key, order_ in solver_instance["orders"].items():
-            if order["id"] == order_id:
+            if order_["id"] == order_id:
                 solver_instance["orders"] = {key: order_}
                 order = order_
                 break

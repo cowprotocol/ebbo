@@ -33,8 +33,8 @@ class TemplateTest:
 
     ###### class variables
     DUNE_KEY = os.getenv("DUNE_KEY")
-    INFURA_KEY = "ec46e54a3d5a41e4930952e54bd0cd51"  # os.getenv("INFURA_KEY")
-    ETHERSCAN_KEY = os.getenv("INFURA_KEY")
+    INFURA_KEY = os.getenv("INFURA_KEY")
+    ETHERSCAN_KEY = os.getenv("ETHERSCAN_KEY")
     infura_connection = f"https://mainnet.infura.io/v3/{INFURA_KEY}"
     web_3 = Web3(Web3.HTTPProvider(infura_connection))
     QUASIMODO_SOLVER_URL = os.getenv("QUASIMODO_SOLVER_URL")
