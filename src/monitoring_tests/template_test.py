@@ -11,6 +11,7 @@ import requests
 from web3 import Web3
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
+from helper_functions import percent_eth_conversions_order
 from src.constants import (
     ADDRESS,
     header,
@@ -32,7 +33,7 @@ class TemplateTest:
 
     ###### class variables
     DUNE_KEY = os.getenv("DUNE_KEY")
-    INFURA_KEY = os.getenv("INFURA_KEY")
+    INFURA_KEY = "ec46e54a3d5a41e4930952e54bd0cd51"  # os.getenv("INFURA_KEY")
     ETHERSCAN_KEY = os.getenv("INFURA_KEY")
     infura_connection = f"https://mainnet.infura.io/v3/{INFURA_KEY}"
     web_3 = Web3(Web3.HTTPProvider(infura_connection))
@@ -184,6 +185,74 @@ class TemplateTest:
         return surplus
 
     @classmethod
+    def get_order_data_by_hash(cls, settlement_hash: str) -> Any:
+        """
+        Returns competition endpoint data since we need order_id and auction_id
+        """
+        comp_data = None
+        compete_data = []
+        try:
+            # first fetch from production environment
+            comp_data = requests.get(
+                f"https://api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash/{settlement_hash}"
+            )
+            status_code = comp_data.status_code
+            if status_code == SUCCESS_CODE:
+                compete_data = comp_data.json()
+                return compete_data["solutions"][-1]["orders"]
+
+            # attempt fetch from staging environment, if prod failed.
+            comp_data = requests.get(
+                (
+                    "https://barn.api.cow.fi/mainnet/api/v1/solver_competition/"
+                    f"by_tx_hash/{settlement_hash}"
+                )
+            )
+            status_code = comp_data.status_code
+            if comp_data.status_code == SUCCESS_CODE:
+                compete_data = comp_data.json()
+                return compete_data["solutions"][-1]["orders"]
+        except ValueError as except_err:
+            TemplateTest.logger.error("Unhandled exception: %s", str(except_err))
+            return []
+
+    @classmethod
+    def get_auction_id_by_hash(cls, settlement_hash: str) -> int:
+        """
+        To be completed
+        """
+        data = cls.get_solver_competition_data([settlement_hash])
+        if data:
+            return int(data["auctionId"])
+        return -1
+
+    @classmethod
+    def get_instance_json_by_auction_id(cls, auction_id: int) -> Any:
+        """
+        To be completed
+        """
+        bucket_response = None
+        try:
+            # first fetch from production environment
+            bucket_response = requests.get(
+                "https://solver-instances.s3.eu-central-1.amazonaws.com/"
+                f"prod-mainnet/{auction_id}.json"
+            )
+            if bucket_response.status_code == SUCCESS_CODE:
+                return dict(bucket_response.json())
+
+            # attempt fetch from staging environment, if prod failed.
+            bucket_response = requests.get(
+                "https://solver-instances.s3.eu-central-1.amazonaws.com/"
+                f"staging-mainnet/{auction_id}.json"
+            )
+            if bucket_response.status_code == SUCCESS_CODE:
+                return dict(bucket_response.json())
+        except ValueError as except_err:
+            TemplateTest.logger.error("Unhandled exception: %s", str(except_err))
+            return None
+
+    @classmethod
     def get_eth_value(cls):
         """
         Returns live ETH price using etherscan API
@@ -192,5 +261,55 @@ class TemplateTest:
             "https://api.etherscan.io/api?module=stats&"
             f"action=ethprice&apikey={cls.ETHERSCAN_KEY}"
         )
+        ## a try-catch is missing here!!!!!
         eth_price = requests.get(eth_price_url).json()["result"]["ethusd"]
         return eth_price
+
+    @classmethod
+    def get_flagging_values(
+        cls, onchain_order_data, executed_amount, clearing_prices, external_prices
+    ):
+        """
+        This function calculates surplus for solution, compares to winning
+        solution to get surplus difference, and finally returns percent_deviations
+        and surplus difference in eth based on external prices.
+        """
+        if onchain_order_data["order_type"] == "1":  # buy order
+            # in this case, it is sell amount
+            buy_or_sell_amount = int(onchain_order_data["sell_amount"])
+            conversion_external_price = int(
+                external_prices[onchain_order_data["sell_token"]]
+            )
+        elif onchain_order_data["order_type"] == "0":  # sell order
+            # in this case, it is buy amount
+            buy_or_sell_amount = int(onchain_order_data["buy_amount"])
+            conversion_external_price = int(
+                external_prices[onchain_order_data["buy_token"]]
+            )
+
+        win_surplus = TemplateTest.get_order_surplus(
+            executed_amount,
+            buy_or_sell_amount,
+            onchain_order_data["sell_token_clearing_price"],
+            onchain_order_data["buy_token_clearing_price"],
+            onchain_order_data["order_type"],
+        )
+
+        soln_surplus = TemplateTest.get_order_surplus(
+            executed_amount,
+            buy_or_sell_amount,
+            clearing_prices[onchain_order_data["sell_token"]],
+            clearing_prices[onchain_order_data["buy_token"]],
+            onchain_order_data["order_type"],
+        )
+        # difference in surplus
+        diff_surplus = win_surplus - soln_surplus
+
+        percent_deviation, surplus_eth = percent_eth_conversions_order(
+            diff_surplus,
+            buy_or_sell_amount,
+            conversion_external_price,
+        )
+        # divide by 10**18 to convert to ETH, consistent with quasimodo test
+        surplus_eth = surplus_eth / pow(10, 18)
+        return surplus_eth, percent_deviation

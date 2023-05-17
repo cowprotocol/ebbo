@@ -5,7 +5,6 @@ from typing import List, Tuple, Dict, Any
 from src.monitoring_tests.template_test import TemplateTest
 from src.helper_functions import (
     DecodedSettlement,
-    percent_eth_conversions_order,
 )
 from src.constants import ABSOLUTE_ETH_FLAG_AMOUNT, REL_DEVIATION_FLAG_PERCENT
 
@@ -147,56 +146,7 @@ class EndpointTest(TemplateTest):
         )
         TemplateTest.logger.error(log_output)
 
-    @classmethod
-    def get_flagging_values(
-        cls, onchain_order_data, executed_amount, clearing_prices, external_prices
-    ):
-        """
-        This function calculates surplus for solution, compares to winning
-        solution to get surplus difference, and finally returns percent_deviations
-        and surplus difference in eth based on external prices.
-        """
-        if onchain_order_data["order_type"] == "1":  # buy order
-            # in this case, it is sell amount
-            buy_or_sell_amount = int(onchain_order_data["sell_amount"])
-            conversion_external_price = int(
-                external_prices[onchain_order_data["sell_token"]]
-            )
-        elif onchain_order_data["order_type"] == "0":  # sell order
-            # in this case, it is buy amount
-            buy_or_sell_amount = int(onchain_order_data["buy_amount"])
-            conversion_external_price = int(
-                external_prices[onchain_order_data["buy_token"]]
-            )
-
-        win_surplus = TemplateTest.get_order_surplus(
-            executed_amount,
-            buy_or_sell_amount,
-            onchain_order_data["sell_token_clearing_price"],
-            onchain_order_data["buy_token_clearing_price"],
-            onchain_order_data["order_type"],
-        )
-
-        soln_surplus = TemplateTest.get_order_surplus(
-            executed_amount,
-            buy_or_sell_amount,
-            clearing_prices[onchain_order_data["sell_token"]],
-            clearing_prices[onchain_order_data["buy_token"]],
-            onchain_order_data["order_type"],
-        )
-        # difference in surplus
-        diff_surplus = win_surplus - soln_surplus
-
-        percent_deviation, surplus_eth = percent_eth_conversions_order(
-            diff_surplus,
-            buy_or_sell_amount,
-            conversion_external_price,
-        )
-        # divide by 10**18 to convert to ETH, consistent with quasimodo test
-        surplus_eth = surplus_eth / pow(10, 18)
-        return surplus_eth, percent_deviation
-
-    def cow_endpoint_test(self, single_hash: str):
+    def cow_endpoint_test(self, single_hash: str) -> bool:
         """
         Wrapper function for the whole test. Checks if solver competition data is retrievable
         and runs EBBO test, else returns True to add to list of unchecked hashes
