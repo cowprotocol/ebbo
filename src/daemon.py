@@ -40,6 +40,8 @@ def main(sleep_time: int) -> None:
             endpoint_test_success = endpoind_test.cow_endpoint_test(single_hash)
             if not endpoint_test_success:
                 unchecked_hashes.append(single_hash)
+            else:
+                TemplateTest.logger.info("Processed hash: "+ single_hash)
 
         start_block = end_block + 1
 

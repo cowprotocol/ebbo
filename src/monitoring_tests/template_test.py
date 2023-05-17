@@ -1,5 +1,6 @@
 """
-To be completed
+In this file, we introduce a TemplateClass, whose purpose is to be used as the base class
+for all tests developed.
 """
 import json
 from typing import List, Dict, Any
@@ -20,12 +21,11 @@ from src.helper_functions import get_logger, DecodedSettlement
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
 
-# This is a TemplateTest class that contains a few auxiliary functions that
-# multiple tests might find useful. The intended usage is that every new test
-# is a subclass of this class.
 class TemplateTest:
     """
-    To be completed
+    This is a TemplateTest class that contains a few auxiliary functions that
+    multiple tests might find useful. The intended usage is that every new test
+    is a subclass of this class.
     """
 
     load_dotenv()

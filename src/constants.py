@@ -1,8 +1,7 @@
 """
-Constants from here
+All Constants that are used throughout the project
 """
 ADDRESS = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
-
 ABSOLUTE_ETH_FLAG_AMOUNT = 0.002
 REL_DEVIATION_FLAG_PERCENT = 0.1
 SLEEP_TIME_IN_SEC = 60
