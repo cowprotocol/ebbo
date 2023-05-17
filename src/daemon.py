@@ -38,8 +38,6 @@ def main(sleep_time: int) -> None:
         while len(all_hashes) > 0:
             single_hash = all_hashes.pop(0)
             endpoint_test_success = endpoind_test.cow_endpoint_test(single_hash)
-            print(endpoint_test_success)
-            print(single_hash)
             if not endpoint_test_success:
                 unchecked_hashes.append(single_hash)
 
