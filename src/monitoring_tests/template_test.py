@@ -17,7 +17,7 @@ from src.helper_functions import get_logger, DecodedSettlement
 from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
 
-# This is a templateTest class that contains a few auxiliary functions that
+# This is a TemplateTest class that contains a few auxiliary functions that
 # multiple tests might find useful. The intended usage is that every new test
 # is a subclass of this class.
 class TemplateTest:
@@ -26,7 +26,7 @@ class TemplateTest:
 
     ###### class variables
     DUNE_KEY = os.getenv("DUNE_KEY")
-    INFURA_KEY = "ec46e54a3d5a41e4930952e54bd0cd51"  # os.getenv("INFURA_KEY")
+    INFURA_KEY = os.getenv("INFURA_KEY")
     ETHERSCAN_KEY = os.getenv("INFURA_KEY")
     infura_connection = f"https://mainnet.infura.io/v3/{INFURA_KEY}"
     web_3 = Web3(Web3.HTTPProvider(infura_connection))
