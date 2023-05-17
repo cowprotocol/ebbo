@@ -11,7 +11,7 @@ import requests
 from web3 import Web3
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
-from helper_functions import percent_eth_conversions_order
+from src.helper_functions import percent_eth_conversions_order
 from src.constants import (
     ADDRESS,
     header,
