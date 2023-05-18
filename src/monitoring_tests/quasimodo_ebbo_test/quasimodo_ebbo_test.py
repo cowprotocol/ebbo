@@ -42,7 +42,7 @@ class QuasimodoEbboTest(TemplateTest):
         )
         # make solution request to quasimodo
         solution = requests.post(
-            solver_url, json=bucket_response_json, timeout=30
+            solver_url, data=bucket_response_json, timeout=30
         ).json()
         # return quasimodo solved solution
         return solution, order
