@@ -88,8 +88,7 @@ class QuasimodoEbboTest(TemplateTest):
             order_id = winning_orders[decoded_settlement.trades.index(trade)]["id"]
             solver_solution, order = self.get_solver_response(order_id, bucket_response)
 
-            log_msg = "Quasimodo response is :" + str(solver_solution)
-            print(log_msg)
+            print("Quasimodo response is :" + str(solver_solution))
             sell_token = order["sell_token"]
             buy_token = order["buy_token"]
             # if a valid solution is returned by solver
