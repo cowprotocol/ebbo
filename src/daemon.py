@@ -25,7 +25,7 @@ def main(sleep_time: int) -> None:
     """
     # here, we have one object per test that we will run
     endpoind_test = EndpointTest()  # the CoW Competition Endpoint Test
-    quasimodo_ebbo_test = QuasimodoEbboTest()
+    # quasimodo_ebbo_test = QuasimodoEbboTest()
     ####
 
     start_block = TemplateTest.get_current_block_number()
