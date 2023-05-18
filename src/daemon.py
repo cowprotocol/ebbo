@@ -41,10 +41,12 @@ def main(sleep_time: int) -> None:
 
         while len(all_hashes) > 0:
             single_hash = all_hashes.pop(0)
+            quasimodo_ebbo_test_success = False
             endpoint_test_success = endpoind_test.cow_endpoint_test(single_hash)
-            quasimodo_ebbo_test_success = quasimodo_ebbo_test.quasimodo_ebbo_test(
-                single_hash
-            )
+            if endpoint_test_success:
+                quasimodo_ebbo_test_success = quasimodo_ebbo_test.quasimodo_ebbo_test(
+                    single_hash
+                )
             if not endpoint_test_success or not quasimodo_ebbo_test_success:
                 unchecked_hashes.append(single_hash)
             else:
