@@ -14,9 +14,10 @@ from typing import List
 from src.constants import SLEEP_TIME_IN_SEC
 from src.monitoring_tests.template_test import TemplateTest
 from src.monitoring_tests.competition_endpoint_test.endpoint_test import EndpointTest
-from src.monitoring_tests.quasimodo_ebbo_test.quasimodo_ebbo_test import (
-    QuasimodoEbboTest,
-)
+
+# from src.monitoring_tests.quasimodo_ebbo_test.quasimodo_ebbo_test import (
+#    QuasimodoEbboTest,
+# )
 
 
 def main(sleep_time: int) -> None:
