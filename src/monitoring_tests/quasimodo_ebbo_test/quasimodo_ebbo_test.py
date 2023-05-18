@@ -45,9 +45,13 @@ class QuasimodoEbboTest(TemplateTest):
         #    + "/solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts"
         # )
         # make solution request to quasimodo
-        solution = requests.post(
+        quasimodo_response = requests.post(
             solver_url, data=bucket_response_json, timeout=30
-        ).json()
+        )
+        if quasimodo_response.ok:
+            solution = quasimodo_response.json()
+        else:
+            solution = {}
         # return quasimodo solved solution
         return solution, order
 
@@ -84,6 +88,8 @@ class QuasimodoEbboTest(TemplateTest):
             order_id = winning_orders[decoded_settlement.trades.index(trade)]["id"]
             solver_solution, order = self.get_solver_response(order_id, bucket_response)
 
+            log_msg = "Quasimodo response is :" + str(solver_solution)
+            print(log_msg)
             sell_token = order["sell_token"]
             buy_token = order["buy_token"]
             # if a valid solution is returned by solver
@@ -98,7 +104,6 @@ class QuasimodoEbboTest(TemplateTest):
                 buy_token_clearing_price,
                 order_type,
             )
-            print("Done")
             print(winning_surplus, quasimodo_surplus)
             # TemplateTest.check_flag_condition(
             #    winning_surplus - quasimodo_surplus,
