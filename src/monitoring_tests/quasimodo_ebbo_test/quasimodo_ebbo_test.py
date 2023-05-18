@@ -36,7 +36,10 @@ class QuasimodoEbboTest(TemplateTest):
                 break
         # convert back to JSON as post data
         bucket_response_json = json.dumps(solver_instance)
-        solver_url = "http://testnets-quasimodo-solver-staging.services.svc.cluster.local:80/solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts"
+        solver_url = (
+            "http://testnets-quasimodo-solver-staging.services.svc.cluster.local:80"
+            + "/solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts"
+        )
         # solver_url = (
         #    str(TemplateTest.QUASIMODO_SOLVER_URL)
         #    + "/solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts"
