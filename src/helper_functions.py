@@ -1,19 +1,10 @@
 """
-This file contains functions used by cow_endpoint_surplus and quasimodo_test_surplus.
+This file contains some auxiliary functions
 """
 from __future__ import annotations
 import logging
-from fractions import Fraction
-from typing import List, Optional, Tuple, Dict, Any
-import json
-import requests
-from web3 import Web3
-from src.constants import (
-    header,
-    ADDRESS,
-    SUCCESS_CODE,
-    FAIL_CODE,
-)
+from typing import List, Optional, Tuple, Any
+from eth_typing import HexStr
 
 
 def get_logger(filename: Optional[str] = None) -> logging.Logger:
@@ -33,42 +24,6 @@ def get_logger(filename: Optional[str] = None) -> logging.Logger:
     return logger
 
 
-def get_tx_hashes_by_block(web_3: Web3, start_block: int, end_block: int) -> List[str]:
-    """
-    Function filters hashes by contract address, and block ranges
-    """
-    filter_criteria = {
-        "fromBlock": int(start_block),
-        "toBlock": int(end_block),
-        "address": ADDRESS,
-    }
-    # transactions may have repeating hashes, since even event logs are filtered
-    # therefore, check if hash has already been added to the list
-
-    # only successful transactions are filtered
-    transactions = web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
-    settlement_hashes_list = []
-    for transaction in transactions:
-        tx_hash = (transaction["transactionHash"]).hex()
-        if tx_hash not in settlement_hashes_list:
-            settlement_hashes_list.append(tx_hash)
-    return settlement_hashes_list
-
-
-# def get_eth_value():
-#    """
-#    Returns live eth price using etherscan API
-#    """
-#    eth_price_url = (
-#        "https://api.etherscan.io/api?module=stats&"
-#        f"action=ethprice&apikey={ETHERSCAN_KEY}"
-#    )
-#    eth_price = requests.get(eth_price_url).json()["result"]["ethusd"]
-#    # min_flag_usd = 4.00
-#    # eth_absolute_check = str(format(min_flag_usd / float(eth_price), ".6f"))
-#    return eth_price
-
-
 def percent_eth_conversions_order(
     diff_surplus: int, buy_or_sell_amount: int, external_price: float
 ) -> Tuple[float, float]:
@@ -81,84 +36,9 @@ def percent_eth_conversions_order(
     return percent_deviation, diff_in_eth
 
 
-def get_solver_competition_data(
-    settlement_hashes_list: List[str],
-) -> List[Dict[str, Any]]:
-    """
-    This function uses a list of tx hashes to fetch and assemble competition data
-    for each of the tx hashes and returns it.
-    """
-
-    solver_competition_data = []
-    logger = get_logger()
-    for tx_hash in settlement_hashes_list:
-        try:
-            prod_endpoint_url = (
-                "https://api.cow.fi/mainnet/api/v1/solver_competition"
-                f"/by_tx_hash/{tx_hash}"
-            )
-            json_competition_data = requests.get(
-                prod_endpoint_url,
-                headers=header,
-                timeout=30,
-            )
-            if json_competition_data.status_code == SUCCESS_CODE:
-                solver_competition_data.append(json.loads(json_competition_data.text))
-                # print(tx_hash)
-            elif json_competition_data.status_code == FAIL_CODE:
-                barn_endpoint_url = (
-                    "https://barn.api.cow.fi/mainnet/api/v1"
-                    f"/solver_competition/by_tx_hash/{tx_hash}"
-                )
-                barn_competition_data = requests.get(
-                    barn_endpoint_url, headers=header, timeout=30
-                )
-                if barn_competition_data.status_code == SUCCESS_CODE:
-                    solver_competition_data.append(
-                        json.loads(barn_competition_data.text)
-                    )
-        except ValueError as except_err:
-            logger.error("Unhandled exception: %s.", str(except_err))
-
-    return solver_competition_data
-
-
-def get_surplus_order(
-    executed_amount: int,
-    buy_or_sell_amount: int,
-    sell_token_clearing_price: int,
-    buy_token_clearing_price: int,
-    order_type: str,
-) -> int:
-    """
-    Returns surplus using:
-    executed amount,
-    buy amount if sell order OR sell amount if buy order,
-    token clearing prices, and the type of order.
-    """
-    surplus = 0
-    if order_type == "1":  # buy order
-        exec_amt = int(
-            Fraction(executed_amount)
-            * Fraction(buy_token_clearing_price)
-            // Fraction(sell_token_clearing_price)
-        )
-        # sell amount here
-        surplus = buy_or_sell_amount - exec_amt
-    elif order_type == "0":  # sell order
-        exec_amt = int(
-            Fraction(executed_amount)
-            * Fraction(sell_token_clearing_price)
-            // Fraction(buy_token_clearing_price)
-        )
-        # buy amount here
-        surplus = exec_amt - buy_or_sell_amount
-    return surplus
-
-
 class DecodedSettlement:
     """
-    Decodes transaction fetched from blockchain using web3.py for GPV2 settlement
+    Decodes transaction fetched from blockchain using web3.py for GPv2 settlement
     """
 
     def __init__(
@@ -185,3 +65,18 @@ class DecodedSettlement:
 
         # Create and return a new instance of DecodedSettlement
         return cls(tokens, clearing_prices, trades)
+
+    @classmethod
+    def get_decoded_settlement(cls, contract_instance, web_3, tx_hash: str):
+        """
+        Takes settlement hash as input, returns decoded settlement data.
+        """
+        encoded_transaction = web_3.eth.get_transaction(HexStr(tx_hash))
+        decoded_settlement = DecodedSettlement.new(
+            contract_instance, encoded_transaction["input"]
+        )
+        return (
+            decoded_settlement.trades,
+            decoded_settlement.clearing_prices,
+            decoded_settlement.tokens,
+        )
