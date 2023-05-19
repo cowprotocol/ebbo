@@ -165,15 +165,25 @@ class TemplateTest:
         prod_endpoint_url = (
             "https://api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
         )
+        barn_endpoint_url = (
+            "https://barn.api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
+        )
         orders_response = requests.get(
             prod_endpoint_url,
             headers=header,
             timeout=30,
         )
         if orders_response.status_code != SUCCESS_CODE:
-            cls.logger.error(
-                "Error loading orders from mainnet: %s", orders_response.status_code
+            orders_response = requests.get(
+                barn_endpoint_url,
+                headers=header,
+                timeout=30,
             )
+            if orders_response.status_code != SUCCESS_CODE:
+                cls.logger.error(
+                    "Error loading orders from mainnet: %s", orders_response.status_code
+                )
+                return []
 
         orders = json.loads(orders_response.text)
 
