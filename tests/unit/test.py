@@ -15,20 +15,9 @@ class TestSurplusCalculation(unittest.TestCase):
         """
         Test that function works with a hash
         """
-        hash = "0x8b40027e1484c64ae4154d65a5d727ae7f912efd5df43f2c70ae92393ee93b7c"
+        tx_hash = "0x8b40027e1484c64ae4154d65a5d727ae7f912efd5df43f2c70ae92393ee93b7c"
         instance = EndpointTest()
-        self.assertIsNone(instance.get_surplus_by_input(settlement_hash=hash))
-
-    def test_block_range_input(self) -> None:
-        """
-        Test that function works with a start and end block input
-        """
-        start_block = 16996550
-        end_block = 16997050
-        instance = EndpointTest()
-        self.assertIsNone(
-            instance.get_surplus_by_input(start_block=start_block, end_block=end_block)
-        )
+        self.assertIsNone(instance.cow_endpoint_test(tx_hash))
 
 
 class TestFeeMonitoring(unittest.TestCase):

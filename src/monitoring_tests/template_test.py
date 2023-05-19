@@ -3,12 +3,13 @@ In this file, we introduce a TemplateClass, whose purpose is to be used as the b
 for all tests developed.
 """
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Tuple, Any
 from fractions import Fraction
 import os
 from dotenv import load_dotenv
 import requests
 from web3 import Web3
+from web3.types import TxData, TxReceipt
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 from src.helper_functions import percent_eth_conversions_order
@@ -116,11 +117,37 @@ class TemplateTest:
         return solver_competition_data
 
     @classmethod
+    def get_encoded_transaction(cls, tx_hash: str) -> TxData:
+        """
+        Takes settlement hash as input, returns encoded transaction data.
+        """
+        return cls.web_3.eth.get_transaction(HexStr(tx_hash))
+
+    @classmethod
+    def get_encoded_receipt(cls, tx_hash: str) -> TxReceipt:
+        """
+        Get the receipt of a transaction from the transaction hash.
+        This is used to obtain the gas used for the transaction.
+        """
+        return cls.web_3.eth.wait_for_transaction_receipt(HexStr(tx_hash))
+
+    @classmethod
+    def get_decoded_settlement_raw(
+        cls, encoded_transaction: TxData
+    ) -> DecodedSettlement:
+        """
+        Decode settlement from transaction using the settlement contract.
+        """
+        return DecodedSettlement.new(
+            cls.contract_instance, encoded_transaction["input"]
+        )
+
+    @classmethod
     def get_decoded_settlement(cls, tx_hash: str):
         """
         Takes settlement hash as input, returns decoded settlement data.
         """
-        encoded_transaction = cls.web_3.eth.get_transaction(HexStr(tx_hash))
+        encoded_transaction = cls.get_encoded_transaction(tx_hash)
         decoded_settlement = DecodedSettlement.new(
             cls.contract_instance, encoded_transaction["input"]
         )
@@ -129,6 +156,28 @@ class TemplateTest:
             decoded_settlement.clearing_prices,
             decoded_settlement.tokens,
         )
+
+    @classmethod
+    def get_endpoint_order_data(cls, tx_hash: str) -> List[Any]:
+        """
+        Get all orders in a transaction from the transaction hash.
+        """
+        prod_endpoint_url = (
+            "https://api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
+        )
+        orders_response = requests.get(
+            prod_endpoint_url,
+            headers=header,
+            timeout=30,
+        )
+        if orders_response.status_code != SUCCESS_CODE:
+            cls.logger.error(
+                "Error loading orders from mainnet: %s", orders_response.status_code
+            )
+
+        orders = json.loads(orders_response.text)
+
+        return orders
 
     @classmethod
     def get_onchain_order_data(cls, trade, onchain_clearing_prices, tokens):
@@ -149,6 +198,26 @@ class TemplateTest:
             "buy_amount": trade["buyAmount"],
             "fee_amount": trade["feeAmount"],
         }
+
+    @classmethod
+    def get_gas_costs(
+        cls, encoded_transaction: TxData, receipt: TxReceipt
+    ) -> Tuple[int, int]:
+        """
+        Combine the transaction and receipt to return gas used and gas price.
+        """
+        return int(receipt["gasUsed"]), int(encoded_transaction["gasPrice"])
+
+    @classmethod
+    def get_fee(
+        cls, order: dict, tx_hash: str  # pylint: disable=unused-argument
+    ) -> int:
+        """
+        Get the fee amount in the sell token for the execution of an order in the transaction given
+        hash.
+        TODO: use database for this. atm only the fee of the last execution can be recovered.
+        """
+        return int(order["executedSurplusFee"])
 
     @classmethod
     def get_order_surplus(

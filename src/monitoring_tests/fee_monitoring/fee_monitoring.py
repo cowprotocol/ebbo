@@ -3,97 +3,17 @@ Fee Monitoring
 """
 
 import json
-from typing import Tuple, List, Any
-from eth_typing import Address, HexStr
-from hexbytes import HexBytes
-from web3 import Web3
-from web3.types import TxData, TxReceipt
+from typing import Tuple
 import requests
-from src.constants import INFURA_KEY, ADDRESS, SUCCESS_CODE, header
-from src.helper_functions import (
-    get_logger,
-    get_solver_competition_data,
-    DecodedSettlement,
-)
-from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
+from src.monitoring_tests.template_test import TemplateTest
+from src.constants import SUCCESS_CODE, header
+from src.helper_functions import DecodedSettlement
 
 
 class FeeMonitoring:
     """
     Class for fee monitoring.
     """
-
-    def __init__(self) -> None:
-        """
-        TODO: Merge this with the setup of the other classes.
-        """
-        self.web_3 = Web3(
-            Web3.HTTPProvider(f"https://mainnet.infura.io/v3/{INFURA_KEY}")
-        )
-        self.logger = get_logger()
-        self.contract_instance = self.web_3.eth.contract(
-            address=Address(HexBytes(ADDRESS)), abi=gpv2Abi
-        )
-
-    def get_encoded_transaction(self, tx_hash: str):
-        """
-        TODO: Merge with code from other tests.
-        Takes settlement hash as input, returns decoded settlement data.
-        """
-        return self.web_3.eth.get_transaction(HexStr(tx_hash))
-
-    def get_decoded_settlement(self, encoded_transaction: TxData) -> DecodedSettlement:
-        """
-        Decode settlement from transaction using the settlement contract.
-        """
-        return DecodedSettlement.new(
-            self.contract_instance, encoded_transaction["input"]
-        )
-
-    def get_receipt(self, tx_hash: str) -> TxReceipt:
-        """
-        Get the receipt of a transaction from the transaction hash.
-        This is used to obtain the gas used for the transaction.
-        """
-        return self.web_3.eth.wait_for_transaction_receipt(HexStr(tx_hash))
-
-    def get_orders(self, tx_hash: str) -> List[Any]:
-        """
-        Get all orders in a transaction from the transaction hash.
-        """
-        prod_endpoint_url = (
-            "https://api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
-        )
-        orders_response = requests.get(
-            prod_endpoint_url,
-            headers=header,
-            timeout=30,
-        )
-        if orders_response.status_code != SUCCESS_CODE:
-            self.logger.error(
-                "Error loading orders from mainnet: %s", orders_response.status_code
-            )
-
-        orders = json.loads(orders_response.text)
-
-        return orders
-
-    def get_gas_costs(
-        self, encoded_transaction: TxData, receipt: TxReceipt
-    ) -> Tuple[int, int]:
-        """
-        Combine the transaction and receipt to return gas used and gas price.
-        """
-        return int(receipt["gasUsed"]), int(encoded_transaction["gasPrice"])
-
-    def get_fee(
-        self, order: dict, tx_hash: str  # pylint: disable=unused-argument
-    ) -> int:
-        """
-        Get the fee for the execution of an order in the transaction given hash.
-        TODO: use database for this. atm only the fee of the last execution can be recovered.
-        """
-        return int(order["executedSurplusFee"])
 
     def get_order_execution(self, order, tx_hash) -> Tuple[int, int, int]:
         """
@@ -114,9 +34,8 @@ class FeeMonitoring:
             if trade["txHash"] == tx_hash:
                 trade_0 = trade
                 break
-            self.logger.error("Order not traded in transaction.")
 
-        fee_amount = self.get_fee(order, tx_hash)
+        fee_amount = TemplateTest.get_fee(order, tx_hash)
         sell_amount = int(trade_0["sellAmount"]) - fee_amount
         buy_amount = int(trade_0["buyAmount"])
 
@@ -167,9 +86,11 @@ class FeeMonitoring:
                     timeout=30,
                 )
                 if quote_response.status_code != SUCCESS_CODE:
-                    self.logger.error("Quote error: %s.", quote_response.status_code)
+                    TemplateTest.logger.error(
+                        "Quote error: %s.", quote_response.status_code
+                    )
         except ValueError as except_err:
-            self.logger.error("Unhandled exception: %s.", str(except_err))
+            TemplateTest.logger.error("Unhandled exception: %s.", str(except_err))
 
         quote_json = json.loads(quote_response.text)
 
@@ -204,11 +125,13 @@ class FeeMonitoring:
         TODO: add more explanations
         """
         # get trades via api
-        orders = self.get_orders(tx_hash)
+        orders = TemplateTest.get_endpoint_order_data(tx_hash)
         # loop through trades
 
-        encoded_transaction = self.get_encoded_transaction(tx_hash)
-        decoded_settlement = self.get_decoded_settlement(encoded_transaction)
+        encoded_transaction = TemplateTest.get_encoded_transaction(tx_hash)
+        decoded_settlement = TemplateTest.get_decoded_settlement_raw(
+            encoded_transaction
+        )
 
         partially_fillable_indices = []
         for i, order in enumerate(orders):
@@ -217,8 +140,8 @@ class FeeMonitoring:
 
         if len(partially_fillable_indices) > 0:
             # get additional data for the batch
-            receipt = self.get_receipt(tx_hash)
-            competition_data = get_solver_competition_data([tx_hash])[0]
+            receipt = TemplateTest.get_encoded_receipt(tx_hash)
+            competition_data = TemplateTest.get_solver_competition_data([tx_hash])[0]
 
             for i in partially_fillable_indices:
                 # get additional data for the trade
@@ -267,12 +190,14 @@ class FeeMonitoring:
                     + (str(format(100 * diff_fee_rel, ".2f")) + "%")
                 )
                 if abs(diff_fee_abs) > 1e15 or abs(diff_fee_rel) > 0.2:
-                    self.logger.warning(log_output)
+                    TemplateTest.logger.warning(log_output)
                 else:
-                    self.logger.info(log_output)
+                    TemplateTest.logger.info(log_output)
 
             # get batch costs
-            gas_amount, gas_price = self.get_gas_costs(encoded_transaction, receipt)
+            gas_amount, gas_price = TemplateTest.get_gas_costs(
+                encoded_transaction, receipt
+            )
             cost = gas_amount * gas_price
             # get batch fees (not correct if some orders are market orders)
             fee = int(competition_data["solutions"][-1]["objective"]["fees"])
@@ -281,6 +206,7 @@ class FeeMonitoring:
             a_rel = (fee - cost) / cost
 
             log_output = (
+                "Cost coverage test:"
                 "Tx hash: "
                 + tx_hash
                 + "\t\t"
@@ -306,8 +232,8 @@ class FeeMonitoring:
             if (abs(a_abs) > 1e15 or abs(a_rel) > 0.2) and len(orders) == len(
                 partially_fillable_indices
             ):
-                self.logger.warning(log_output)
+                TemplateTest.logger.warning(log_output)
             else:
-                self.logger.info(log_output)
+                TemplateTest.logger.info(log_output)
 
         return True
