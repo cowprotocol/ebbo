@@ -58,7 +58,7 @@ Sample `.env` structure:
 
 *If you wish to run the EBBO tool over historical data, set the (start_block, end_block) or tx_hash in `test.py` and run the following from the ebbo directory:* <br>
 
-       python3 -m tests.unit.test
+       python3 -m tests.e2e.test
 
 You should be good to go now!
 
