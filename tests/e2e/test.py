@@ -17,7 +17,7 @@ class TestSurplusCalculation(unittest.TestCase):
         """
         tx_hash = "0x8b40027e1484c64ae4154d65a5d727ae7f912efd5df43f2c70ae92393ee93b7c"
         instance = EndpointTest()
-        self.assertIsNone(instance.cow_endpoint_test(tx_hash))
+        self.assertTrue(instance.cow_endpoint_test(tx_hash))
 
 
 class TestFeeMonitoring(unittest.TestCase):
