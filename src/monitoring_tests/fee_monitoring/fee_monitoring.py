@@ -3,6 +3,10 @@ Fee Monitoring
 """
 
 from src.monitoring_tests.template_test import TemplateTest
+from src.constants import (
+    FEE_ABSOLUTE_DEVIATION_ETH_FLAG,
+    FEE_RELATIVE_DEVIATION_FLAG,
+)
 
 
 class FeeMonitoring:
@@ -83,7 +87,7 @@ class FeeMonitoring:
                     + "Relative difference: "
                     + (str(format(100 * diff_fee_rel, ".2f")) + "%")
                 )
-                if abs(diff_fee_abs) > 1e15 or abs(diff_fee_rel) > 0.2:
+                if abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG:
                     TemplateTest.logger.warning(log_output)
                 else:
                     TemplateTest.logger.info(log_output)
@@ -123,9 +127,10 @@ class FeeMonitoring:
                 + (str(format(100 * a_rel, ".2f")) + "%")
             )
 
-            if (abs(a_abs) > 1e15 or abs(a_rel) > 0.2) and len(orders) == len(
-                partially_fillable_indices
-            ):
+            if (
+                abs(a_abs) > 1e18 * FEE_ABSOLUTE_DEVIATION_ETH_FLAG
+                or abs(a_rel) > FEE_RELATIVE_DEVIATION_FLAG
+            ) and len(orders) == len(partially_fillable_indices):
                 TemplateTest.logger.warning(log_output)
             else:
                 TemplateTest.logger.info(log_output)
