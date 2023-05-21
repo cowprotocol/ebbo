@@ -141,7 +141,10 @@ class FeeMonitoring:
         if len(partially_fillable_indices) > 0:
             # get additional data for the batch
             receipt = TemplateTest.get_encoded_receipt(tx_hash)
-            competition_data = TemplateTest.get_solver_competition_data([tx_hash])[0]
+            competition_data_list = TemplateTest.get_solver_competition_data([tx_hash])
+            if len(competition_data_list) == 0:
+                return False
+            competition_data = competition_data_list[0]
 
             for i in partially_fillable_indices:
                 # get additional data for the trade
