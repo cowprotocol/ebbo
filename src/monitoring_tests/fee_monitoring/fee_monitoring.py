@@ -23,23 +23,32 @@ class FeeMonitoring:
         """
         # get trades via api
         orders = TemplateTest.get_endpoint_order_data(tx_hash)
-        # loop through trades
-
-        encoded_transaction = TemplateTest.get_encoded_transaction(tx_hash)
-        decoded_settlement = TemplateTest.get_decoded_settlement_raw(
-            encoded_transaction
-        )
 
         partially_fillable_indices = []
         for i, order in enumerate(orders):
             if order["partiallyFillable"]:
                 partially_fillable_indices.append(i)
+                log_output = (
+                    "Partially fillable order found.\t"
+                    + "Tx hash:"
+                    + tx_hash
+                    + "\t\t"
+                    + "Order uid: "
+                    + order["uid"]
+                )
+                TemplateTest.logger.debug(log_output)
 
         if len(partially_fillable_indices) > 0:
             # get additional data for the batch
+            # catch connection errors here?
+            encoded_transaction = TemplateTest.get_encoded_transaction(tx_hash)
+            decoded_settlement = TemplateTest.get_decoded_settlement_raw(
+                encoded_transaction
+            )
             receipt = TemplateTest.get_encoded_receipt(tx_hash)
             competition_data_list = TemplateTest.get_solver_competition_data([tx_hash])
             if len(competition_data_list) == 0:
+                TemplateTest.logger.debug("No competition data found. Skipping hash.")
                 return False
             competition_data = competition_data_list[0]
 
@@ -90,7 +99,7 @@ class FeeMonitoring:
                 if abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG:
                     TemplateTest.logger.warning(log_output)
                 else:
-                    TemplateTest.logger.info(log_output)
+                    TemplateTest.logger.debug(log_output)
 
             # get batch costs
             gas_amount, gas_price = TemplateTest.get_gas_costs(
@@ -134,5 +143,6 @@ class FeeMonitoring:
                 TemplateTest.logger.warning(log_output)
             else:
                 TemplateTest.logger.info(log_output)
-
+        else:
+            TemplateTest.logger.debug("No partially fillable order found.")
         return True
