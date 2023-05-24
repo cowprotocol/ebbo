@@ -46,11 +46,17 @@ class FeeMonitoring:
                 encoded_transaction
             )
             receipt = TemplateTest.get_encoded_receipt(tx_hash)
+
             competition_data_list = TemplateTest.get_solver_competition_data([tx_hash])
             if len(competition_data_list) == 0:
                 TemplateTest.logger.debug("No competition data found. Skipping hash.")
                 return False
             competition_data = competition_data_list[0]
+
+            # get batch costs
+            gas_amount, gas_price = TemplateTest.get_gas_costs(
+                encoded_transaction, receipt
+            )
 
             for i in partially_fillable_indices:
                 # get additional data for the trade
@@ -62,13 +68,32 @@ class FeeMonitoring:
 
                 try:
                     (
-                        _,
-                        _,
+                        quote_buy_amount,
+                        quote_sell_amount,
                         quote_fee_amount,
                     ) = TemplateTest.get_quote(decoded_settlement, i)
                 except ConnectionError as err:
                     TemplateTest.logger.error("Error fetching quote: %s", err)
                     return False
+
+                try:
+                    gas_price_quote = TemplateTest.get_current_gas_price()
+                except ValueError as err:
+                    TemplateTest.logger.error(
+                        "Error fetching current gas price: %s", err
+                    )
+                    return False
+                (
+                    _,
+                    _,
+                    quote_fee_amount,  # updates the fee to the old gas price
+                ) = TemplateTest.adapt_execution_to_gas_price(
+                    quote_buy_amount,
+                    quote_sell_amount,
+                    quote_fee_amount,
+                    gas_price_quote,
+                    gas_price,
+                )
 
                 diff_fee_abs = fee_amount - quote_fee_amount
                 diff_fee_rel = (fee_amount - quote_fee_amount) / quote_fee_amount
@@ -101,10 +126,6 @@ class FeeMonitoring:
                 else:
                     TemplateTest.logger.debug(log_output)
 
-            # get batch costs
-            gas_amount, gas_price = TemplateTest.get_gas_costs(
-                encoded_transaction, receipt
-            )
             cost = gas_amount * gas_price
             # get batch fees (not correct if some orders are market orders)
             fee = int(competition_data["solutions"][-1]["objective"]["fees"])

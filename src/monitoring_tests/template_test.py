@@ -351,6 +351,40 @@ class TemplateTest:
         return int(order["executedSurplusFee"])
 
     @classmethod
+    def adapt_execution_to_gas_price(
+        cls,
+        buy_amount: int,
+        sell_amount: int,
+        fee_amount: int,
+        gas_price: int,
+        gas_price_adapted: int,
+    ) -> Tuple[int, int, int]:
+        """
+        Given an execution in term of buy, sell, and fee amount created at a time with gas price
+        `gas_price`, computes what the execution would have been with gas price `gas_price_adapted`.
+        """
+        buy_amount_adapted = buy_amount
+        fee_amount_adapted = int(fee_amount * gas_price_adapted / gas_price)
+        sell_amount_adapted = sell_amount + fee_amount - fee_amount_adapted
+        cls.logger.debug(
+            "original fee: %s, adapted fee: %s, original gas price: %s, "
+            "adapted gas price: %s, correction of fee: %s",
+            fee_amount,
+            fee_amount_adapted,
+            gas_price,
+            gas_price_adapted,
+            gas_price_adapted / gas_price,
+        )
+        return buy_amount_adapted, sell_amount_adapted, fee_amount_adapted
+
+    @classmethod
+    def get_current_gas_price(cls) -> int:
+        """
+        Get the current gas price.
+        """
+        return int(cls.web_3.eth.gas_price)
+
+    @classmethod
     def get_order_surplus(
         cls,
         executed_amount: int,
