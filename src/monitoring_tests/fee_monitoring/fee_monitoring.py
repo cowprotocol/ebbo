@@ -2,103 +2,13 @@
 Fee Monitoring
 """
 
-import json
-from typing import Tuple
-import requests
 from src.monitoring_tests.template_test import TemplateTest
-from src.constants import SUCCESS_CODE, header
-from src.helper_functions import DecodedSettlement
 
 
 class FeeMonitoring:
     """
     Class for fee monitoring.
     """
-
-    def get_order_execution(self, order, tx_hash) -> Tuple[int, int, int]:
-        """
-        Given an order and a transaction hash, compute buy_amount, sell_amount, and fee_amount
-        of the trade.
-        """
-        order_uid = order["uid"]
-        prod_endpoint_url = (
-            "https://api.cow.fi/mainnet/api/v1/trades?orderUid=" + order_uid
-        )
-        trades_response = requests.get(
-            prod_endpoint_url,
-            headers=header,
-            timeout=30,
-        )
-        trades = json.loads(trades_response.text)
-        for trade in trades:
-            if trade["txHash"] == tx_hash:
-                trade_0 = trade
-                break
-
-        fee_amount = TemplateTest.get_fee(order, tx_hash)
-        sell_amount = int(trade_0["sellAmount"]) - fee_amount
-        buy_amount = int(trade_0["buyAmount"])
-
-        return buy_amount, sell_amount, fee_amount
-
-    def get_quote(self, decoded_settlement, i) -> Tuple[int, int, int]:
-        """
-        Given a trade, compute buy_amount, sell_amount, and fee_amount of the trade
-        as proposed by our quoting infrastructure.
-        """
-        trade = decoded_settlement.trades[i]
-
-        if str(f"{trade['flags']:08b}")[-1] == "0":
-            kind = "sell"
-        else:
-            kind = "buy"
-
-        request_dict = {
-            "sellToken": decoded_settlement.tokens[trade["sellTokenIndex"]],
-            "buyToken": decoded_settlement.tokens[trade["buyTokenIndex"]],
-            "receiver": trade["receiver"],
-            "appData": "0x0000000000000000000000000000000000000000000000000000000000000000",
-            "partiallyFillable": False,
-            "sellTokenBalance": "erc20",
-            "buyTokenBalance": "erc20",
-            "from": trade["receiver"],
-            "priceQuality": "optimal",
-            "signingScheme": "eip712",
-            "onchainOrder": False,
-            "kind": kind,
-            "sellAmountBeforeFee": str(trade["executedAmount"]),
-        }
-
-        try:
-            prod_endpoint_url = "https://api.cow.fi/mainnet/api/v1/quote"
-            quote_response = requests.post(
-                prod_endpoint_url,
-                headers=header,
-                json=request_dict,
-                timeout=30,
-            )
-            if quote_response.status_code != SUCCESS_CODE:
-                barn_endpoint_url = "https://barn.api.cow.fi/mainnet/api/v1/quote"
-                quote_response = requests.post(
-                    barn_endpoint_url,
-                    headers=header,
-                    json=json.dumps(request_dict),
-                    timeout=30,
-                )
-                if quote_response.status_code != SUCCESS_CODE:
-                    TemplateTest.logger.error(
-                        "Quote error: %s.", quote_response.status_code
-                    )
-        except ValueError as except_err:
-            TemplateTest.logger.error("Unhandled exception: %s.", str(except_err))
-
-        quote_json = json.loads(quote_response.text)
-
-        quote_buy_amount = int(quote_json["quote"]["buyAmount"])
-        quote_sell_amount = int(quote_json["quote"]["sellAmount"])
-        quote_fee_amount = int(quote_json["quote"]["feeAmount"])
-
-        return quote_buy_amount, quote_sell_amount, quote_fee_amount
 
     def fee_test(self, tx_hash) -> bool:  # pylint: disable=too-many-locals
         """
@@ -131,16 +41,16 @@ class FeeMonitoring:
 
             for i in partially_fillable_indices:
                 # get additional data for the trade
-                (  # pylint: disable=unused-variable
-                    buy_amount,
-                    sell_amount,
+                (
+                    _,
+                    _,
                     fee_amount,
-                ) = self.get_order_execution(orders[i], tx_hash)
-                (  # pylint: disable=unused-variable
-                    quote_buy_amount,
-                    quote_sell_amount,
+                ) = TemplateTest.get_order_execution(orders[i], tx_hash)
+                (
+                    _,
+                    _,
                     quote_fee_amount,
-                ) = self.get_quote(decoded_settlement, i)
+                ) = TemplateTest.get_quote(decoded_settlement, i)
 
                 diff_fee_abs = fee_amount - quote_fee_amount
                 diff_fee_rel = (fee_amount - quote_fee_amount) / quote_fee_amount
