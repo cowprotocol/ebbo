@@ -100,23 +100,6 @@ class FeeMonitoring:
 
         return quote_buy_amount, quote_sell_amount, quote_fee_amount
 
-    def get_solver_solution(  # pylint: disable=unused-argument
-        self,
-        decoded_settlement: DecodedSettlement,
-        i: int,
-    ) -> Tuple[int, int, int]:
-        """
-        Given a trade, compute buy_amount, sell_amount, and fee_amount of the trade
-        as proposed by a solver resolving the instance with only that order.
-        """
-        # solver_json = json.loads()
-
-        solver_buy_amount = 0
-        solver_sell_amount = 0
-        solver_fee_amount = 0
-
-        return solver_buy_amount, solver_sell_amount, solver_fee_amount
-
     def fee_test(self, tx_hash) -> bool:  # pylint: disable=too-many-locals
         """
         Given a transaction hash, check if there is a partially-fillable order in the settlement.
@@ -158,13 +141,6 @@ class FeeMonitoring:
                     quote_sell_amount,
                     quote_fee_amount,
                 ) = self.get_quote(decoded_settlement, i)
-                (  # pylint: disable=unused-variable
-                    solver_buy_amount,
-                    solver_sell_amount,
-                    solver_fee_amount,
-                ) = self.get_solver_solution(
-                    decoded_settlement, i
-                )  # TODO: use those values
 
                 diff_fee_abs = fee_amount - quote_fee_amount
                 diff_fee_rel = (fee_amount - quote_fee_amount) / quote_fee_amount
