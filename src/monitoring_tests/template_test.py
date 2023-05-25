@@ -61,6 +61,9 @@ class TemplateTest:
             "fromBlock": int(start_block),
             "toBlock": int(end_block),
             "address": ADDRESS,
+            "topics": [
+                "0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17"
+            ],
         }
         # transactions may have repeating hashes, since even event logs are filtered
         # therefore, check if hash has already been added to the list
