@@ -69,7 +69,14 @@ class TemplateTest:
         # therefore, check if hash has already been added to the list
 
         # only successful transactions are filtered
-        transactions = cls.web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
+        try:
+            transactions = cls.web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
+        except requests.exceptions.ConnectionError as except_err:
+            cls.logger.error(
+                "Connection error while fetching hashes: %s.",
+                str(except_err),
+            )
+            transactions = []
         settlement_hashes_list = []
         for transaction in transactions:
             tx_hash = (transaction["transactionHash"]).hex()
@@ -114,8 +121,11 @@ class TemplateTest:
                         solver_competition_data.append(
                             json.loads(barn_competition_data.text)
                         )
-            except ValueError as except_err:
-                cls.logger.error("Unhandled exception: %s.", str(except_err))
+            except requests.exceptions.ConnectionError as except_err:
+                cls.logger.error(
+                    "Connection error while fetching competition data: %s.",
+                    str(except_err),
+                )
 
         return solver_competition_data
 
