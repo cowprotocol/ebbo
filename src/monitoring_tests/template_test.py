@@ -71,9 +71,9 @@ class TemplateTest:
         # only successful transactions are filtered
         try:
             transactions = cls.web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
-        except requests.exceptions.ConnectionError as except_err:
+        except ValueError as except_err:
             cls.logger.error(
-                "Connection error while fetching hashes: %s.",
+                "ValueError while fetching hashes: %s.",
                 str(except_err),
             )
             transactions = []
