@@ -46,11 +46,16 @@ class FeeMonitoring:
                     _,
                     fee_amount,
                 ) = TemplateTest.get_order_execution(orders[i], tx_hash)
-                (
-                    _,
-                    _,
-                    quote_fee_amount,
-                ) = TemplateTest.get_quote(decoded_settlement, i)
+
+                try:
+                    (
+                        _,
+                        _,
+                        quote_fee_amount,
+                    ) = TemplateTest.get_quote(decoded_settlement, i)
+                except ConnectionError as err:
+                    TemplateTest.logger.error("Error fetching quote: %s", err)
+                    return False
 
                 diff_fee_abs = fee_amount - quote_fee_amount
                 diff_fee_rel = (fee_amount - quote_fee_amount) / quote_fee_amount

@@ -313,11 +313,16 @@ class TemplateTest:
                     quote_response.status_code,
                     trade,
                 )
-                return 0, 0, 0
+                raise ConnectionError(
+                    f"Fee quote failed with error {quote_response.status_code}"
+                )
         except ValueError as except_err:
-            TemplateTest.logger.error("Unhandled exception: %s.", str(except_err))
+            TemplateTest.logger.error(
+                "Unhandled exception when fetching quotes: %s.", str(except_err)
+            )
 
         quote_json = json.loads(quote_response.text)
+        TemplateTest.logger.debug("Quote received: %s", quote_json)
 
         quote_buy_amount = int(quote_json["quote"]["buyAmount"])
         quote_sell_amount = int(quote_json["quote"]["sellAmount"])
