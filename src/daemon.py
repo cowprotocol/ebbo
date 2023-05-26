@@ -46,8 +46,8 @@ def main(sleep_time: int) -> None:
             single_hash = all_hashes.pop(0)
             # quasimodo_ebbo_test_success = False
             endpoint_test_success = endpoind_test.cow_endpoint_test(single_hash)
-            fee_monitoring_test_success = fee_monitoring_test.fee_test(single_hash)
-            # if endpoint_test_success:
+            if endpoint_test_success:
+                fee_monitoring_test_success = fee_monitoring_test.fee_test(single_hash)
             #    quasimodo_ebbo_test_success = quasimodo_ebbo_test.quasimodo_ebbo_test(
             #        single_hash
             #    )

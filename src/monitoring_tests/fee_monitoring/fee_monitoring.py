@@ -40,18 +40,11 @@ class FeeMonitoring:
 
         if len(partially_fillable_indices) > 0:
             # get additional data for the batch
-            # catch connection errors here?
             encoded_transaction = TemplateTest.get_encoded_transaction(tx_hash)
             decoded_settlement = TemplateTest.get_decoded_settlement_raw(
                 encoded_transaction
             )
             receipt = TemplateTest.get_encoded_receipt(tx_hash)
-
-            competition_data_list = TemplateTest.get_solver_competition_data([tx_hash])
-            if len(competition_data_list) == 0:
-                TemplateTest.logger.debug("No competition data found. Skipping hash.")
-                return False
-            competition_data = competition_data_list[0]
 
             # get batch costs
             gas_amount, gas_price = TemplateTest.get_gas_costs(
@@ -64,7 +57,7 @@ class FeeMonitoring:
                     _,
                     _,
                     fee_amount,
-                ) = TemplateTest.get_order_execution(orders[i], tx_hash)
+                ) = TemplateTest.get_order_execution(decoded_settlement, i)
 
                 try:
                     (
@@ -107,7 +100,7 @@ class FeeMonitoring:
                     + str(i)
                     + "\t\t"
                     + "Winning Solver: "
-                    + competition_data["solutions"][-1]["solver"]
+                    + encoded_transaction["from"]
                     + "\t\t"
                     + "Fee: "
                     + str(fee_amount)
@@ -128,6 +121,13 @@ class FeeMonitoring:
 
             cost = gas_amount * gas_price
             # get batch fees (not correct if some orders are market orders)
+
+            competition_data_list = TemplateTest.get_solver_competition_data([tx_hash])
+            if len(competition_data_list) == 0:
+                TemplateTest.logger.debug("No competition data found. Skipping hash.")
+                return False
+            competition_data = competition_data_list[0]
+
             fee = int(competition_data["solutions"][-1]["objective"]["fees"])
 
             a_abs = fee - cost
@@ -142,7 +142,7 @@ class FeeMonitoring:
                 + str(partially_fillable_indices)
                 + "\t\t"
                 + "Winning Solver: "
-                + competition_data["solutions"][-1]["solver"]
+                + encoded_transaction["from"]
                 + "\t\t"
                 + "Fee: "
                 + (str(format(fee * 1e-18, ".5f")) + " ETH")

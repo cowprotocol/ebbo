@@ -203,50 +203,48 @@ class TemplateTest:
         return orders
 
     @classmethod
-    def get_order_execution(cls, order, tx_hash: str) -> Tuple[int, int, int]:
+    def get_order_execution(
+        cls, decoded_settlement: DecodedSettlement, i: int
+    ) -> Tuple[int, int, int]:
         """
-        Given an order and a transaction hash, compute buy_amount, sell_amount, and fee_amount
-        of the trade.
+        Given a settlement and the index of an trade, compute buy_amount, sell_amount, and
+        fee_amount of the trade.
         """
-        order_uid = order["uid"]
-        prod_endpoint_url = (
-            "https://api.cow.fi/mainnet/api/v1/trades?orderUid=" + order_uid
-        )
-        barn_endpoint_url = (
-            "https://barn.api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
-        )
-        try:
-            trades_response = requests.get(
-                prod_endpoint_url,
-                headers=header,
-                timeout=30,
+        trade = decoded_settlement.trades[i]
+        tokens = decoded_settlement.tokens
+        clearing_prices = decoded_settlement.clearing_prices
+
+        buy_token = tokens[trade["buyTokenIndex"]]
+        buy_token_price = clearing_prices[trade["buyTokenIndex"]]
+        buy_token_index_ucp = tokens.index(buy_token)
+        buy_token_price_ucp = clearing_prices[buy_token_index_ucp]
+
+        sell_token = tokens[trade["sellTokenIndex"]]
+        sell_token_price = clearing_prices[trade["sellTokenIndex"]]
+        sell_token_index_ucp = tokens.index(sell_token)
+        sell_token_price_ucp = clearing_prices[sell_token_index_ucp]
+
+        executed_amount = trade["executedAmount"]
+        precomputed_fee_amount = trade["feeAmount"]
+
+        if str(f"{trade['flags']:08b}")[-1] == "0":  # sell order
+            buy_amount = int(
+                executed_amount * Fraction(sell_token_price, buy_token_price)
             )
-            if trades_response.status_code != SUCCESS_CODE:
-                trades_response = requests.get(
-                    barn_endpoint_url,
-                    headers=header,
-                    timeout=30,
-                )
-                if trades_response.status_code != SUCCESS_CODE:
-                    cls.logger.error(
-                        "Error %s getting execution for order %s and hash %s",
-                        trades_response.status_code,
-                        order,
-                        tx_hash,
-                    )
-                    return 0, 0, 0  # TODO: raise error
-        except ValueError as except_err:
-            TemplateTest.logger.error("Unhandled exception: %s.", str(except_err))
-
-        trades = json.loads(trades_response.text)
-        for trade in trades:
-            if trade["txHash"] == tx_hash:
-                trade_0 = trade
-                break
-
-        fee_amount = cls.get_fee(order, tx_hash)
-        sell_amount = int(trade_0["sellAmount"]) - fee_amount
-        buy_amount = int(trade_0["buyAmount"])
+            sell_amount = int(
+                buy_amount * Fraction(buy_token_price_ucp, sell_token_price_ucp)
+            )
+            fee_amount = precomputed_fee_amount + executed_amount - sell_amount
+        else:  # buy orders
+            buy_amount = executed_amount
+            sell_amount = int(
+                buy_amount * Fraction(buy_token_price_ucp, sell_token_price_ucp)
+            )
+            fee_amount = (
+                precomputed_fee_amount
+                + int(buy_amount * Fraction(buy_token_price, sell_token_price))
+                - sell_amount
+            )
 
         return buy_amount, sell_amount, fee_amount
 
