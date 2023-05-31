@@ -24,6 +24,7 @@ from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
 
 class TemplateTest:
+    # pylint: disable=too-many-public-methods
     """
     This is a TemplateTest class that contains a few auxiliary functions that
     multiple tests might find useful. The intended usage is that every new test
@@ -206,6 +207,7 @@ class TemplateTest:
     def get_order_execution(
         cls, decoded_settlement: DecodedSettlement, i: int
     ) -> Tuple[int, int, int]:
+        # pylint: disable=too-many-locals
         """
         Given a settlement and the index of an trade, compute buy_amount, sell_amount, and
         fee_amount of the trade.
