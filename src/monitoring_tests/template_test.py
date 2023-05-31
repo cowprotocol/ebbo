@@ -3,12 +3,13 @@ In this file, we introduce a TemplateClass, whose purpose is to be used as the b
 for all tests developed.
 """
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Tuple, Any
 from fractions import Fraction
 import os
 from dotenv import load_dotenv
 import requests
 from web3 import Web3
+from web3.types import TxData, TxReceipt
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 from src.helper_functions import percent_eth_conversions_order
@@ -23,6 +24,7 @@ from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
 
 
 class TemplateTest:
+    # pylint: disable=too-many-public-methods
     """
     This is a TemplateTest class that contains a few auxiliary functions that
     multiple tests might find useful. The intended usage is that every new test
@@ -60,12 +62,22 @@ class TemplateTest:
             "fromBlock": int(start_block),
             "toBlock": int(end_block),
             "address": ADDRESS,
+            "topics": [
+                "0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17"
+            ],
         }
         # transactions may have repeating hashes, since even event logs are filtered
         # therefore, check if hash has already been added to the list
 
         # only successful transactions are filtered
-        transactions = cls.web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
+        try:
+            transactions = cls.web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
+        except ValueError as except_err:
+            cls.logger.error(
+                "ValueError while fetching hashes: %s.",
+                str(except_err),
+            )
+            transactions = []
         settlement_hashes_list = []
         for transaction in transactions:
             tx_hash = (transaction["transactionHash"]).hex()
@@ -110,17 +122,46 @@ class TemplateTest:
                         solver_competition_data.append(
                             json.loads(barn_competition_data.text)
                         )
-            except ValueError as except_err:
-                cls.logger.error("Unhandled exception: %s.", str(except_err))
+            except requests.exceptions.ConnectionError as except_err:
+                cls.logger.error(
+                    "Connection error while fetching competition data: %s.",
+                    str(except_err),
+                )
 
         return solver_competition_data
+
+    @classmethod
+    def get_encoded_transaction(cls, tx_hash: str) -> TxData:
+        """
+        Takes settlement hash as input, returns encoded transaction data.
+        """
+        return cls.web_3.eth.get_transaction(HexStr(tx_hash))
+
+    @classmethod
+    def get_encoded_receipt(cls, tx_hash: str) -> TxReceipt:
+        """
+        Get the receipt of a transaction from the transaction hash.
+        This is used to obtain the gas used for the transaction.
+        """
+        return cls.web_3.eth.wait_for_transaction_receipt(HexStr(tx_hash))
+
+    @classmethod
+    def get_decoded_settlement_raw(
+        cls, encoded_transaction: TxData
+    ) -> DecodedSettlement:
+        """
+        Decode settlement from transaction using the settlement contract.
+        """
+        return DecodedSettlement.new(
+            cls.contract_instance, encoded_transaction["input"]
+        )
 
     @classmethod
     def get_decoded_settlement(cls, tx_hash: str):
         """
         Takes settlement hash as input, returns decoded settlement data.
         """
-        encoded_transaction = cls.web_3.eth.get_transaction(HexStr(tx_hash))
+        encoded_transaction = cls.get_encoded_transaction(tx_hash)
         decoded_settlement = DecodedSettlement.new(
             cls.contract_instance, encoded_transaction["input"]
         )
@@ -129,6 +170,85 @@ class TemplateTest:
             decoded_settlement.clearing_prices,
             decoded_settlement.tokens,
         )
+
+    @classmethod
+    def get_endpoint_order_data(cls, tx_hash: str) -> List[Any]:
+        """
+        Get all orders in a transaction from the transaction hash.
+        """
+        prod_endpoint_url = (
+            "https://api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
+        )
+        barn_endpoint_url = (
+            "https://barn.api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
+        )
+        orders_response = requests.get(
+            prod_endpoint_url,
+            headers=header,
+            timeout=30,
+        )
+        if orders_response.status_code != SUCCESS_CODE:
+            orders_response = requests.get(
+                barn_endpoint_url,
+                headers=header,
+                timeout=30,
+            )
+            if orders_response.status_code != SUCCESS_CODE:
+                cls.logger.error(
+                    "Error loading orders from mainnet: %s", orders_response.status_code
+                )
+                return []
+
+        orders = json.loads(orders_response.text)
+
+        return orders
+
+    @classmethod
+    def get_order_execution(
+        cls, decoded_settlement: DecodedSettlement, i: int
+    ) -> Tuple[int, int, int]:
+        # pylint: disable=too-many-locals
+        """
+        Given a settlement and the index of an trade, compute buy_amount, sell_amount, and
+        fee_amount of the trade.
+        """
+        trade = decoded_settlement.trades[i]
+        tokens = decoded_settlement.tokens
+        clearing_prices = decoded_settlement.clearing_prices
+
+        buy_token = tokens[trade["buyTokenIndex"]]
+        buy_token_price = clearing_prices[trade["buyTokenIndex"]]
+        buy_token_index_ucp = tokens.index(buy_token)
+        buy_token_price_ucp = clearing_prices[buy_token_index_ucp]
+
+        sell_token = tokens[trade["sellTokenIndex"]]
+        sell_token_price = clearing_prices[trade["sellTokenIndex"]]
+        sell_token_index_ucp = tokens.index(sell_token)
+        sell_token_price_ucp = clearing_prices[sell_token_index_ucp]
+
+        executed_amount = trade["executedAmount"]
+        precomputed_fee_amount = trade["feeAmount"]
+
+        if str(f"{trade['flags']:08b}")[-1] == "0":  # sell order
+            buy_amount = int(
+                executed_amount * Fraction(sell_token_price, buy_token_price)
+            )
+            sell_amount = int(
+                buy_amount * Fraction(buy_token_price_ucp, sell_token_price_ucp)
+            )
+            fee_amount = precomputed_fee_amount + executed_amount - sell_amount
+        else:  # buy orders
+            buy_amount = executed_amount
+            sell_amount = int(
+                buy_amount * Fraction(buy_token_price_ucp, sell_token_price_ucp)
+            )
+            fee_amount = (
+                precomputed_fee_amount
+                + int(buy_amount * Fraction(buy_token_price, sell_token_price))
+                - sell_amount
+            )
+
+        return buy_amount, sell_amount, fee_amount
 
     @classmethod
     def get_onchain_order_data(cls, trade, onchain_clearing_prices, tokens):
@@ -149,6 +269,120 @@ class TemplateTest:
             "buy_amount": trade["buyAmount"],
             "fee_amount": trade["feeAmount"],
         }
+
+    @classmethod
+    def get_quote(cls, decoded_settlement, i) -> Tuple[int, int, int]:
+        """
+        Given a trade, compute buy_amount, sell_amount, and fee_amount of the trade
+        as proposed by our quoting infrastructure.
+        """
+        trade = decoded_settlement.trades[i]
+
+        if str(f"{trade['flags']:08b}")[-1] == "0":
+            kind = "sell"
+        else:
+            kind = "buy"
+
+        request_dict = {
+            "sellToken": decoded_settlement.tokens[trade["sellTokenIndex"]],
+            "buyToken": decoded_settlement.tokens[trade["buyTokenIndex"]],
+            "receiver": trade["receiver"],
+            "appData": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "partiallyFillable": False,
+            "sellTokenBalance": "erc20",
+            "buyTokenBalance": "erc20",
+            "from": trade["receiver"],
+            "priceQuality": "optimal",
+            "signingScheme": "eip712",
+            "onchainOrder": False,
+            "kind": kind,
+            "sellAmountBeforeFee": str(trade["executedAmount"]),
+        }
+
+        try:
+            prod_endpoint_url = "https://api.cow.fi/mainnet/api/v1/quote"
+            quote_response = requests.post(
+                prod_endpoint_url,
+                headers=header,
+                json=request_dict,
+                timeout=30,
+            )
+            if quote_response.status_code != SUCCESS_CODE:
+                cls.logger.error(
+                    "Error %s getting quote for trade %s",
+                    quote_response.status_code,
+                    trade,
+                )
+                raise ConnectionError(
+                    f"Fee quote failed with error {quote_response.status_code}"
+                )
+        except ValueError as except_err:
+            TemplateTest.logger.error(
+                "Unhandled exception when fetching quotes: %s.", str(except_err)
+            )
+
+        quote_json = json.loads(quote_response.text)
+        TemplateTest.logger.debug("Quote received: %s", quote_json)
+
+        quote_buy_amount = int(quote_json["quote"]["buyAmount"])
+        quote_sell_amount = int(quote_json["quote"]["sellAmount"])
+        quote_fee_amount = int(quote_json["quote"]["feeAmount"])
+
+        return quote_buy_amount, quote_sell_amount, quote_fee_amount
+
+    @classmethod
+    def get_gas_costs(
+        cls, encoded_transaction: TxData, receipt: TxReceipt
+    ) -> Tuple[int, int]:
+        """
+        Combine the transaction and receipt to return gas used and gas price.
+        """
+        return int(receipt["gasUsed"]), int(encoded_transaction["gasPrice"])
+
+    @classmethod
+    def get_fee(
+        cls, order: dict, tx_hash: str  # pylint: disable=unused-argument
+    ) -> int:
+        """
+        Get the fee amount in the sell token for the execution of an order in the transaction given
+        hash.
+        TODO: use database for this. atm only the fee of the last execution can be recovered.
+        """
+        return int(order["executedSurplusFee"])
+
+    @classmethod
+    def adapt_execution_to_gas_price(
+        cls,
+        buy_amount: int,
+        sell_amount: int,
+        fee_amount: int,
+        gas_price: int,
+        gas_price_adapted: int,
+    ) -> Tuple[int, int, int]:
+        """
+        Given an execution in term of buy, sell, and fee amount created at a time with gas price
+        `gas_price`, computes what the execution would have been with gas price `gas_price_adapted`.
+        """
+        buy_amount_adapted = buy_amount
+        fee_amount_adapted = int(fee_amount * gas_price_adapted / gas_price)
+        sell_amount_adapted = sell_amount + fee_amount - fee_amount_adapted
+        cls.logger.debug(
+            "original fee: %s, adapted fee: %s, original gas price: %s, "
+            "adapted gas price: %s, correction of fee: %s",
+            fee_amount,
+            fee_amount_adapted,
+            gas_price,
+            gas_price_adapted,
+            gas_price_adapted / gas_price,
+        )
+        return buy_amount_adapted, sell_amount_adapted, fee_amount_adapted
+
+    @classmethod
+    def get_current_gas_price(cls) -> int:
+        """
+        Get the current gas price.
+        """
+        return int(cls.web_3.eth.gas_price)
 
     @classmethod
     def get_order_surplus(
