@@ -280,8 +280,10 @@ class TemplateTest:
 
         if str(f"{trade['flags']:08b}")[-1] == "0":
             kind = "sell"
+            limit_amount_name = "sellAmountBeforeFee"
         else:
             kind = "buy"
+            limit_amount_name = "buyAmountAfterFee"
 
         request_dict = {
             "sellToken": decoded_settlement.tokens[trade["sellTokenIndex"]],
@@ -296,7 +298,7 @@ class TemplateTest:
             "signingScheme": "eip712",
             "onchainOrder": False,
             "kind": kind,
-            "sellAmountBeforeFee": str(trade["executedAmount"]),
+            limit_amount_name: str(trade["executedAmount"]),
         }
 
         try:
