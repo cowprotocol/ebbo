@@ -2,19 +2,17 @@
 Web3API for fetching relevant data using the web3 library.
 """
 from os import getenv
-from typing import Dict, List, Tuple, Any, Optional
+from typing import Any, Optional
 from fractions import Fraction
 from dotenv import load_dotenv
 from web3 import Web3
 from web3.types import TxData, TxReceipt
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
-from contracts.gpv2_settlement import gpv2_settlement as gpv2Abi
+from contracts.gpv2_settlement import gpv2_settlement
 from src.trades import Trade, OrderData, OrderExecution
 from src.helper_functions import get_logger
-from src.constants import (
-    ADDRESS,
-)
+from src.constants import SETTLEMENT_CONTRACT_ADDRESS
 
 
 class Web3API:
@@ -28,7 +26,7 @@ class Web3API:
         self.url = f"https://mainnet.infura.io/v3/{infura_key}"
         self.web_3 = Web3(Web3.HTTPProvider(self.url))
         self.contract = self.web_3.eth.contract(
-            address=Address(HexBytes(ADDRESS)), abi=gpv2Abi
+            address=Address(HexBytes(SETTLEMENT_CONTRACT_ADDRESS)), abi=gpv2_settlement
         )
         self.logger = get_logger()
 
@@ -42,14 +40,14 @@ class Web3API:
             self.logger.error("Error while fetching block number: %s", err)
             return None
 
-    def get_tx_hashes_by_block(self, start_block: int, end_block: int) -> List[str]:
+    def get_tx_hashes_by_block(self, start_block: int, end_block: int) -> list[str]:
         """
         Function filters hashes by contract address, and block ranges
         """
         filter_criteria = {
             "fromBlock": int(start_block),
             "toBlock": int(end_block),
-            "address": ADDRESS,
+            "address": SETTLEMENT_CONTRACT_ADDRESS,
             "topics": [
                 "0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17"
             ],
@@ -68,7 +66,7 @@ class Web3API:
         # transactions may have repeating hashes, since even event logs are filtered
         # therefore, check if hash has already been added to the list
         for transaction in transactions:
-            tx_hash = (transaction["transactionHash"]).hex()
+            tx_hash = transaction["transactionHash"].hex()
             if tx_hash not in settlement_hashes_list:
                 settlement_hashes_list.append(tx_hash)
         return settlement_hashes_list
@@ -100,13 +98,13 @@ class Web3API:
             receipt = None
         return receipt
 
-    def get_settlement(self, transaction: TxData) -> Dict[str, Any]:
+    def get_settlement(self, transaction: TxData) -> dict[str, Any]:
         """
         Decode settlement from transaction using the settlement contract.
         """
         return self.contract.decode_function_input(transaction["input"])[1]
 
-    def get_trades(self, settlement: Dict[str, Any]) -> List[Trade]:
+    def get_trades(self, settlement: dict[str, Any]) -> list[Trade]:
         """
         Get all trades from a settlement.
         """
@@ -119,7 +117,7 @@ class Web3API:
         return trades
 
     def get_order_data_from_settlement(
-        self, settlement: Dict[str, Any], i: int
+        self, settlement: dict[str, Any], i: int
     ) -> OrderData:
         """
         Given a settlement and the index of an trade, return order information.
@@ -139,7 +137,7 @@ class Web3API:
         return order_data
 
     def get_order_execution_from_settlement(
-        self, settlement: Dict[str, Any], i: int
+        self, settlement: dict[str, Any], i: int
     ) -> OrderExecution:
         # pylint: disable=too-many-locals
         """
@@ -197,7 +195,7 @@ class Web3API:
 
     def get_batch_gas_costs(
         self, transaction: TxData, receipt: TxReceipt
-    ) -> Tuple[int, int]:
+    ) -> tuple[int, int]:
         """
         Combine the transaction and receipt to return gas used and gas price.
         """

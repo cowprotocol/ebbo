@@ -1,18 +1,19 @@
 """
 Definition of trades, orders, and executions.
 """
-
+from __future__ import annotations
 from fractions import Fraction
+from dataclasses import dataclass
 
 
+@dataclass
 class Trade:
     """
     Class for executed orders.
     """
 
-    def __init__(self, data, execution):
-        self.data = data
-        self.execution = execution
+    data: OrderData
+    execution: OrderExecution
 
     def adapt_execution_to_gas_price(self, gas_price, gas_price_adapted):
         """
@@ -22,46 +23,32 @@ class Trade:
         self.execution.adapt_execution_to_gas_price(gas_price, gas_price_adapted)
 
 
+@dataclass
 class OrderData:
     """
     Class for order data.
     """
 
-    def __init__(
-        self,
-        limit_buy_amount,
-        limit_sell_amount,
-        precomputed_fee_amount,
-        buy_token,
-        sell_token,
-        is_sell_order,
-        is_partially_fillable,
-    ):
-        self.limit_buy_amount = limit_buy_amount
-        self.limit_sell_amount = limit_sell_amount
-        self.precomputed_fee_amount = precomputed_fee_amount
-        self.buy_token = buy_token
-        self.sell_token = sell_token
-        self.is_sell_order = is_sell_order
-        self.is_partially_fillable = is_partially_fillable
+    limit_buy_amount: int
+    limit_sell_amount: int
+    precomputed_fee_amount: int
+    buy_token: str
+    sell_token: str
+    is_sell_order: bool
+    is_partially_fillable: bool
 
 
+@dataclass
 class OrderExecution:
     """
     Class for how an order was executed.
     """
 
-    def __init__(
-        self,
-        buy_amount,
-        sell_amount,
-        fee_amount,
-    ):
-        self.buy_amount = buy_amount
-        self.sell_amount = sell_amount
-        self.fee_amount = fee_amount
+    buy_amount: int
+    sell_amount: int
+    fee_amount: int
 
-    def adapt_execution_to_gas_price(self, gas_price, gas_price_adapted):
+    def adapt_execution_to_gas_price(self, gas_price: int, gas_price_adapted: int):
         """
         Given an order execution created at a time with gas price `gas_price`, computes what the
         execution would have been with gas price `gas_price_adapted`.

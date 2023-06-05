@@ -1,7 +1,7 @@
 """
 OrderbookAPI for fetching relevant data using the CoW Swap Orderbook API.
 """
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from json import loads
 import requests
 from src.helper_functions import get_logger
@@ -23,8 +23,8 @@ class OrderbookAPI:
 
     def get_solver_competition_data(
         self,
-        settlement_hashes_list: List[str],
-    ) -> List[Dict[str, Any]]:
+        settlement_hashes_list: list[str],
+    ) -> list[dict[str, Any]]:
         """
         This function uses a list of tx hashes to fetch and assemble competition data
         for each of the tx hashes and returns it.
@@ -63,7 +63,7 @@ class OrderbookAPI:
 
         return solver_competition_data
 
-    def get_endpoint_order_data(self, tx_hash: str) -> List[Any]:
+    def get_endpoint_order_data(self, tx_hash: str) -> list[Any]:
         """
         Get all orders in a transaction from the transaction hash.
         """
