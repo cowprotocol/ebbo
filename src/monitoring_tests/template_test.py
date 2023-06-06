@@ -272,6 +272,7 @@ class TemplateTest:
 
     @classmethod
     def get_quote(cls, decoded_settlement, i) -> Tuple[int, int, int]:
+        # pylint: disable=too-many-locals
         """
         Given a trade, compute buy_amount, sell_amount, and fee_amount of the trade
         as proposed by our quoting infrastructure.
@@ -309,18 +310,29 @@ class TemplateTest:
                 json=request_dict,
                 timeout=30,
             )
-            if quote_response.status_code != SUCCESS_CODE:
+        except ValueError as err:
+            cls.logger.error("Fee quote failed with error %s.", err)
+
+        if quote_response.status_code != SUCCESS_CODE:
+            error_type = json.loads(quote_response.content)["errorType"]
+            error_description = json.loads(quote_response.content)["description"]
+            if error_type in ("SellAmountDoesNotCoverFee", "NoLiquidity"):
                 cls.logger.error(
-                    "Error %s getting quote for trade %s",
+                    "Error %s, %s while getting quote for trade %s",
                     quote_response.status_code,
+                    error_description,
                     trade,
                 )
-                raise ConnectionError(
-                    f"Fee quote failed with error {quote_response.status_code}"
-                )
-        except ValueError as except_err:
-            TemplateTest.logger.error(
-                "Unhandled exception when fetching quotes: %s.", str(except_err)
+                raise ValueError(error_description)
+
+            cls.logger.error(
+                "Error %s, %s while getting quote for trade %s",
+                quote_response.status_code,
+                error_description,
+                trade,
+            )
+            raise ConnectionError(
+                f"Fee quote failed with error {quote_response.status_code}, {error_description}"
             )
 
         quote_json = json.loads(quote_response.text)

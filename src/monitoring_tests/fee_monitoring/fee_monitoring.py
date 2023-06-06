@@ -14,7 +14,8 @@ class FeeMonitoring:
     Class for fee monitoring.
     """
 
-    def fee_test(self, tx_hash) -> bool:  # pylint: disable=too-many-locals
+    def fee_test(self, tx_hash) -> bool:
+        # pylint: disable=too-many-locals, too-many-branches
         """
         Given a transaction hash, check if there is a partially-fillable order in the settlement.
         If this is the case, perform multiple tests on the execution of those orders to check if
@@ -66,9 +67,11 @@ class FeeMonitoring:
                         quote_fee_amount,
                     ) = TemplateTest.get_quote(decoded_settlement, i)
                 except ConnectionError as err:
-                    TemplateTest.logger.error("Error fetching quote: %s", err)
+                    TemplateTest.logger.error("ConnectionError fetching quote: %s", err)
                     return False
-
+                except ValueError as err:
+                    TemplateTest.logger.error("ValueError fetching quote: %s.", err)
+                    return True
                 try:
                     gas_price_quote = TemplateTest.get_current_gas_price()
                 except ValueError as err:
