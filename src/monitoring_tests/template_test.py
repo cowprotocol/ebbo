@@ -272,6 +272,7 @@ class TemplateTest:
 
     @classmethod
     def get_quote(cls, decoded_settlement, i) -> Tuple[int, int, int]:
+        # pylint: disable=too-many-locals
         """
         Given a trade, compute buy_amount, sell_amount, and fee_amount of the trade
         as proposed by our quoting infrastructure.

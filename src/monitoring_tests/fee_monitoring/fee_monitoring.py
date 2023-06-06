@@ -14,7 +14,8 @@ class FeeMonitoring:
     Class for fee monitoring.
     """
 
-    def fee_test(self, tx_hash) -> bool:  # pylint: disable=too-many-locals
+    def fee_test(self, tx_hash) -> bool:
+        # pylint: disable=too-many-locals, too-many-branches
         """
         Given a transaction hash, check if there is a partially-fillable order in the settlement.
         If this is the case, perform multiple tests on the execution of those orders to check if
