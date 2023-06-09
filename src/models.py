@@ -59,3 +59,16 @@ class OrderExecution:
         )
         self.sell_amount = self.sell_amount + self.fee_amount - fee_amount_adapted
         self.fee_amount = fee_amount_adapted
+
+
+def find_partially_fillable(trades: list[Trade]) -> list[int]:
+    """
+    Go through a list of trades and output a list of indices corresponding to all partially
+    fillable orders.
+    """
+    partially_fillable_indices = []
+    for i, trade in enumerate(trades):
+        if trade.data.is_partially_fillable:
+            partially_fillable_indices.append(i)
+
+    return partially_fillable_indices

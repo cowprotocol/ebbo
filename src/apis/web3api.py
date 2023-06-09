@@ -1,6 +1,8 @@
 """
 Web3API for fetching relevant data using the web3 library.
 """
+# pylint: disable=logging-fstring-interpolation
+
 from os import getenv
 from typing import Any, Optional
 from fractions import Fraction
@@ -10,7 +12,7 @@ from web3.types import TxData, TxReceipt
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 from contracts.gpv2_settlement import gpv2_settlement
-from src.trades import Trade, OrderData, OrderExecution
+from src.models import Trade, OrderData, OrderExecution
 from src.helper_functions import get_logger
 from src.constants import SETTLEMENT_CONTRACT_ADDRESS
 
@@ -37,7 +39,7 @@ class Web3API:
         try:
             return int(self.web_3.eth.block_number)
         except ValueError as err:
-            self.logger.error("Error while fetching block number: %s", err)
+            self.logger.error(f"Error while fetching block number: {err}")
             return None
 
     def get_tx_hashes_by_block(self, start_block: int, end_block: int) -> list[str]:
@@ -50,25 +52,20 @@ class Web3API:
             "address": SETTLEMENT_CONTRACT_ADDRESS,
             "topics": [
                 "0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17"
+                # "0x40338ce1a7c49204f0099533b1e9a7ee0a3d261f84974ab7af36105b8c4e9db4"
             ],
         }
 
         try:
-            transactions = self.web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
-        except ValueError as except_err:
-            self.logger.error(
-                "ValueError while fetching hashes: %s.",
-                str(except_err),
-            )
-            transactions = []
+            log_receipts = self.web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
+        except ValueError as err:
+            self.logger.error(f"ValueError while fetching hashes: {err}")
+            log_receipts = []
 
-        settlement_hashes_list = []
-        # transactions may have repeating hashes, since even event logs are filtered
-        # therefore, check if hash has already been added to the list
-        for transaction in transactions:
-            tx_hash = transaction["transactionHash"].hex()
-            if tx_hash not in settlement_hashes_list:
-                settlement_hashes_list.append(tx_hash)
+        settlement_hashes_list = list(
+            {log_receipt["transactionHash"].hex() for log_receipt in log_receipts}
+        )
+
         return settlement_hashes_list
 
     def get_transaction(self, tx_hash: str) -> Optional[TxData]:
@@ -78,10 +75,7 @@ class Web3API:
         try:
             transaction = self.web_3.eth.get_transaction(HexStr(tx_hash))
         except ValueError as err:
-            self.logger.debug(
-                "Error while fetching transaction: %s.",
-                str(err),
-            )
+            self.logger.debug(f"Error while fetching transaction: {err}")
             transaction = None
 
         return transaction
@@ -94,7 +88,7 @@ class Web3API:
         try:
             receipt = self.web_3.eth.wait_for_transaction_receipt(HexStr(tx_hash))
         except ValueError as err:
-            self.logger.error("Error fetching log receipt: %s", err)
+            self.logger.error(f"Error fetching log receipt: {err}")
             receipt = None
         return receipt
 
@@ -208,6 +202,6 @@ class Web3API:
         try:
             gas_price = int(self.web_3.eth.gas_price)
         except ValueError as err:
-            self.logger.error("Error fetching gas price: %s", err)
+            self.logger.error(f"Error fetching gas price: {err}")
             gas_price = None
         return gas_price

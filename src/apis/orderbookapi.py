@@ -1,13 +1,16 @@
 """
 OrderbookAPI for fetching relevant data using the CoW Swap Orderbook API.
 """
+# pylint: disable=logging-fstring-interpolation
+
 from typing import Any, Optional
 from json import loads
 import requests
 from src.helper_functions import get_logger
-from src.trades import Trade, OrderExecution
+from src.models import Trade, OrderExecution
 from src.constants import (
     header,
+    REQUEST_TIMEOUT,
     SUCCESS_CODE,
     FAIL_CODE,
 )
@@ -21,47 +24,57 @@ class OrderbookAPI:
     def __init__(self):
         self.logger = get_logger()
 
-    def get_solver_competition_data(
+    def get_solver_competition_data(self, tx_hash: str) -> Optional[dict[str, Any]]:
+        """
+        Get solver competition data from a transaction hash.
+        The returned dict follows the schema outlined here:
+        https://api.cow.fi/docs/#/default/get_api_v1_solver_competition_by_tx_hash__tx_hash_
+        """
+        prod_endpoint_url = (
+            "https://api.cow.fi/mainnet/api/v1/solver_competition"
+            f"/by_tx_hash/{tx_hash}"
+        )
+        barn_endpoint_url = (
+            "https://barn.api.cow.fi/mainnet/api/v1"
+            f"/solver_competition/by_tx_hash/{tx_hash}"
+        )
+        try:
+            json_competition_data = requests.get(
+                prod_endpoint_url,
+                headers=header,
+                timeout=REQUEST_TIMEOUT,
+            )
+            if json_competition_data.status_code == SUCCESS_CODE:
+                solver_competition_data = loads(json_competition_data.text)
+            elif json_competition_data.status_code == FAIL_CODE:
+                barn_competition_data = requests.get(
+                    barn_endpoint_url, headers=header, timeout=REQUEST_TIMEOUT
+                )
+                if barn_competition_data.status_code == SUCCESS_CODE:
+                    solver_competition_data = loads(barn_competition_data.text)
+            else:
+                return None
+        except requests.exceptions.ConnectionError as err:
+            self.logger.error(
+                f"Connection error while fetching competition data: {err}"
+            )
+            return None
+        return solver_competition_data
+
+    def get_solver_competition_data_list(
         self,
-        settlement_hashes_list: list[str],
+        tx_hash_list: list[str],
     ) -> list[dict[str, Any]]:
         """
         This function uses a list of tx hashes to fetch and assemble competition data
         for each of the tx hashes and returns it.
         """
-        solver_competition_data = []
-        for tx_hash in settlement_hashes_list:
-            try:
-                prod_endpoint_url = (
-                    "https://api.cow.fi/mainnet/api/v1/solver_competition"
-                    f"/by_tx_hash/{tx_hash}"
-                )
-                json_competition_data = requests.get(
-                    prod_endpoint_url,
-                    headers=header,
-                    timeout=30,
-                )
-                if json_competition_data.status_code == SUCCESS_CODE:
-                    solver_competition_data.append(loads(json_competition_data.text))
-                elif json_competition_data.status_code == FAIL_CODE:
-                    barn_endpoint_url = (
-                        "https://barn.api.cow.fi/mainnet/api/v1"
-                        f"/solver_competition/by_tx_hash/{tx_hash}"
-                    )
-                    barn_competition_data = requests.get(
-                        barn_endpoint_url, headers=header, timeout=30
-                    )
-                    if barn_competition_data.status_code == SUCCESS_CODE:
-                        solver_competition_data.append(
-                            loads(barn_competition_data.text)
-                        )
-            except requests.exceptions.ConnectionError as except_err:
-                self.logger.error(
-                    "Connection error while fetching competition data: %s.",
-                    str(except_err),
-                )
-
-        return solver_competition_data
+        solver_competition_data_list = []
+        for tx_hash in tx_hash_list:
+            solver_competition_data = self.get_solver_competition_data(tx_hash)
+            if not solver_competition_data is None:
+                solver_competition_data_list.append(solver_competition_data)
+        return solver_competition_data_list
 
     def get_endpoint_order_data(self, tx_hash: str) -> list[Any]:
         """
@@ -76,17 +89,17 @@ class OrderbookAPI:
         orders_response = requests.get(
             prod_endpoint_url,
             headers=header,
-            timeout=30,
+            timeout=REQUEST_TIMEOUT,
         )
         if orders_response.status_code != SUCCESS_CODE:
             orders_response = requests.get(
                 barn_endpoint_url,
                 headers=header,
-                timeout=30,
+                timeout=REQUEST_TIMEOUT,
             )
             if orders_response.status_code != SUCCESS_CODE:
                 self.logger.error(
-                    "Error loading orders from mainnet: %s", orders_response.status_code
+                    f"Error loading orders from mainnet: {orders_response.status_code}"
                 )
                 return []
 
@@ -127,23 +140,22 @@ class OrderbookAPI:
         prod_endpoint_url = "https://api.cow.fi/mainnet/api/v1/quote"
 
         try:
+            prod_endpoint_url = "https://api.cow.fi/mainnet/api/v1/quote"
             quote_response = requests.post(
                 prod_endpoint_url,
                 headers=header,
                 json=request_dict,
-                timeout=30,
+                timeout=REQUEST_TIMEOUT,
             )
-            if quote_response.status_code != SUCCESS_CODE:
-                self.logger.error(
-                    "Error %s getting quote for trade %s: %s",
-                    quote_response.status_code,
-                    trade,
-                    quote_response.content,
-                )
-                return None
-        except ValueError as except_err:
+        except ValueError as err:
+            self.logger.error(f"Fee quote failed with error {err}")
+            return None
+
+        if quote_response.status_code != SUCCESS_CODE:
+            error_response_json = loads(quote_response.content)
             self.logger.error(
-                "Unhandled exception when fetching quotes: %s.", str(except_err)
+                f"Error {error_response_json['errorType']},"
+                + f"{error_response_json['description']} while getting quote for trade {trade}"
             )
             return None
 

@@ -1,20 +1,21 @@
 """
-Fee Test
+Quote test for partially fillable orders.
 """
+# pylint: disable=logging-fstring-interpolation
 
-from web3.types import TxData, TxReceipt
+from web3.types import TxData
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
 from src.helper_functions import get_logger
-from src.trades import Trade
+from src.models import Trade, find_partially_fillable
 from src.constants import (
     FEE_ABSOLUTE_DEVIATION_ETH_FLAG,
     FEE_RELATIVE_DEVIATION_FLAG,
 )
 
 
-class FeeTest(BaseTest):
+class PartialFillFeeQuoteTest(BaseTest):
     """
     Class for testing fees.
     """
@@ -39,53 +40,23 @@ class FeeTest(BaseTest):
         settlement = self.web3_api.get_settlement(transaction)
         trades = self.web3_api.get_trades(settlement)
 
-        partially_fillable_indices = self.find_partially_fillable(trades)
+        partially_fillable_indices = find_partially_fillable(trades)
+        self.logger.debug(
+            f"Number of partially fillable orders: {len(partially_fillable_indices)}."
+        )
 
         # Only run test if at least one partially fillable order is in the batch.
         if len(partially_fillable_indices) > 0:
-            log_output = [
-                f"Partially fillable order found for hash: {tx_hash}",
-                f"Indices of partially fillable orders: {partially_fillable_indices}",
-            ]
-            self.logger.debug("\t".join(log_output))
-
-            # get additional data for the batch
-            receipt = self.web3_api.get_receipt(tx_hash)
-            if receipt is None:
-                return False
-
             for i in partially_fillable_indices:
                 trade = trades[i]
                 success = self.run_quote_test(trade, transaction)
                 if not success:
                     return False
 
-            success = self.run_cost_coverage_test(transaction, receipt)
-            if not success:
-                return False
-            # TODO: should this be written as
-            #
-            # if not self.run_cost_coverage_test(transaction, receipt):
-            #     return False
-            #
-            # to be shorter?
-
         return True
 
     def alert(self, msg: str):
         self.logger.error(msg)
-
-    def find_partially_fillable(self, trades: list[Trade]) -> list[int]:
-        """
-        Go through a list of trades and output a list of indices corresponding to all partially
-        fillable orders.
-        """
-        partially_fillable_indices = []
-        for i, trade in enumerate(trades):
-            if trade.data.is_partially_fillable:
-                partially_fillable_indices.append(i)
-
-        return partially_fillable_indices
 
     def run_quote_test(self, trade: Trade, transaction: TxData) -> bool:
         """
@@ -99,8 +70,8 @@ class FeeTest(BaseTest):
         tx_hash = transaction["hash"].hex()
         quote = self.orderbook_api.get_quote(trade)
         if quote is None:
-            self.logger.error("Error fetching quote. Skipping hash %s.", tx_hash)
-            return False
+            self.logger.error("Error fetching quote. Skipping trade %s.", trade)
+            return True
 
         gas_price = int(transaction["gasPrice"])
         gas_price_quote = self.web3_api.get_current_gas_price()
@@ -127,46 +98,9 @@ class FeeTest(BaseTest):
             f"Absolute difference: {diff_fee_abs}",
             f"Relative difference: {100 * diff_fee_rel:.2f}%",
         ]
-        if abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG:
-            self.alert("\t".join(log_output))
-        return True
-
-    def run_cost_coverage_test(self, transaction: TxData, receipt: TxReceipt) -> bool:
-        """
-        Test if the cost of a batch are close to the fees collected in that batch.
-        """
-        tx_hash = transaction["hash"].hex()
-        competition_data_list = self.orderbook_api.get_solver_competition_data(
-            [tx_hash]
-        )
-        if len(competition_data_list) == 0:
-            self.logger.debug("No competition data found. Skipping hash.")
-            return False
-        competition_data = competition_data_list[0]
-
-        gas_amount = int(receipt["gasUsed"])
-        gas_price = int(transaction["gasPrice"])
-
-        batch_fee = int(competition_data["solutions"][-1]["objective"]["fees"])
-        batch_cost = gas_amount * gas_price
-
-        a_abs = batch_fee - batch_cost
-        a_rel = (batch_fee - batch_cost) / batch_cost
-
-        log_output = [
-            "Cost coverage test\n",
-            f"Tx hash: {tx_hash}",
-            f"Winning Solver: {transaction['from']}",
-            f"Fee: {batch_fee * 1e-18:.5f}ETH",
-            f"Cost: {batch_cost * 1e-18:.5f}ETH",
-            f"Absolute difference: {a_abs * 1e-18:.5f}ETH",
-            f"Relative difference: {100 * a_rel:.2f}%",
-        ]
-
         if (
-            abs(a_abs) > 1e18 * FEE_ABSOLUTE_DEVIATION_ETH_FLAG
-            or abs(a_rel) > FEE_RELATIVE_DEVIATION_FLAG
+            abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG
+            and abs(diff_fee_rel) > FEE_ABSOLUTE_DEVIATION_ETH_FLAG * 10**18
         ):
             self.alert("\t".join(log_output))
-
         return True

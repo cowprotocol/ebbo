@@ -1,5 +1,5 @@
 """
-In this file, we introduce a TemplateClass, whose purpose is to be used as the base class
+In this file, we introduce the BaseTest class, whose purpose is to be used as the basis
 for all tests developed.
 """
 from abc import ABC, abstractmethod
@@ -12,14 +12,34 @@ class BaseTest(ABC):
     is a subclass of this class.
     """
 
+    def __init__(self) -> None:
+        self.tx_hashes: list[str] = []
+
     @abstractmethod
-    def run(self, tx_hash):
+    def run(self, tx_hash: str) -> bool:
         """
         This function runs the test. It must be implemented by all subclasses.
         """
 
+    def run_queue(self) -> None:
+        """
+        Run the test for all hashes in the list tx_hashes.
+        """
+        tx_hashes_fails: list[str] = []
+        for tx_hash in self.tx_hashes:
+            success = self.run(tx_hash)
+            if not success:
+                self.tx_hashes.append(tx_hash)
+        self.tx_hashes = tx_hashes_fails
+
+    def add_hashes_to_queue(self, tx_hashes: list[str]) -> None:
+        """
+        Add a list of hashes to tx_hashes.
+        """
+        self.tx_hashes += tx_hashes
+
     @abstractmethod
-    def alert(self, msg: str):
+    def alert(self, msg: str) -> None:
         """
         This function is called to create an alert for a failed test.
         It must be implemented by all subclasses.
