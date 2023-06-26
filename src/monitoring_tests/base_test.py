@@ -19,6 +19,8 @@ class BaseTest(ABC):
     def run(self, tx_hash: str) -> bool:
         """
         This function runs the test. It must be implemented by all subclasses.
+        The function returns `False` if the test should be run again for this hash and `True`
+        otherwise.
         """
 
     def run_queue(self) -> None:
@@ -29,7 +31,7 @@ class BaseTest(ABC):
         for tx_hash in self.tx_hashes:
             success = self.run(tx_hash)
             if not success:
-                self.tx_hashes.append(tx_hash)
+                tx_hashes_fails.append(tx_hash)
         self.tx_hashes = tx_hashes_fails
 
     def add_hashes_to_queue(self, tx_hashes: list[str]) -> None:

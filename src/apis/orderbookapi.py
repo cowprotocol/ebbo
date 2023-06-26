@@ -4,7 +4,7 @@ OrderbookAPI for fetching relevant data using the CoW Swap Orderbook API.
 # pylint: disable=logging-fstring-interpolation
 
 from typing import Any, Optional
-from json import loads
+import json
 import requests
 from src.helper_functions import get_logger
 from src.models import Trade, OrderExecution
@@ -14,6 +14,9 @@ from src.constants import (
     SUCCESS_CODE,
     FAIL_CODE,
 )
+
+PROD_BASE_URL = "https://api.cow.fi/mainnet/api/v1/"
+BARN_BASE_URL = "https://api.cow.fi/mainnet/api/v1/"
 
 
 class OrderbookAPI:
@@ -30,14 +33,8 @@ class OrderbookAPI:
         The returned dict follows the schema outlined here:
         https://api.cow.fi/docs/#/default/get_api_v1_solver_competition_by_tx_hash__tx_hash_
         """
-        prod_endpoint_url = (
-            "https://api.cow.fi/mainnet/api/v1/solver_competition"
-            f"/by_tx_hash/{tx_hash}"
-        )
-        barn_endpoint_url = (
-            "https://barn.api.cow.fi/mainnet/api/v1"
-            f"/solver_competition/by_tx_hash/{tx_hash}"
-        )
+        prod_endpoint_url = f"{PROD_BASE_URL}solver_competition/by_tx_hash/{tx_hash}"
+        barn_endpoint_url = f"{BARN_BASE_URL}solver_competition/by_tx_hash/{tx_hash}"
         try:
             json_competition_data = requests.get(
                 prod_endpoint_url,
@@ -45,15 +42,13 @@ class OrderbookAPI:
                 timeout=REQUEST_TIMEOUT,
             )
             if json_competition_data.status_code == SUCCESS_CODE:
-                solver_competition_data = loads(json_competition_data.text)
+                solver_competition_data = json.loads(json_competition_data.text)
             elif json_competition_data.status_code == FAIL_CODE:
                 barn_competition_data = requests.get(
                     barn_endpoint_url, headers=header, timeout=REQUEST_TIMEOUT
                 )
                 if barn_competition_data.status_code == SUCCESS_CODE:
-                    solver_competition_data = loads(barn_competition_data.text)
-            else:
-                return None
+                    solver_competition_data = json.loads(barn_competition_data.text)
         except requests.exceptions.ConnectionError as err:
             self.logger.error(
                 f"Connection error while fetching competition data: {err}"
@@ -80,12 +75,8 @@ class OrderbookAPI:
         """
         Get all orders in a transaction from the transaction hash.
         """
-        prod_endpoint_url = (
-            "https://api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
-        )
-        barn_endpoint_url = (
-            "https://barn.api.cow.fi/mainnet/api/v1/transactions/" + tx_hash + "/orders"
-        )
+        prod_endpoint_url = f"{PROD_BASE_URL}transactions/{tx_hash}/orders"
+        barn_endpoint_url = f"{BARN_BASE_URL}transactions/{tx_hash}/orders"
         orders_response = requests.get(
             prod_endpoint_url,
             headers=header,
@@ -103,7 +94,7 @@ class OrderbookAPI:
                 )
                 return []
 
-        orders = loads(orders_response.text)
+        orders = json.loads(orders_response.text)
 
         return orders
 
@@ -137,10 +128,9 @@ class OrderbookAPI:
             "kind": kind,
             limit_amount_name: str(executed_amount),
         }
-        prod_endpoint_url = "https://api.cow.fi/mainnet/api/v1/quote"
+        prod_endpoint_url = f"{PROD_BASE_URL}quote"
 
         try:
-            prod_endpoint_url = "https://api.cow.fi/mainnet/api/v1/quote"
             quote_response = requests.post(
                 prod_endpoint_url,
                 headers=header,
@@ -152,14 +142,14 @@ class OrderbookAPI:
             return None
 
         if quote_response.status_code != SUCCESS_CODE:
-            error_response_json = loads(quote_response.content)
+            error_response_json = json.loads(quote_response.content)
             self.logger.error(
                 f"Error {error_response_json['errorType']},"
                 + f"{error_response_json['description']} while getting quote for trade {trade}"
             )
             return None
 
-        quote_json = loads(quote_response.text)
+        quote_json = json.loads(quote_response.text)
         self.logger.debug("Quote received: %s", quote_json)
 
         quote_buy_amount = int(quote_json["quote"]["buyAmount"])
