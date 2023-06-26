@@ -22,6 +22,44 @@ class Trade:
         """
         self.execution.adapt_execution_to_gas_price(gas_price, gas_price_adapted)
 
+    def get_surplus(self) -> int:
+        """Compute surplus in the surplus token (i.e. buy token for sell orders and sell token for
+        buy orders).
+        """
+        if self.data.is_sell_order:
+            surplus = int(
+                self.execution.buy_amount
+                - Fraction(
+                    self.data.limit_buy_amount,
+                    self.data.limit_sell_amount + self.data.precomputed_fee_amount,
+                )
+                * (self.execution.sell_amount + self.execution.fee_amount)
+            )
+        else:
+            surplus = int(
+                Fraction(
+                    self.data.limit_sell_amount + self.data.precomputed_fee_amount,
+                    self.data.limit_buy_amount,
+                )
+                * (self.execution.buy_amount)
+                - (self.execution.sell_amount + self.execution.fee_amount)
+            )
+        return surplus
+
+    def get_price(self) -> Fraction:
+        """Compute price as sell amount + fee amount divided by buy amount."""
+
+        return Fraction(
+            self.execution.sell_amount + self.execution.fee_amount,
+            self.execution.buy_amount,
+        )
+
+    def get_surplus_token(self) -> str:
+        """Get the token which is used to compute surplus.
+        Buy token for sell orders and sell token for buy orders.
+        """
+        return self.data.get_surplus_token()
+
 
 @dataclass
 class OrderData:
@@ -37,12 +75,20 @@ class OrderData:
     is_sell_order: bool
     is_partially_fillable: bool
 
+    def get_surplus_token(self) -> str:
+        """Get the token which is used to compute surplus.
+        Buy token for sell orders and sell token for buy orders.
+        """
+        if self.is_sell_order:
+            token = self.buy_token
+        else:
+            token = self.sell_token
+        return token
+
 
 @dataclass
 class OrderExecution:
-    """
-    Class for how an order was executed.
-    """
+    """Class for how an order was executed."""
 
     buy_amount: int
     sell_amount: int

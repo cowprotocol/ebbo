@@ -96,7 +96,13 @@ class Web3API:
         """
         Decode settlement from transaction using the settlement contract.
         """
-        return self.contract.decode_function_input(transaction["input"])[1]
+        return self.get_settlement_from_calldata(transaction["input"])
+
+    def get_settlement_from_calldata(self, calldata: str) -> dict[str, Any]:
+        """
+        Decode settlement from transaction using the settlement contract.
+        """
+        return self.contract.decode_function_input(calldata)[1]
 
     def get_trades(self, settlement: dict[str, Any]) -> list[Trade]:
         """
