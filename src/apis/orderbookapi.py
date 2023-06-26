@@ -16,7 +16,7 @@ from src.constants import (
 )
 
 PROD_BASE_URL = "https://api.cow.fi/mainnet/api/v1/"
-BARN_BASE_URL = "https://api.cow.fi/mainnet/api/v1/"
+BARN_BASE_URL = "https://barn.api.cow.fi/mainnet/api/v1/"
 
 
 class OrderbookAPI:

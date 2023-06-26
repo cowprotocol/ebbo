@@ -17,7 +17,7 @@ class Trade:
 
     def adapt_execution_to_gas_price(self, gas_price, gas_price_adapted):
         """
-        Given an executed order which was executed ata time with gas price `gas_price`, adapt the
+        Given an executed order which was executed at a time with gas price `gas_price`, adapt the
         execution to what it would have been with gas price `gas_price_adapted`.
         """
         self.execution.adapt_execution_to_gas_price(gas_price, gas_price_adapted)
