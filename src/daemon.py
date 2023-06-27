@@ -1,67 +1,60 @@
-"""
-At runtime, "main" function records the most recent block and initializes it as the start block.
-After the daemon is asleep for SLEEP_TIME_IN_SEC seconds, it gets the newest block as the end block.
-Since the competition endpoint has a lag of SLEEP_TIME_IN_SEC seconds (worst case), we wait
-SLEEP_TIME_IN_SEC seconds before we fetch comp. data and start running our tests.
+""" A daemon to run tests on settlements.
+An infinite loop is started which listens to CoW Protocol trade events. If such an event happens,
+the correstonding transaction hash is added to the queue of the individual tests.
 
-If all tests fail, then the candidate tx hash is added to the list of unchecked hashes
-to be checked in the next cycle. Once all hashes in the current cycle have been iterated through,
-the previous end block + 1 becomes the start block for the next cycle, and the latest block is
-the new end block. Daemon sleeps for SLEEP_TIME_IN_SEC seconds and continues checking.
+If a settlement failes a test, an error level message is logged.
 """
+# pylint: disable=logging-fstring-interpolation
+
 import time
-from typing import List
+from src.apis.web3api import Web3API
+from src.monitoring_tests.solver_competition_surplus_test import (
+    SolverCompetitionSurplusTest,
+)
+from src.monitoring_tests.partially_fillable_fee_quote_test import (
+    PartialFillFeeQuoteTest,
+)
+from src.monitoring_tests.partially_fillable_cost_coverage_test import (
+    PartialFillCostCoverageTest,
+)
 from src.constants import SLEEP_TIME_IN_SEC
-from src.monitoring_tests.template_test import TemplateTest
-from src.monitoring_tests.competition_endpoint_test.endpoint_test import EndpointTest
-from src.monitoring_tests.fee_monitoring.fee_monitoring import FeeMonitoring
-
-# from src.monitoring_tests.quasimodo_ebbo_test.quasimodo_ebbo_test import (
-#    QuasimodoEbboTest,
-# )
 
 
-def main(sleep_time: int) -> None:
+def main() -> None:
     """
     daemon function that runs as highlighted in docstring.
     """
-    # here, we have one object per test that we will run
-    endpoind_test = EndpointTest()  # the CoW Competition Endpoint Test
-    # quasimodo_ebbo_test = QuasimodoEbboTest()
-    fee_monitoring_test = FeeMonitoring()
-    ####
+    web3_api = Web3API()
 
-    start_block = TemplateTest.get_current_block_number()
-    unchecked_hashes: List[str] = []
+    # initialize tests
+    tests = [
+        SolverCompetitionSurplusTest(),
+        PartialFillFeeQuoteTest(),
+        PartialFillCostCoverageTest(),
+    ]
 
-    # main (infinite) loop
+    start_block = web3_api.get_current_block_number()
+    if start_block is None:
+        return
+
+    web3_api.logger.debug("Start infinite loop")
     while True:
-        time.sleep(sleep_time)
-        end_block = TemplateTest.get_current_block_number()
-        fetched_hashes = TemplateTest.get_tx_hashes_by_block(start_block, end_block)
-        all_hashes = fetched_hashes + unchecked_hashes
-        unchecked_hashes = []
+        time.sleep(SLEEP_TIME_IN_SEC)
+        end_block = web3_api.get_current_block_number()
+        if end_block is None:
+            continue
+        tx_hashes = web3_api.get_tx_hashes_by_block(start_block, end_block)
 
-        while len(all_hashes) > 0:
-            single_hash = all_hashes.pop(0)
-            # quasimodo_ebbo_test_success = False
-            endpoint_test_success = endpoind_test.cow_endpoint_test(single_hash)
-            if endpoint_test_success:
-                fee_monitoring_test_success = fee_monitoring_test.fee_test(single_hash)
-            #    quasimodo_ebbo_test_success = quasimodo_ebbo_test.quasimodo_ebbo_test(
-            #        single_hash
-            #    )
-            if (
-                not endpoint_test_success or not fee_monitoring_test_success
-            ):  # or not quasimodo_ebbo_test_success:
-                unchecked_hashes.append(single_hash)
-            # else:
-            # logging_msg = "Processed hash: " + single_hash
-            # TemplateTest.logger.info(logging_msg)
+        web3_api.logger.debug(f"{len(tx_hashes)} hashes found: {tx_hashes}")
+        for test in tests:
+            test.add_hashes_to_queue(tx_hashes)
+            web3_api.logger.debug(f"Running test ({test}) for hashes {test.tx_hashes}.")
+            test.run_queue()
+            web3_api.logger.debug("Test completed.")
 
         start_block = end_block + 1
 
 
 if __name__ == "__main__":
     # sleep time can be set here in seconds
-    main(SLEEP_TIME_IN_SEC)
+    main()
