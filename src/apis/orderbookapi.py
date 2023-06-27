@@ -49,6 +49,8 @@ class OrderbookAPI:
                 )
                 if barn_competition_data.status_code == SUCCESS_CODE:
                     solver_competition_data = json.loads(barn_competition_data.text)
+                else:
+                    return None
         except requests.exceptions.ConnectionError as err:
             self.logger.error(
                 f"Connection error while fetching competition data: {err}"
