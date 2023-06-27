@@ -58,48 +58,6 @@ class OrderbookAPI:
             return None
         return solver_competition_data
 
-    def get_solver_competition_data_list(
-        self,
-        tx_hash_list: list[str],
-    ) -> list[dict[str, Any]]:
-        """
-        This function uses a list of tx hashes to fetch and assemble competition data
-        for each of the tx hashes and returns it.
-        """
-        solver_competition_data_list = []
-        for tx_hash in tx_hash_list:
-            solver_competition_data = self.get_solver_competition_data(tx_hash)
-            if not solver_competition_data is None:
-                solver_competition_data_list.append(solver_competition_data)
-        return solver_competition_data_list
-
-    def get_endpoint_order_data(self, tx_hash: str) -> list[Any]:
-        """
-        Get all orders in a transaction from the transaction hash.
-        """
-        prod_endpoint_url = f"{PROD_BASE_URL}transactions/{tx_hash}/orders"
-        barn_endpoint_url = f"{BARN_BASE_URL}transactions/{tx_hash}/orders"
-        orders_response = requests.get(
-            prod_endpoint_url,
-            headers=header,
-            timeout=REQUEST_TIMEOUT,
-        )
-        if orders_response.status_code != SUCCESS_CODE:
-            orders_response = requests.get(
-                barn_endpoint_url,
-                headers=header,
-                timeout=REQUEST_TIMEOUT,
-            )
-            if orders_response.status_code != SUCCESS_CODE:
-                self.logger.error(
-                    f"Error loading orders from mainnet: {orders_response.status_code}"
-                )
-                return []
-
-        orders = json.loads(orders_response.text)
-
-        return orders
-
     def get_quote(self, trade: Trade) -> Optional[Trade]:
         """
         Given a trade, compute buy_amount, sell_amount, and fee_amount of the trade
