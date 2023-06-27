@@ -2,6 +2,7 @@
 Quote test for partially fillable orders.
 """
 # pylint: disable=logging-fstring-interpolation
+# pylint: disable=duplicate-code
 
 from web3.types import TxData
 from src.monitoring_tests.base_test import BaseTest
