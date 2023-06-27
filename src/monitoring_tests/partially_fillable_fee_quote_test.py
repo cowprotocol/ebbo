@@ -70,13 +70,13 @@ class PartialFillFeeQuoteTest(BaseTest):
         tx_hash = transaction["hash"].hex()
         quote = self.orderbook_api.get_quote(trade)
         if quote is None:
-            self.logger.error("Error fetching quote. Skipping trade %s.", trade)
+            self.logger.warning("Error fetching quote. Skipping trade %s.", trade)
             return True
 
         gas_price = int(transaction["gasPrice"])
         gas_price_quote = self.web3_api.get_current_gas_price()
         if gas_price_quote is None:
-            self.logger.error(
+            self.logger.warning(
                 "Error fetching current gas price. Skipping hash %s.", tx_hash
             )
             return False
@@ -98,9 +98,17 @@ class PartialFillFeeQuoteTest(BaseTest):
             f"Absolute difference: {diff_fee_abs}",
             f"Relative difference: {100 * diff_fee_rel:.2f}%",
         ]
+
         if (
             abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG
             and abs(diff_fee_rel) > FEE_ABSOLUTE_DEVIATION_ETH_FLAG * 10**18
         ):
             self.alert("\t".join(log_output))
+        elif (
+            abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG / 2
+            and abs(diff_fee_rel) > FEE_ABSOLUTE_DEVIATION_ETH_FLAG / 2 * 10**18
+        ):
+            self.logger.info("\t".join(log_output))
+        else:
+            self.logger.debug("\t".join(log_output))
         return True

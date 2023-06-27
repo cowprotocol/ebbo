@@ -52,7 +52,7 @@ class OrderbookAPI:
                 else:
                     return None
         except requests.exceptions.ConnectionError as err:
-            self.logger.error(
+            self.logger.warning(
                 f"Connection error while fetching competition data: {err}"
             )
             return None
@@ -98,12 +98,12 @@ class OrderbookAPI:
                 timeout=REQUEST_TIMEOUT,
             )
         except ValueError as err:
-            self.logger.error(f"Fee quote failed with error {err}")
+            self.logger.warning(f"Fee quote failed with error {err}")
             return None
 
         if quote_response.status_code != SUCCESS_CODE:
             error_response_json = json.loads(quote_response.content)
-            self.logger.error(
+            self.logger.warning(
                 f"Error {error_response_json['errorType']},"
                 + f"{error_response_json['description']} while getting quote for trade {trade}"
             )

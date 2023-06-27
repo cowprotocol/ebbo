@@ -72,26 +72,38 @@ class SolverCompetitionSurplusTest(BaseTest):
                 surplus_alt_dict[solution_alt["solver"]] = surplus_alt
             if len(surplus_alt_dict) == 0:
                 continue
+
             solver_alt = max(surplus_alt_dict, key=lambda key: surplus_alt_dict[key])
             surplus_alt = surplus_alt_dict[solver_alt]
+
             a_abs = surplus_alt - surplus
             a_abs_eth = a_abs * token_to_eth
             a_rel = price / price_alt - 1
-            log_output = [
-                "Solver competition surplus test:",
-                f"Tx Hash: {tx_hash}",
-                f"Order UID: {uid}",
-                f"Winning Solver: {solver}",
-                f"Solver providing more surplus: {solver_alt}",
-                f"Relative deviation: {float(a_rel * 100):.4f}%",
-                f"Absolute difference: {float(a_abs_eth):.5f}ETH ({a_abs} atoms)",
-            ]
-            self.logger.info("\t".join(log_output))
+
+            log_output = "\t".join(
+                [
+                    "Solver competition surplus test:",
+                    f"Tx Hash: {tx_hash}",
+                    f"Order UID: {uid}",
+                    f"Winning Solver: {solver}",
+                    f"Solver providing more surplus: {solver_alt}",
+                    f"Relative deviation: {float(a_rel * 100):.4f}%",
+                    f"Absolute difference: {float(a_abs_eth):.5f}ETH ({a_abs} atoms)",
+                ]
+            )
+
             if (
                 a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT
                 and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT
             ):
-                self.alert("\t".join(log_output))
+                self.alert(log_output)
+            elif (
+                a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT / 2
+                and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT / 2
+            ):
+                self.logger.info(log_output)
+            else:
+                self.logger.debug(log_output)
 
         return True
 

@@ -39,7 +39,7 @@ class Web3API:
         try:
             return int(self.web_3.eth.block_number)
         except ValueError as err:
-            self.logger.error(f"Error while fetching block number: {err}")
+            self.logger.warning(f"Error while fetching block number: {err}")
             return None
 
     def get_tx_hashes_by_block(self, start_block: int, end_block: int) -> list[str]:
@@ -59,7 +59,7 @@ class Web3API:
         try:
             log_receipts = self.web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
         except ValueError as err:
-            self.logger.error(f"ValueError while fetching hashes: {err}")
+            self.logger.warning(f"ValueError while fetching hashes: {err}")
             log_receipts = []
 
         settlement_hashes_list = list(
@@ -75,7 +75,7 @@ class Web3API:
         try:
             transaction = self.web_3.eth.get_transaction(HexStr(tx_hash))
         except ValueError as err:
-            self.logger.debug(f"Error while fetching transaction: {err}")
+            self.logger.warning(f"Error while fetching transaction: {err}")
             transaction = None
 
         return transaction
@@ -88,7 +88,7 @@ class Web3API:
         try:
             receipt = self.web_3.eth.wait_for_transaction_receipt(HexStr(tx_hash))
         except ValueError as err:
-            self.logger.error(f"Error fetching log receipt: {err}")
+            self.logger.warning(f"Error fetching log receipt: {err}")
             receipt = None
         return receipt
 
@@ -208,6 +208,6 @@ class Web3API:
         try:
             gas_price = int(self.web_3.eth.gas_price)
         except ValueError as err:
-            self.logger.error(f"Error fetching gas price: {err}")
+            self.logger.warning(f"Error fetching gas price: {err}")
             gas_price = None
         return gas_price

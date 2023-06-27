@@ -80,20 +80,29 @@ class PartialFillCostCoverageTest(BaseTest):
         a_abs = batch_fee - batch_cost
         a_rel = (batch_fee - batch_cost) / batch_cost
 
-        log_output = [
-            "Cost coverage test\n",
-            f"Tx hash: {tx_hash}",
-            f"Winning Solver: {transaction['from']}",
-            f"Fee: {batch_fee * 1e-18:.5f}ETH",
-            f"Cost: {batch_cost * 1e-18:.5f}ETH",
-            f"Absolute difference: {a_abs * 1e-18:.5f}ETH",
-            f"Relative difference: {100 * a_rel:.2f}%",
-        ]
+        log_output = "\t".join(
+            [
+                "Cost coverage test\n",
+                f"Tx hash: {tx_hash}",
+                f"Winning Solver: {transaction['from']}",
+                f"Fee: {batch_fee * 1e-18:.5f}ETH",
+                f"Cost: {batch_cost * 1e-18:.5f}ETH",
+                f"Absolute difference: {a_abs * 1e-18:.5f}ETH",
+                f"Relative difference: {100 * a_rel:.2f}%",
+            ]
+        )
 
         if (
             abs(a_abs) > 1e18 * COST_COVERAGE_ABSOLUTE_DEVIATION_ETH
             or abs(a_rel) > COST_COVERAGE_RELATIVE_DEVIATION
         ):
-            self.alert("\t".join(log_output))
+            self.alert(log_output)
+        elif (
+            abs(a_abs) > 1e18 * COST_COVERAGE_ABSOLUTE_DEVIATION_ETH / 2
+            or abs(a_rel) > COST_COVERAGE_RELATIVE_DEVIATION / 2
+        ):
+            self.logger.info(log_output)
+        else:
+            self.logger.debug(log_output)
 
         return True
