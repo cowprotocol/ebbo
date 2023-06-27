@@ -9,6 +9,7 @@ from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
 from src.helper_functions import get_logger
+from src.models import Trade
 from src.constants import ABSOLUTE_ETH_FLAG_AMOUNT, REL_DEVIATION_FLAG_PERCENT
 
 
@@ -31,81 +32,87 @@ class SolverCompetitionSurplusTest(BaseTest):
         calculates surplus difference between that pair (winning and non-winning solution).
         """
 
-        tx_hash = competition_data["transactionHash"]
         solution = competition_data["solutions"][-1]
-        solver = solution["solver"]
-        calldata = solution["callData"]
-        settlement = self.web3_api.get_settlement_from_calldata(calldata)
-        trades = self.web3_api.get_trades(settlement)
-        external_prices = competition_data["auction"]["prices"]
 
-        trades_dict = {
-            solution["orders"][i]["id"]: trade for (i, trade) in enumerate(trades)
-        }
+        trades_dict = self.get_uid_trades(solution)
 
         for uid in trades_dict:
             trade = trades_dict[uid]
-            surplus = trade.get_surplus()
-            price = trade.get_price()
             token_to_eth = Fraction(
-                int(external_prices[trade.get_surplus_token().lower()]), 10**36
+                int(
+                    competition_data["auction"]["prices"][
+                        trade.get_surplus_token().lower()
+                    ]
+                ),
+                10**36,
             )
-            surplus_alt_dict: dict[str, tuple[int, Fraction]] = {}
-            for solution_alt in competition_data["solutions"][0:-1]:
-                if (
-                    solution_alt["objective"]["fees"]
-                    < 0.9 * solution_alt["objective"]["cost"]
-                ):
-                    continue
-                uid_list = [o["id"] for o in solution_alt["orders"]]
-                try:
-                    i = uid_list.index(uid)
-                except ValueError:
-                    continue
-                calldata_alt = solution_alt["callData"]
-                settlement_alt = self.web3_api.get_settlement_from_calldata(
-                    calldata_alt
+
+            trade_alt_dict = self.get_trade_alternatives(
+                uid, competition_data["solutions"][0:-1]
+            )
+
+            for solver_alt, trade_alt in trade_alt_dict.items():
+                a_abs = trade.compare_surplus(trade_alt)
+                a_abs_eth = a_abs * token_to_eth
+                a_rel = trade.compare_price(trade_alt)
+
+                log_output = "\t".join(
+                    [
+                        "Solver competition surplus test:",
+                        f"Tx Hash: {competition_data['transactionHash']}",
+                        f"Order UID: {uid}",
+                        f"Winning Solver: {solution['solver']}",
+                        f"Solver providing more surplus: {solver_alt}",
+                        f"Relative deviation: {float(a_rel * 100):.4f}%",
+                        f"Absolute difference: {float(a_abs_eth):.5f}ETH ({a_abs} atoms)",
+                    ]
                 )
-                trade_alt = self.web3_api.get_trades(settlement_alt)[i]
-                surplus_alt = trade_alt.get_surplus()
-                price_alt = trade_alt.get_price()
-                surplus_alt_dict[solution_alt["solver"]] = surplus_alt
-            if len(surplus_alt_dict) == 0:
-                continue
 
-            solver_alt = max(surplus_alt_dict, key=lambda key: surplus_alt_dict[key])
-            surplus_alt = surplus_alt_dict[solver_alt]
-
-            a_abs = surplus_alt - surplus
-            a_abs_eth = a_abs * token_to_eth
-            a_rel = price / price_alt - 1
-
-            log_output = "\t".join(
-                [
-                    "Solver competition surplus test:",
-                    f"Tx Hash: {tx_hash}",
-                    f"Order UID: {uid}",
-                    f"Winning Solver: {solver}",
-                    f"Solver providing more surplus: {solver_alt}",
-                    f"Relative deviation: {float(a_rel * 100):.4f}%",
-                    f"Absolute difference: {float(a_abs_eth):.5f}ETH ({a_abs} atoms)",
-                ]
-            )
-
-            if (
-                a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT
-                and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT
-            ):
-                self.alert(log_output)
-            elif (
-                a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT / 2
-                and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT / 2
-            ):
-                self.logger.info(log_output)
-            else:
-                self.logger.debug(log_output)
+                if (
+                    a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT
+                    and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT
+                ):
+                    self.alert(log_output)
+                elif (
+                    a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT / 2
+                    and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT / 2
+                ):
+                    self.logger.info(log_output)
+                else:
+                    self.logger.debug(log_output)
 
         return True
+
+    def get_trade_alternatives(
+        self, uid: str, solution_alternatives: dict
+    ) -> dict[str, Trade]:
+        """Compute surplus and exchange rate for an order with uid as settled in alternative
+        solutions."""
+        trade_alt_dict: dict[str, Trade] = {}
+        for solution_alt in solution_alternatives:
+            if (
+                solution_alt["objective"]["fees"]
+                < 0.9 * solution_alt["objective"]["cost"]
+            ):
+                continue
+            trades_dict_alt = self.get_uid_trades(solution_alt)
+            try:
+                trade_alt = trades_dict_alt[uid]
+            except KeyError:
+                continue
+            trade_alt_dict[solution_alt["solver"]] = trade_alt
+
+        return trade_alt_dict
+
+    def get_uid_trades(self, solution: dict[str, Any]) -> dict[str, Trade]:
+        """Get a dictionary mapping UIDs to trades in a solution."""
+        calldata = solution["callData"]
+        settlement = self.web3_api.get_settlement_from_calldata(calldata)
+        trades = self.web3_api.get_trades(settlement)
+        trades_dict = {
+            solution["orders"][i]["id"]: trade for (i, trade) in enumerate(trades)
+        }
+        return trades_dict
 
     def run(self, tx_hash) -> bool:
         """

@@ -60,6 +60,18 @@ class Trade:
         """
         return self.data.get_surplus_token()
 
+    def compare_surplus(self, trade: Trade) -> int:
+        """Compute absolute difference in executed surplus.
+        The result is negative if trade provides more surplus than self.
+        """
+        return self.get_surplus() - trade.get_surplus()
+
+    def compare_price(self, trade: Trade) -> Fraction:
+        """Compute relative difference in executed prices.
+        The result is negative if trade provides a better price than self.
+        """
+        return trade.get_price() / self.get_price() - 1
+
 
 @dataclass
 class OrderData:

@@ -31,7 +31,6 @@ class PartialFillFeeQuoteTest(BaseTest):
         Given a transaction hash, check if there is a partially-fillable order in the settlement.
         If this is the case, perform multiple tests on the execution of those orders to check if
         the fee was set correctly.
-        TODO: add more explanations
         """
         # get settlement and trades via web3 api
         transaction = self.web3_api.get_transaction(tx_hash)
