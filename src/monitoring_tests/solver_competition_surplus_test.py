@@ -52,9 +52,9 @@ class SolverCompetitionSurplusTest(BaseTest):
             )
 
             for solver_alt, trade_alt in trade_alt_dict.items():
-                a_abs = trade.compare_surplus(trade_alt)
+                a_abs = trade_alt.compare_surplus(trade)
                 a_abs_eth = a_abs * token_to_eth
-                a_rel = trade.compare_price(trade_alt)
+                a_rel = trade_alt.compare_price(trade)
 
                 log_output = "\t".join(
                     [
