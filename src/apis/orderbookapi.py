@@ -51,9 +51,9 @@ class OrderbookAPI:
                     solver_competition_data = json.loads(barn_competition_data.text)
                 else:
                     return None
-        except requests.exceptions.ConnectionError as err:
+        except requests.RequestException as err:
             self.logger.warning(
-                f"Connection error while fetching competition data: {err}"
+                f"Connection error while fetching competition data. Hash: {tx_hash}, error: {err}"
             )
             return None
         return solver_competition_data
@@ -97,8 +97,10 @@ class OrderbookAPI:
                 json=request_dict,
                 timeout=REQUEST_TIMEOUT,
             )
-        except ValueError as err:
-            self.logger.warning(f"Fee quote failed with error {err}")
+        except requests.RequestException as err:
+            self.logger.warning(
+                f"Fee quote failed. Request: {request_dict}, error: {err}"
+            )
             return None
 
         if quote_response.status_code != SUCCESS_CODE:

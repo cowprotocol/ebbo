@@ -8,7 +8,6 @@ from fractions import Fraction
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
-from src.helper_functions import get_logger
 from src.models import Trade
 from src.constants import ABSOLUTE_ETH_FLAG_AMOUNT, REL_DEVIATION_FLAG_PERCENT
 
@@ -23,7 +22,6 @@ class SolverCompetitionSurplusTest(BaseTest):
         super().__init__()
         self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
-        self.logger = get_logger()
 
     def compare_orders_surplus(self, competition_data: dict[str, Any]) -> bool:
         """
@@ -129,6 +127,3 @@ class SolverCompetitionSurplusTest(BaseTest):
         success = self.compare_orders_surplus(solver_competition_data)
 
         return success
-
-    def alert(self, msg: str) -> None:
-        self.logger.error(msg)

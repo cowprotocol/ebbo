@@ -7,7 +7,6 @@ from web3.types import TxData, TxReceipt
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
-from src.helper_functions import get_logger
 from src.models import find_partially_fillable
 from src.constants import (
     COST_COVERAGE_ABSOLUTE_DEVIATION_ETH,
@@ -24,7 +23,6 @@ class PartialFillCostCoverageTest(BaseTest):
         super().__init__()
         self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
-        self.logger = get_logger()
 
     def run(self, tx_hash) -> bool:
         """
@@ -55,9 +53,6 @@ class PartialFillCostCoverageTest(BaseTest):
                 return False
 
         return True
-
-    def alert(self, msg: str):
-        self.logger.error(msg)
 
     def run_cost_coverage_test(self, transaction: TxData, receipt: TxReceipt) -> bool:
         """

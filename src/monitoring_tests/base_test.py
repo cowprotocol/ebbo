@@ -2,7 +2,10 @@
 In this file, we introduce the BaseTest class, whose purpose is to be used as the basis
 for all tests developed.
 """
+# pylint: disable=logging-fstring-interpolation
+
 from abc import ABC, abstractmethod
+from src.helper_functions import get_logger
 
 
 class BaseTest(ABC):
@@ -14,6 +17,7 @@ class BaseTest(ABC):
 
     def __init__(self) -> None:
         self.tx_hashes: list[str] = []
+        self.logger = get_logger()
 
     @abstractmethod
     def run(self, tx_hash: str) -> bool:
@@ -32,6 +36,13 @@ class BaseTest(ABC):
             success = self.run(tx_hash)
             if not success:
                 tx_hashes_fails.append(tx_hash)
+        tx_hashes_success = [
+            tx_hash for tx_hash in self.tx_hashes if tx_hash not in tx_hashes_fails
+        ]
+        self.logger.debug(
+            f"Test ran successefully for hashes {tx_hashes_success} and"
+            f"needs to be rerun for hashes {tx_hashes_fails}."
+        )
         self.tx_hashes = tx_hashes_fails
 
     def add_hashes_to_queue(self, tx_hashes: list[str]) -> None:
@@ -40,9 +51,9 @@ class BaseTest(ABC):
         """
         self.tx_hashes += tx_hashes
 
-    @abstractmethod
     def alert(self, msg: str) -> None:
         """
         This function is called to create an alert for a failed test.
         It must be implemented by all subclasses.
         """
+        self.logger.error(msg)

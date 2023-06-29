@@ -42,7 +42,9 @@ class Web3API:
             self.logger.warning(f"Error while fetching block number: {err}")
             return None
 
-    def get_tx_hashes_by_block(self, start_block: int, end_block: int) -> list[str]:
+    def get_tx_hashes_by_block(
+        self, start_block: int, end_block: int
+    ) -> Optional[list[str]]:
         """
         Function filters hashes by contract address, and block ranges
         """
@@ -60,7 +62,7 @@ class Web3API:
             log_receipts = self.web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
         except ValueError as err:
             self.logger.warning(f"ValueError while fetching hashes: {err}")
-            log_receipts = []
+            return None
 
         settlement_hashes_list = list(
             {log_receipt["transactionHash"].hex() for log_receipt in log_receipts}

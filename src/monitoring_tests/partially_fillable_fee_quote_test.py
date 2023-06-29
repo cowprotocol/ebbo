@@ -8,7 +8,6 @@ from web3.types import TxData
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
-from src.helper_functions import get_logger
 from src.models import Trade, find_partially_fillable
 from src.constants import (
     FEE_ABSOLUTE_DEVIATION_ETH_FLAG,
@@ -25,7 +24,6 @@ class PartialFillFeeQuoteTest(BaseTest):
         super().__init__()
         self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
-        self.logger = get_logger()
 
     def run(self, tx_hash) -> bool:
         """
@@ -54,9 +52,6 @@ class PartialFillFeeQuoteTest(BaseTest):
                     return False
 
         return True
-
-    def alert(self, msg: str):
-        self.logger.error(msg)
 
     def run_quote_test(self, trade: Trade, transaction: TxData) -> bool:
         """

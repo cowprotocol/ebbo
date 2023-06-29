@@ -7,6 +7,7 @@ If a settlement failes a test, an error level message is logged.
 # pylint: disable=logging-fstring-interpolation
 
 import time
+from typing import Optional
 from src.apis.web3api import Web3API
 from src.monitoring_tests.solver_competition_surplus_test import (
     SolverCompetitionSurplusTest,
@@ -33,24 +34,28 @@ def main() -> None:
         PartialFillCostCoverageTest(),
     ]
 
-    start_block = web3_api.get_current_block_number()
-    if start_block is None:
-        return
+    start_block: Optional[int] = None
 
     web3_api.logger.debug("Start infinite loop")
     while True:
         time.sleep(SLEEP_TIME_IN_SEC)
+        if start_block is None:
+            start_block = web3_api.get_current_block_number()
+            continue
         end_block = web3_api.get_current_block_number()
         if end_block is None:
             continue
+
         tx_hashes = web3_api.get_tx_hashes_by_block(start_block, end_block)
+        if tx_hashes is None:
+            continue
 
         web3_api.logger.debug(f"{len(tx_hashes)} hashes found: {tx_hashes}")
         for test in tests:
             test.add_hashes_to_queue(tx_hashes)
             web3_api.logger.debug(f"Running test ({test}) for hashes {test.tx_hashes}.")
             test.run_queue()
-            web3_api.logger.debug("Test completed.")
+            web3_api.logger.debug(f"Test ({test}) completed.")
 
         start_block = end_block + 1
 
