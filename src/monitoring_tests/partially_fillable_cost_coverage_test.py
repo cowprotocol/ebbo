@@ -77,7 +77,7 @@ class PartialFillCostCoverageTest(BaseTest):
 
         log_output = "\t".join(
             [
-                "Cost coverage test\n",
+                "Cost coverage test",
                 f"Tx hash: {tx_hash}",
                 f"Winning Solver: {transaction['from']}",
                 f"Fee: {batch_fee * 1e-18:.5f}ETH",
