@@ -18,7 +18,7 @@ class SolverCompetitionSurplusTest(BaseTest):
     the different executions of these orders by other solvers in the competition.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
@@ -82,7 +82,7 @@ class SolverCompetitionSurplusTest(BaseTest):
         return True
 
     def get_trade_alternatives(
-        self, uid: str, solution_alternatives: dict
+        self, uid: str, solution_alternatives: list[dict[str, Any]]
     ) -> dict[str, Trade]:
         """Compute surplus and exchange rate for an order with uid as settled in alternative
         solutions."""
@@ -112,7 +112,7 @@ class SolverCompetitionSurplusTest(BaseTest):
         }
         return trades_dict
 
-    def run(self, tx_hash) -> bool:
+    def run(self, tx_hash: str) -> bool:
         """
         Wrapper function for the whole test. Checks if solver competition data is retrievable
         and runs EBBO test, else returns True to add to list of unchecked hashes.
