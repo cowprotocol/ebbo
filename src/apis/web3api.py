@@ -8,7 +8,7 @@ from typing import Any, Optional
 from fractions import Fraction
 from dotenv import load_dotenv
 from web3 import Web3
-from web3.types import TxData, TxReceipt
+from web3.types import TxData, TxReceipt, FilterParams
 from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 from contracts.gpv2_settlement import gpv2_settlement
@@ -22,7 +22,7 @@ class Web3API:
     Class for fetching data from a Web3 API.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         load_dotenv()
         infura_key = getenv("INFURA_KEY")
         self.url = f"https://mainnet.infura.io/v3/{infura_key}"
@@ -48,18 +48,19 @@ class Web3API:
         """
         Function filters hashes by contract address, and block ranges
         """
-        filter_criteria = {
+        filter_criteria: FilterParams = {
             "fromBlock": int(start_block),
             "toBlock": int(end_block),
-            "address": SETTLEMENT_CONTRACT_ADDRESS,
+            "address": self.web_3.to_checksum_address(SETTLEMENT_CONTRACT_ADDRESS),
             "topics": [
-                "0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17"
-                # "0x40338ce1a7c49204f0099533b1e9a7ee0a3d261f84974ab7af36105b8c4e9db4"
+                HexStr(
+                    "0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17"
+                )
             ],
         }
 
         try:
-            log_receipts = self.web_3.eth.filter(filter_criteria).get_all_entries()  # type: ignore
+            log_receipts = self.web_3.eth.filter(filter_criteria).get_all_entries()
         except ValueError as err:
             self.logger.warning(f"ValueError while fetching hashes: {err}")
             return None
@@ -104,7 +105,8 @@ class Web3API:
         """
         Decode settlement from transaction using the settlement contract.
         """
-        return self.contract.decode_function_input(calldata)[1]
+        args: dict[str, Any] = self.contract.decode_function_input(calldata)[1]
+        return args
 
     def get_trades(self, settlement: dict[str, Any]) -> list[Trade]:
         """
@@ -122,7 +124,7 @@ class Web3API:
         self, settlement: dict[str, Any], i: int
     ) -> OrderData:
         """
-        Given a settlement and the index of an trade, return order information.
+        Given a settlement and the index of a trade, return order information.
         """
         decoded_trade = settlement["trades"][i]
         tokens = settlement["tokens"]
@@ -183,21 +185,22 @@ class Web3API:
 
         return OrderExecution(buy_amount, sell_amount, fee_amount)
 
-    def is_sell_order(self, decoded_trade):
+    @staticmethod
+    def is_sell_order(decoded_trade: dict[str, Any]) -> bool:
         """
         Check if the order corresponding to a trade is a sell order.
         """
         return str(f"{decoded_trade['flags']:08b}")[-1] == "0"
 
-    def is_partially_fillable(self, decoded_trade):
+    @staticmethod
+    def is_partially_fillable(decoded_trade: dict[str, Any]) -> bool:
         """
         Check if the order corresponding to a trade is partially-fillable.
         """
         return str(f"{decoded_trade['flags']:08b}")[-2] == "1"
 
-    def get_batch_gas_costs(
-        self, transaction: TxData, receipt: TxReceipt
-    ) -> tuple[int, int]:
+    @staticmethod
+    def get_batch_gas_costs(transaction: TxData, receipt: TxReceipt) -> tuple[int, int]:
         """
         Combine the transaction and receipt to return gas used and gas price.
         """

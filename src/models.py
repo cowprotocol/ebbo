@@ -15,7 +15,9 @@ class Trade:
     data: OrderData
     execution: OrderExecution
 
-    def adapt_execution_to_gas_price(self, gas_price, gas_price_adapted):
+    def adapt_execution_to_gas_price(
+        self, gas_price: int, gas_price_adapted: int
+    ) -> None:
         """
         Given an executed order which was executed at a time with gas price `gas_price`, adapt the
         execution to what it would have been with gas price `gas_price_adapted`.
@@ -41,7 +43,7 @@ class Trade:
                     self.data.limit_sell_amount + self.data.precomputed_fee_amount,
                     self.data.limit_buy_amount,
                 )
-                * (self.execution.buy_amount)
+                * self.execution.buy_amount
                 - (self.execution.sell_amount + self.execution.fee_amount)
             )
         return surplus
@@ -106,7 +108,9 @@ class OrderExecution:
     sell_amount: int
     fee_amount: int
 
-    def adapt_execution_to_gas_price(self, gas_price: int, gas_price_adapted: int):
+    def adapt_execution_to_gas_price(
+        self, gas_price: int, gas_price_adapted: int
+    ) -> None:
         """
         Given an order execution created at a time with gas price `gas_price`, computes what the
         execution would have been with gas price `gas_price_adapted`.

@@ -24,7 +24,7 @@ class OrderbookAPI:
     Class for fetching data from a Web3 API.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger()
 
     def get_solver_competition_data(self, tx_hash: str) -> Optional[dict[str, Any]]:
@@ -35,6 +35,7 @@ class OrderbookAPI:
         """
         prod_endpoint_url = f"{PROD_BASE_URL}solver_competition/by_tx_hash/{tx_hash}"
         barn_endpoint_url = f"{BARN_BASE_URL}solver_competition/by_tx_hash/{tx_hash}"
+        solver_competition_data: Optional[dict[str, Any]] = None
         try:
             json_competition_data = requests.get(
                 prod_endpoint_url,

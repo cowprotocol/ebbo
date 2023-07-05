@@ -20,12 +20,12 @@ class PartialFillFeeQuoteTest(BaseTest):
     Class for testing fees.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
 
-    def run(self, tx_hash) -> bool:
+    def run(self, tx_hash: str) -> bool:
         """
         Given a transaction hash, check if there is a partially-fillable order in the settlement.
         If this is the case, perform multiple tests on the execution of those orders to check if

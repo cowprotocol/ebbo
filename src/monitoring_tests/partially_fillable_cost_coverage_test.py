@@ -19,12 +19,12 @@ class PartialFillCostCoverageTest(BaseTest):
     Class for testing fees.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
 
-    def run(self, tx_hash) -> bool:
+    def run(self, tx_hash: str) -> bool:
         """
         Given a transaction hash, check if the fee as computed for the objective covers costs for
         the batch.
