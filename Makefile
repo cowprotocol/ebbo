@@ -3,9 +3,6 @@ PYTHON = python3
 VENV      = venv
 ACTIVATE := . $(VENV)/bin/activate
 
-DOCKER = docker
-TESTDB = solver-rewards-test-db
-
 # Write a marker .install file to indicate that the dependencies have been
 # installed.
 INST := $(VENV)/.install
