@@ -12,7 +12,7 @@ def get_logger(filename: Optional[str] = None) -> logging.Logger:
     """
     logging.basicConfig(format="%(levelname)s - %(message)s")
     logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
     if filename:
         file_handler = logging.FileHandler(filename + ".log", mode="w")
         file_handler.setLevel(logging.INFO)
