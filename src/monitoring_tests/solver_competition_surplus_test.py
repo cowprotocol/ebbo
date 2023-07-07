@@ -9,7 +9,7 @@ from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
 from src.models import Trade
-from src.constants import ABSOLUTE_ETH_FLAG_AMOUNT, REL_DEVIATION_FLAG_PERCENT
+from src.constants import SURPLUS_ABSOLUTE_DEVIATION_ETH, SURPLUS_REL_DEVIATION
 
 
 class SolverCompetitionSurplusTest(BaseTest):
@@ -36,48 +36,13 @@ class SolverCompetitionSurplusTest(BaseTest):
 
         for uid in trades_dict:
             trade = trades_dict[uid]
-            token_to_eth = Fraction(
-                int(
-                    competition_data["auction"]["prices"][
-                        trade.get_surplus_token().lower()
-                    ]
-                ),
-                10**36,
-            )
 
             trade_alt_dict = self.get_trade_alternatives(
                 uid, competition_data["solutions"][0:-1]
             )
 
             for solver_alt, trade_alt in trade_alt_dict.items():
-                a_abs = trade_alt.compare_surplus(trade)
-                a_abs_eth = a_abs * token_to_eth
-                a_rel = trade_alt.compare_price(trade)
-
-                log_output = "\t".join(
-                    [
-                        "Solver competition surplus test:",
-                        f"Tx Hash: {competition_data['transactionHash']}",
-                        f"Order UID: {uid}",
-                        f"Winning Solver: {solution['solver']}",
-                        f"Solver providing more surplus: {solver_alt}",
-                        f"Relative deviation: {float(a_rel * 100):.4f}%",
-                        f"Absolute difference: {float(a_abs_eth):.5f}ETH ({a_abs} atoms)",
-                    ]
-                )
-
-                if (
-                    a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT
-                    and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT
-                ):
-                    self.alert(log_output)
-                elif (
-                    a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT / 2
-                    and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT / 2
-                ):
-                    self.logger.info(log_output)
-                else:
-                    self.logger.debug(log_output)
+                self.check_and_log(trade, trade_alt, uid, solver_alt, competition_data)
 
         return True
 
@@ -127,3 +92,49 @@ class SolverCompetitionSurplusTest(BaseTest):
         success = self.compare_orders_surplus(solver_competition_data)
 
         return success
+
+    def check_and_log(
+        self,
+        trade: Trade,
+        trade_alt: Trade,
+        uid: str,
+        solver_alt: str,
+        competition_data: dict[str, Any],
+    ):
+        """Compare surplus of a trade to an alternative execution."""
+        token_to_eth = Fraction(
+            int(
+                competition_data["auction"]["prices"][trade.get_surplus_token().lower()]
+            ),
+            10**36,
+        )
+        a_abs = trade_alt.compare_surplus(trade)
+        a_abs_eth = a_abs * token_to_eth
+        a_rel = trade_alt.compare_price(trade)
+
+        log_output = "\t".join(
+            [
+                "Solver competition surplus test:",
+                f"Tx Hash: {competition_data['transactionHash']}",
+                f"Order UID: {uid}",
+                f"Winning Solver: {competition_data['solutions'][-1]['solver']}",
+                f"Solver providing more surplus: {solver_alt}",
+                f"Relative deviation: {float(a_rel * 100):.4f}%",
+                f"Absolute difference: {float(a_abs_eth):.5f}ETH ({a_abs} atoms)",
+            ]
+        )
+
+        if a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH and a_rel > SURPLUS_REL_DEVIATION:
+            self.alert(log_output)
+        elif (
+            a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 2
+            and a_rel > SURPLUS_REL_DEVIATION / 2
+        ):
+            self.logger.warning(log_output)
+        elif (
+            a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 4
+            and a_rel > SURPLUS_REL_DEVIATION / 4
+        ):
+            self.logger.info(log_output)
+        else:
+            self.logger.debug(log_output)
