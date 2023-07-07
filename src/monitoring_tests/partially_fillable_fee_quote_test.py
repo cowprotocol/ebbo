@@ -9,10 +9,7 @@ from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
 from src.models import Trade, find_partially_fillable
-from src.constants import (
-    FEE_ABSOLUTE_DEVIATION_ETH_FLAG,
-    FEE_RELATIVE_DEVIATION_FLAG,
-)
+from src.constants import FEE_RELATIVE_DEVIATION
 
 
 class PartialFillFeeQuoteTest(BaseTest):
@@ -78,32 +75,38 @@ class PartialFillFeeQuoteTest(BaseTest):
 
         quote.adapt_execution_to_gas_price(gas_price_quote, gas_price)
 
+        self.check_and_log(trade, quote, transaction)
+
+        return True
+
+    def check_and_log(
+        self, trade: Trade, trade_quote: Trade, transaction: TxData
+    ) -> None:
+        """Compare fees of a trade to fees from a quote for that trade."""
+
         fee_amount = trade.execution.fee_amount
-        quote_fee_amount = quote.execution.fee_amount
+        quote_fee_amount = trade_quote.execution.fee_amount
 
         diff_fee_abs = fee_amount - quote_fee_amount
         diff_fee_rel = (fee_amount - quote_fee_amount) / quote_fee_amount
 
-        log_output = [
-            f"Quote test\nTx hash: {tx_hash}",
-            f"Trade: {trade}",
-            f"Winning Solver: {transaction['from']}",
-            f"Fee: {fee_amount}",
-            f"Fee quote: {quote_fee_amount}",
-            f"Absolute difference: {diff_fee_abs}",
-            f"Relative difference: {100 * diff_fee_rel:.2f}%",
-        ]
+        log_output = "\t".join(
+            [
+                f"Quote test\nTx hash: {transaction['hash'].hex()}",
+                f"Trade: {trade}",
+                f"Winning Solver: {transaction['from']}",
+                f"Fee: {fee_amount}",
+                f"Fee quote: {quote_fee_amount}",
+                f"Absolute difference: {diff_fee_abs}",
+                f"Relative difference: {100 * diff_fee_rel:.2f}%",
+            ]
+        )
 
-        if (
-            abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG
-            and abs(diff_fee_rel) > FEE_ABSOLUTE_DEVIATION_ETH_FLAG * 10**18
-        ):
-            self.alert("\t".join(log_output))
-        elif (
-            abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG / 2
-            and abs(diff_fee_rel) > FEE_ABSOLUTE_DEVIATION_ETH_FLAG / 2 * 10**18
-        ):
-            self.logger.info("\t".join(log_output))
+        if abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION:
+            self.alert(log_output)
+        elif abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION / 2:
+            self.logger.warning(log_output)
+        elif abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION / 4:
+            self.logger.info(log_output)
         else:
-            self.logger.debug("\t".join(log_output))
-        return True
+            self.logger.debug(log_output)
