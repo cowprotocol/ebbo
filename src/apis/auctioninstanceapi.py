@@ -32,8 +32,8 @@ class AuctionInstanceAPI:
         """
         Get auction instance files for an auction id.
         """
-        prod_endpoint_url = f"{PROD_BASE_URL}{auction_id}"
-        barn_endpoint_url = f"{BARN_BASE_URL}{auction_id}"
+        prod_endpoint_url = f"{PROD_BASE_URL}{auction_id}.json"
+        barn_endpoint_url = f"{BARN_BASE_URL}{auction_id}.json"
         try:
             json_auction_instance = requests.get(
                 prod_endpoint_url,

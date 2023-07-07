@@ -53,11 +53,13 @@ class ReferenceSolverSurplusTest(BaseTest):
 
             trade_alt = self.get_trade_alternative(uid, auction_instance)
             if trade_alt is None:
-                self.logger.debug(
+                self.logger.error(
                     f"No alternative trade for uid {uid} and "
                     f"auction id {auction_instance['metadata']['auction_id']}"
                 )
                 return False
+            if trade_alt.execution.buy_amount == 0:
+                continue
 
             a_abs = trade_alt.compare_surplus(trade)
             a_abs_eth = a_abs * token_to_eth
@@ -108,7 +110,7 @@ class ReferenceSolverSurplusTest(BaseTest):
                 f"auction id {auction_instance['metadata']['auction_id']}"
             )
             return None
-        execution = self.solver_api.get_execution(solution)
+        execution = self.solver_api.get_execution_from_solution(solution)
 
         return Trade(data, execution)
 

@@ -35,7 +35,8 @@ class SolverAPI:
         """
         try:
             json_solution = requests.post(
-                f"{self.solver_url}solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts",
+                f"{self.solver_url}"
+                "solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts",
                 headers=header,
                 json=auction_instance,
                 timeout=REQUEST_TIMEOUT,
@@ -70,10 +71,10 @@ class SolverAPI:
 
     def get_execution_from_order(self, order_dict: dict[str, Any]) -> OrderExecution:
         """Get execution of an order given the order dict from a solution."""
-        if order_dict["exec_fee_amount"] is None:
+        try:
+            fee_amount = order_dict["exec_fee_amount"]
+        except KeyError:
             fee_amount = int(order_dict["fee"]["amount"])
-        else:
-            fee_amount = int(order_dict["exec_fee_amount"])
         execution = OrderExecution(
             int(order_dict["exec_buy_amount"]),
             int(order_dict["exec_sell_amount"]),
