@@ -100,7 +100,7 @@ class SolverCompetitionSurplusTest(BaseTest):
         uid: str,
         solver_alt: str,
         competition_data: dict[str, Any],
-    ):
+    ) -> None:
         """Compare surplus of a trade to an alternative execution."""
         token_to_eth = Fraction(
             int(
