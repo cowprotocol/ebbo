@@ -200,11 +200,11 @@ class Web3API:
         return str(f"{decoded_trade['flags']:08b}")[-2] == "1"
 
     @staticmethod
-    def get_batch_gas_costs(transaction: TxData, receipt: TxReceipt) -> tuple[int, int]:
+    def get_settlement_cost(transaction: TxData, receipt: TxReceipt) -> int:
         """
         Combine the transaction and receipt to return gas used and gas price.
         """
-        return int(receipt["gasUsed"]), int(transaction["gasPrice"])
+        return int(receipt["gasUsed"]) * int(transaction["gasPrice"])
 
     def get_current_gas_price(self) -> Optional[int]:
         """

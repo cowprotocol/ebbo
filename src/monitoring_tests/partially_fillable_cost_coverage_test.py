@@ -58,30 +58,35 @@ class PartialFillCostCoverageTest(BaseTest):
         """
         Test if the cost of a batch are close to the fees collected in that batch.
         """
-        tx_hash = transaction["hash"].hex()
         solver_competition_data = self.orderbook_api.get_solver_competition_data(
-            tx_hash
+            transaction["hash"].hex()
         )
         if solver_competition_data is None:
             self.logger.debug("No competition data found. Skipping hash.")
             return False
 
-        gas_amount = int(receipt["gasUsed"])
-        gas_price = int(transaction["gasPrice"])
+        batch_fee = self.orderbook_api.get_settlement_fee(
+            solver_competition_data["solutions"][-1]
+        )
+        batch_cost = self.web3_api.get_settlement_cost(transaction, receipt)
 
-        batch_fee = int(solver_competition_data["solutions"][-1]["objective"]["fees"])
-        batch_cost = gas_amount * gas_price
+        self.check_and_log(batch_fee, batch_cost, transaction)
 
-        a_abs = batch_fee - batch_cost
-        a_rel = (batch_fee - batch_cost) / batch_cost
+        return True
+
+    def check_and_log(self, fee: int, cost: int, transaction: TxData) -> None:
+        """Check tolerances and log the result."""
+
+        a_abs = fee - cost
+        a_rel = (fee - cost) / cost
 
         log_output = "\t".join(
             [
                 "Cost coverage test",
-                f"Tx hash: {tx_hash}",
+                f"Tx hash: {transaction['hash'].hex()}",
                 f"Winning Solver: {transaction['from']}",
-                f"Fee: {batch_fee * 1e-18:.5f}ETH",
-                f"Cost: {batch_cost * 1e-18:.5f}ETH",
+                f"Fee: {fee * 1e-18:.5f}ETH",
+                f"Cost: {cost * 1e-18:.5f}ETH",
                 f"Absolute difference: {a_abs * 1e-18:.5f}ETH",
                 f"Relative difference: {100 * a_rel:.2f}%",
             ]
@@ -99,5 +104,3 @@ class PartialFillCostCoverageTest(BaseTest):
             self.logger.info(log_output)
         else:
             self.logger.debug(log_output)
-
-        return True

@@ -124,3 +124,7 @@ class OrderbookAPI:
         )
 
         return Trade(trade.data, quote_execution)
+
+    def get_settlement_fee(self, solution: dict[str, Any]) -> int:
+        """Return the fee from the objective of a solution."""
+        return int(solution["objective"]["fees"])
