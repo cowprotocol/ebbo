@@ -23,6 +23,22 @@ class SolverCompetitionSurplusTest(BaseTest):
         self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
 
+    def run(self, tx_hash: str) -> bool:
+        """
+        Wrapper function for the whole test. Checks if solver competition data is retrievable
+        and runs EBBO test, else returns True to add to list of unchecked hashes.
+        """
+
+        solver_competition_data = self.orderbook_api.get_solver_competition_data(
+            tx_hash
+        )
+        if solver_competition_data is None:
+            return False
+
+        success = self.compare_orders_surplus(solver_competition_data)
+
+        return success
+
     def compare_orders_surplus(self, competition_data: dict[str, Any]) -> bool:
         """
         This function goes through each order that the winning solution executed
@@ -76,22 +92,6 @@ class SolverCompetitionSurplusTest(BaseTest):
             solution["orders"][i]["id"]: trade for (i, trade) in enumerate(trades)
         }
         return trades_dict
-
-    def run(self, tx_hash: str) -> bool:
-        """
-        Wrapper function for the whole test. Checks if solver competition data is retrievable
-        and runs EBBO test, else returns True to add to list of unchecked hashes.
-        """
-
-        solver_competition_data = self.orderbook_api.get_solver_competition_data(
-            tx_hash
-        )
-        if solver_competition_data is None:
-            return False
-
-        success = self.compare_orders_surplus(solver_competition_data)
-
-        return success
 
     def check_and_log(
         self,
