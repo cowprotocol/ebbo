@@ -34,8 +34,8 @@ def main() -> None:
     tests = [
         SolverCompetitionSurplusTest(),
         ReferenceSolverSurplusTest(),
-        # PartialFillFeeQuoteTest(),
-        # PartialFillCostCoverageTest(),
+        PartialFillFeeQuoteTest(),
+        PartialFillCostCoverageTest(),
     ]
 
     start_block: Optional[int] = None
