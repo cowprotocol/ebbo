@@ -68,12 +68,12 @@ class SolverCompetitionSurplusTest(BaseTest):
 
                 if (
                     a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT
-                    and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT
+                    and a_rel > REL_DEVIATION_FLAG_PERCENT
                 ):
                     self.alert(log_output)
                 elif (
                     a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT / 2
-                    and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT / 2
+                    and a_rel > REL_DEVIATION_FLAG_PERCENT / 2
                 ):
                     self.logger.info(log_output)
                 else:
