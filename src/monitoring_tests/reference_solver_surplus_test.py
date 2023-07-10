@@ -11,7 +11,7 @@ from src.apis.orderbookapi import OrderbookAPI
 from src.apis.auctioninstanceapi import AuctionInstanceAPI
 from src.apis.solverapi import SolverAPI
 from src.models import Trade
-from src.constants import ABSOLUTE_ETH_FLAG_AMOUNT, REL_DEVIATION_FLAG_PERCENT
+from src.constants import SURPLUS_ABSOLUTE_DEVIATION_ETH, SURPLUS_REL_DEVIATION
 
 
 class ReferenceSolverSurplusTest(BaseTest):
@@ -78,13 +78,13 @@ class ReferenceSolverSurplusTest(BaseTest):
             )
 
             if (
-                a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT
-                and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT
+                a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH
+                and a_rel > SURPLUS_REL_DEVIATION
             ):
                 self.alert(log_output)
             elif (
-                a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT / 2
-                and a_rel * 100 > REL_DEVIATION_FLAG_PERCENT / 2
+                a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10
+                and a_rel > SURPLUS_REL_DEVIATION / 10
             ):
                 self.logger.info(log_output)
             else:
