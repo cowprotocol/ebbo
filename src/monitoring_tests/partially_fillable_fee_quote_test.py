@@ -9,10 +9,7 @@ from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
 from src.models import Trade, find_partially_fillable
-from src.constants import (
-    FEE_ABSOLUTE_DEVIATION_ETH_FLAG,
-    FEE_RELATIVE_DEVIATION_FLAG,
-)
+from src.constants import FEE_RELATIVE_DEVIATION_FLAG
 
 
 class PartialFillFeeQuoteTest(BaseTest):
@@ -94,15 +91,9 @@ class PartialFillFeeQuoteTest(BaseTest):
             f"Relative difference: {100 * diff_fee_rel:.2f}%",
         ]
 
-        if (
-            abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG
-            and abs(diff_fee_rel) > FEE_ABSOLUTE_DEVIATION_ETH_FLAG * 10**18
-        ):
+        if abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG:
             self.alert("\t".join(log_output))
-        elif (
-            abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG / 2
-            and abs(diff_fee_rel) > FEE_ABSOLUTE_DEVIATION_ETH_FLAG / 2 * 10**18
-        ):
+        elif abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG / 2:
             self.logger.info("\t".join(log_output))
         else:
             self.logger.debug("\t".join(log_output))
