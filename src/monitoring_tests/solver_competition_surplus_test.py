@@ -9,7 +9,7 @@ from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
 from src.models import Trade
-from src.constants import ABSOLUTE_ETH_FLAG_AMOUNT, REL_DEVIATION_FLAG_PERCENT
+from src.constants import SURPLUS_ABSOLUTE_DEVIATION_ETH, SURPLUS_REL_DEVIATION
 
 
 class SolverCompetitionSurplusTest(BaseTest):
@@ -67,13 +67,13 @@ class SolverCompetitionSurplusTest(BaseTest):
                 )
 
                 if (
-                    a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT
-                    and a_rel > REL_DEVIATION_FLAG_PERCENT
+                    a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH
+                    and a_rel > SURPLUS_REL_DEVIATION
                 ):
                     self.alert(log_output)
                 elif (
-                    a_abs_eth > ABSOLUTE_ETH_FLAG_AMOUNT / 2
-                    and a_rel > REL_DEVIATION_FLAG_PERCENT / 2
+                    a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 2
+                    and a_rel > SURPLUS_REL_DEVIATION / 2
                 ):
                     self.logger.info(log_output)
                 else:
