@@ -25,7 +25,7 @@ class AuctionInstanceAPI:
     Class for fetching auction instance files from AWS.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.logger = get_logger()
 
     def get_auction_instance(self, auction_id: int) -> Optional[dict[str, Any]]:
@@ -34,6 +34,7 @@ class AuctionInstanceAPI:
         """
         prod_endpoint_url = f"{PROD_BASE_URL}{auction_id}.json"
         barn_endpoint_url = f"{BARN_BASE_URL}{auction_id}.json"
+        auction_instance: Optional[dict[str, Any]] = None
         try:
             json_auction_instance = requests.get(
                 prod_endpoint_url,

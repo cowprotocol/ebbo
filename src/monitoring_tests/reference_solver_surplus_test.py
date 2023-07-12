@@ -2,6 +2,7 @@
 Comparing order surplus to a reference solution.
 """
 # pylint: disable=logging-fstring-interpolation
+# pylint: disable=duplicate-code
 
 from typing import Any, Optional
 from fractions import Fraction
@@ -20,7 +21,7 @@ class ReferenceSolverSurplusTest(BaseTest):
     the executions of these orders by a reference solver.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
@@ -124,7 +125,7 @@ class ReferenceSolverSurplusTest(BaseTest):
         }
         return trades_dict
 
-    def run(self, tx_hash) -> bool:
+    def run(self, tx_hash: str) -> bool:
         """
         Wrapper function for the whole test. Checks if solver competition data is retrievable
         and runs EBBO test, else returns True to add to list of unchecked hashes.

@@ -22,7 +22,7 @@ class SolverAPI:
     Class for querying a solver to provide alternative solutions.
     """
 
-    def __init__(self, url: Optional[str] = None):
+    def __init__(self, url: Optional[str] = None) -> None:
         self.logger = get_logger()
         if url is None:
             load_dotenv()
@@ -34,6 +34,7 @@ class SolverAPI:
         """
         Get solution from auction instance.
         """
+        solution: Optional[dict[str, Any]] = None
         try:
             json_solution = requests.post(
                 f"{self.solver_url}solve?time_limit={SOLVER_TIME_LIMIT}&use_internal_buffers=false"
