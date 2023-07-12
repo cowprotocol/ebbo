@@ -93,8 +93,8 @@ class PartialFillCostCoverageTest(BaseTest):
         ):
             self.alert(log_output)
         elif (
-            abs(a_abs) > 1e18 * COST_COVERAGE_ABSOLUTE_DEVIATION_ETH / 2
-            or abs(a_rel) > COST_COVERAGE_RELATIVE_DEVIATION / 2
+            abs(a_abs) > 1e18 * COST_COVERAGE_ABSOLUTE_DEVIATION_ETH / 10
+            or abs(a_rel) > COST_COVERAGE_RELATIVE_DEVIATION / 10
         ):
             self.logger.info(log_output)
         else:
