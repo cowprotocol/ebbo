@@ -16,7 +16,7 @@ from src.constants import SURPLUS_ABSOLUTE_DEVIATION_ETH, SURPLUS_REL_DEVIATION
 
 class ReferenceSolverSurplusTest(BaseTest):
     """
-    This test compares the surplus all orders from the winning settlement to
+    This test compares the surplus of all orders from the winning settlement to
     the executions of these orders by a reference solver.
     """
 
@@ -95,7 +95,7 @@ class ReferenceSolverSurplusTest(BaseTest):
     def get_trade_alternative(
         self, uid: str, auction_instance: dict[str, Any]
     ) -> Optional[Trade]:
-        """Compute alternative execution for an order with uid as settled by a referefernce solver
+        """Compute alternative execution for an order with uid as settled by a reference solver
         given the liquidity in auction_instance.
         """
         data = self.auction_instance_api.get_order_data(uid, auction_instance)

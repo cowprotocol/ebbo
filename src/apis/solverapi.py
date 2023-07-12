@@ -1,5 +1,5 @@
 """
-OrderbookAPI for fetching relevant data using the CoW Swap Orderbook API.
+API for calling an http solver with auction instances.
 """
 # pylint: disable=logging-fstring-interpolation
 
@@ -13,6 +13,7 @@ from src.helper_functions import get_logger
 from src.constants import (
     header,
     REQUEST_TIMEOUT,
+    SOLVER_TIME_LIMIT,
 )
 
 
@@ -35,11 +36,11 @@ class SolverAPI:
         """
         try:
             json_solution = requests.post(
-                f"{self.solver_url}"
-                "solve?time_limit=20&use_internal_buffers=false&objective=surplusfeescosts",
+                f"{self.solver_url}solve?time_limit={SOLVER_TIME_LIMIT}&use_internal_buffers=false"
+                "&objective=surplusfeescosts",
                 headers=header,
                 json=auction_instance,
-                timeout=REQUEST_TIMEOUT,
+                timeout=SOLVER_TIME_LIMIT + REQUEST_TIMEOUT,
             )
             if json_solution.ok:
                 solution = json.loads(json_solution.text)
@@ -56,6 +57,9 @@ class SolverAPI:
     def get_execution_from_solution(self, solution: dict[str, Any]) -> OrderExecution:
         """Get the execution of an order from solution.
         This is only implemented for the case where exactly one order is supposed to be executed.
+
+        This method cannot handle the case of additional liquidity orders in the auction. If this
+        is desired, the logic for extracting the surplus capturing order needs to be modified.
         """
         orders = solution["orders"]
         if len(orders) == 1:
@@ -71,10 +75,10 @@ class SolverAPI:
 
     def get_execution_from_order(self, order_dict: dict[str, Any]) -> OrderExecution:
         """Get execution of an order given the order dict from a solution."""
-        try:
-            fee_amount = order_dict["exec_fee_amount"]
-        except KeyError:
-            fee_amount = int(order_dict["fee"]["amount"])
+        fee_amount = fee_amount = order_dict.get(
+            "exec_fee_amount", int(order_dict["fee"]["amount"])
+        )
+
         execution = OrderExecution(
             int(order_dict["exec_buy_amount"]),
             int(order_dict["exec_sell_amount"]),

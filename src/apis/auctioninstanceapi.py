@@ -1,5 +1,5 @@
 """
-OrderbookAPI for fetching relevant data using the CoW Swap Orderbook API.
+API for fetching auction instances from AWS.
 """
 # pylint: disable=logging-fstring-interpolation
 
