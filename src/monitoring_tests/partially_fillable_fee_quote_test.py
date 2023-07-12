@@ -82,7 +82,8 @@ class PartialFillFeeQuoteTest(BaseTest):
         diff_fee_rel = (fee_amount - quote_fee_amount) / quote_fee_amount
 
         log_output = [
-            f"Quote test\nTx hash: {tx_hash}",
+            "Quote test",
+            f"Tx hash: {tx_hash}",
             f"Trade: {trade}",
             f"Winning Solver: {transaction['from']}",
             f"Fee: {fee_amount}",
