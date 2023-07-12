@@ -82,7 +82,8 @@ class PartialFillFeeQuoteTest(BaseTest):
         diff_fee_rel = (fee_amount - quote_fee_amount) / quote_fee_amount
 
         log_output = [
-            f"Quote test\nTx hash: {tx_hash}",
+            "Quote test",
+            f"Tx hash: {tx_hash}",
             f"Trade: {trade}",
             f"Winning Solver: {transaction['from']}",
             f"Fee: {fee_amount}",
@@ -93,7 +94,7 @@ class PartialFillFeeQuoteTest(BaseTest):
 
         if abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG:
             self.alert("\t".join(log_output))
-        elif abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG / 2:
+        elif abs(diff_fee_rel) > FEE_RELATIVE_DEVIATION_FLAG / 10:
             self.logger.info("\t".join(log_output))
         else:
             self.logger.debug("\t".join(log_output))
