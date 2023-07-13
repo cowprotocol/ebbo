@@ -37,7 +37,7 @@ class SolverAPI:
         solution: Optional[dict[str, Any]] = None
         try:
             json_solution = requests.post(
-                f"{self.solver_url}solve?time_limit={SOLVER_TIME_LIMIT}&use_internal_buffers=false"
+                f"{self.solver_url}/solve?time_limit={SOLVER_TIME_LIMIT}&use_internal_buffers=false"
                 "&objective=surplusfeescosts",
                 headers=header,
                 json=auction_instance,
