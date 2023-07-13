@@ -18,6 +18,9 @@ from src.monitoring_tests.partially_fillable_fee_quote_test import (
 from src.monitoring_tests.partially_fillable_cost_coverage_test import (
     PartialFillCostCoverageTest,
 )
+from src.monitoring_tests.reference_solver_surplus_test import (
+    ReferenceSolverSurplusTest,
+)
 from src.constants import SLEEP_TIME_IN_SEC
 
 
@@ -30,6 +33,7 @@ def main() -> None:
     # initialize tests
     tests = [
         SolverCompetitionSurplusTest(),
+        ReferenceSolverSurplusTest(),
         PartialFillFeeQuoteTest(),
         PartialFillCostCoverageTest(),
     ]
