@@ -28,7 +28,7 @@ class SolverAPI:
             load_dotenv()
             self.solver_url = getenv("QUASIMODO_SOLVER_URL")
             if self.solver_url is not None:
-                self.solver_url.replace("prod", "staging")
+                self.soulver_url = self.solver_url.replace("prod", "staging")
 
     def solve_instance(
         self, auction_instance: dict[str, Any]
