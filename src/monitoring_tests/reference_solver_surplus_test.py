@@ -100,11 +100,13 @@ class ReferenceSolverSurplusTest(BaseTest):
         given the liquidity in auction_instance.
         """
         data = self.auction_instance_api.get_order_data(uid, auction_instance)
-        order_auction_instance = self.auction_instance_api.get_order_auction_instance(
-            uid, auction_instance
+        order_auction_instance = (
+            self.auction_instance_api.generate_reduced_single_order_auction_instance(
+                uid, auction_instance
+            )
         )
 
-        solution = self.solver_api.get_solution(order_auction_instance)
+        solution = self.solver_api.solve_instance(order_auction_instance)
         if solution is None:
             self.logger.debug(
                 f"No reference solution for uid {uid} and "

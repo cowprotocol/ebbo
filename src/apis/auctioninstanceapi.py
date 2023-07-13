@@ -77,7 +77,7 @@ class AuctionInstanceAPI:
             f"for auction id {auction_instance['metadata']['auction_id']}"
         )
 
-    def get_order_auction_instance(
+    def generate_reduced_single_order_auction_instance(
         self, uid: str, auction_instance: dict[str, Any]
     ) -> dict[str, Any]:
         """Get auction instance only containing the order with a given uid."""

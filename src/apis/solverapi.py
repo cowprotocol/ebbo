@@ -26,9 +26,9 @@ class SolverAPI:
         self.logger = get_logger()
         if url is None:
             load_dotenv()
-            self.solver_url = getenv("SOLVER_URL")
+            self.solver_url = getenv("QUASIMODO_SOLVER_URL")
 
-    def get_solution(
+    def solve_instance(
         self, auction_instance: dict[str, Any]
     ) -> Optional[dict[str, Any]]:
         """
