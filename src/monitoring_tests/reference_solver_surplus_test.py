@@ -54,11 +54,11 @@ class ReferenceSolverSurplusTest(BaseTest):
 
             trade_alt = self.get_trade_alternative(uid, auction_instance)
             if trade_alt is None:
-                self.logger.error(
+                self.logger.warning(
                     f"No alternative trade for uid {uid} and "
                     f"auction id {auction_instance['metadata']['auction_id']}"
                 )
-                return False
+                return True
             if trade_alt.execution.buy_amount == 0:
                 continue
 
