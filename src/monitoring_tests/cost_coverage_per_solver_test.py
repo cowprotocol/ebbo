@@ -3,7 +3,7 @@ Computing cost coverage per solver.
 """
 # pylint: disable=logging-fstring-interpolation
 
-from typing import Any
+from typing import Any, Dict
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
@@ -25,8 +25,8 @@ class CostCoveragePerSolverTest(BaseTest):
         super().__init__()
         self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
-        self.cost_coverage_per_solver = {}
-        self.total_coverage_per_solver = {}
+        self.cost_coverage_per_solver: Dict[str, float] = {}
+        self.total_coverage_per_solver: Dict[str, float] = {}
         self.original_block = self.web3_api.get_current_block_number()
 
     def cost_coverage(self, competition_data: dict[str, Any], gas_cost: float) -> bool:
@@ -84,8 +84,8 @@ class CostCoveragePerSolverTest(BaseTest):
 
         ### This part takes care of the reporting once a day.
         current_block = self.web3_api.get_current_block_number()
-        if current_block is None:
-            current_block = 0
+        if current_block is None or self.original_block is None:
+            return success
         if current_block - self.original_block > DAY_BLOCK_INTERVAL:
             log_msg = (
                 f'"Fees - gasCost" per solver from block {self.original_block} to {current_block}: '
