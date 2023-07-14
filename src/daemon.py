@@ -46,7 +46,7 @@ def main() -> None:
 
     web3_api.logger.debug("Start infinite loop")
     while True:
-        #time.sleep(SLEEP_TIME_IN_SEC)
+        time.sleep(SLEEP_TIME_IN_SEC)
         if start_block is None:
             start_block = web3_api.get_current_block_number()
             continue
