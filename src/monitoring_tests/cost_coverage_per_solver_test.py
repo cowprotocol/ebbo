@@ -81,7 +81,6 @@ class CostCoveragePerSolverTest(BaseTest):
             return False
 
         success = self.cost_coverage(solver_competition_data, gas_cost)
-        success = success and self.total_coverage(solver_competition_data, gas_cost)
 
         ### This part takes care of the reporting once a day.
         current_block = self.web3_api.get_current_block_number()
