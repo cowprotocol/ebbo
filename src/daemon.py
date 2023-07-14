@@ -39,7 +39,7 @@ def main() -> None:
         ReferenceSolverSurplusTest(),
         PartialFillFeeQuoteTest(),
         PartialFillCostCoverageTest(),
-        CostCoveragePerSolverTest()
+        CostCoveragePerSolverTest(),
     ]
 
     start_block: Optional[int] = None

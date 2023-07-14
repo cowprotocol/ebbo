@@ -9,12 +9,12 @@ from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
 from src.constants import DAY_BLOCK_INTERVAL
 
+
 class CostCoveragePerSolverTest(BaseTest):
     """
     This test checks the following on a per solver basis:
         1. fees_collected (as perceived by solver) minus actual execution cost.
         2. total payout to solver minus actual execution cost.
-    
     The intent is to gain a better understanding of which solvers are more costly,
     how much we are paying them etc.
 
@@ -28,9 +28,6 @@ class CostCoveragePerSolverTest(BaseTest):
         self.cost_coverage_per_solver = {}
         self.total_coverage_per_solver = {}
         self.original_block = self.web3_api.get_current_block_number()
-
-
-
 
     def cost_coverage(self, competition_data: dict[str, Any], gas_cost: float) -> bool:
         """
@@ -63,8 +60,6 @@ class CostCoveragePerSolverTest(BaseTest):
             self.total_coverage_per_solver[solver] = ref_score - surplus
 
         return True
-    
-
 
     def run(self, tx_hash: str) -> bool:
         """
@@ -76,27 +71,35 @@ class CostCoveragePerSolverTest(BaseTest):
         )
         transaction = self.web3_api.get_transaction(tx_hash)
         receipt = self.web3_api.get_receipt(tx_hash)
-        gas_cost = 0
+        gas_cost = 0.0
         if transaction is not None and receipt is not None:
-            x,y = self.web3_api.get_batch_gas_costs(transaction,receipt)
-            gas_cost = x * y / 10**18
+            gas_used, gas_price = self.web3_api.get_batch_gas_costs(
+                transaction, receipt
+            )
+            gas_cost = float(gas_used) * float(gas_price) / 10**18
         if gas_cost == 0 or solver_competition_data is None:
             return False
 
-        success = self.cost_coverage(solver_competition_data,gas_cost)
-        success = success and self.total_coverage(solver_competition_data,gas_cost)
+        success = self.cost_coverage(solver_competition_data, gas_cost)
+        success = success and self.total_coverage(solver_competition_data, gas_cost)
 
         ### This part takes care of the reporting once a day.
         current_block = self.web3_api.get_current_block_number()
         if current_block is None:
             current_block = 0
         if current_block - self.original_block > DAY_BLOCK_INTERVAL:
-            log_msg = f"\"Fees - gas cost\" coverage per solver from block {self.original_block} to {current_block}: " + str(self.cost_coverage_per_solver)
+            log_msg = (
+                f'"Fees - gasCost" per solver from block {self.original_block} to {current_block}: '
+                + str(self.cost_coverage_per_solver)
+            )
             self.logger.info(log_msg)
-            log_msg = f"\"Fees - payment to solver\" coverage per solver from block {self.original_block} to {current_block}: " + str(self.total_coverage_per_solver)
+            log_msg = (
+                f'"Fees - payment" per solver from block {self.original_block} to {current_block}: '
+                + str(self.total_coverage_per_solver)
+            )
             self.logger.info(log_msg)
             self.original_block = current_block
-            for x in self.cost_coverage_per_solver:
-                self.cost_coverage_per_solver[x] = 0
-                self.total_coverage_per_solver[x] = 0
+            for solver in self.cost_coverage_per_solver:
+                self.cost_coverage_per_solver[solver] = 0
+                self.total_coverage_per_solver[solver] = 0
         return success
