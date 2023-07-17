@@ -45,7 +45,7 @@ class CostCoveragePerSolverTest(BaseTest):
         solver = solution["solver"]
         ref_score = 0
         if len(competition_data["solutions"]) > 1:
-            second_best_sol = competition_data["solutions"][-1]
+            second_best_sol = competition_data["solutions"][-2]
             if "score" in second_best_sol:
                 ref_score = second_best_sol["score"]
             elif "scoreDiscounted" in second_best_sol:
