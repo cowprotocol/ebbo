@@ -86,6 +86,8 @@ class CostCoveragePerSolverTest(BaseTest):
 
         ### This part takes care of the reporting once a day.
         current_block = self.web3_api.get_current_block_number()
+        if self.original_block is None:
+            self.original_block = current_block
         if current_block is None or self.original_block is None:
             return success
         if current_block - self.original_block > DAY_BLOCK_INTERVAL:
