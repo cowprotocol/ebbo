@@ -14,7 +14,7 @@ class CostCoveragePerSolverTest(BaseTest):
     """
     This test checks the following on a per solver basis:
         1. fees_collected (as perceived by solver) minus actual execution cost.
-        2. total payout to solver minus actual execution cost.
+        2. total payout to solver minus fees collected.
     The intent is to gain a better understanding of which solvers are more costly,
     how much we are paying them etc.
 
@@ -52,12 +52,14 @@ class CostCoveragePerSolverTest(BaseTest):
                 ref_score = second_best_sol["scoreDiscounted"]
             else:
                 ref_score = second_best_sol["scoreProtocol"]
+        payout = surplus + fees - ref_score
+        capped_payout = min(payout, gas_cost + 0.01)
         if solver in self.cost_coverage_per_solver:
             self.cost_coverage_per_solver[solver] += fees - gas_cost
-            self.total_coverage_per_solver[solver] += ref_score - surplus
+            self.total_coverage_per_solver[solver] += fees - capped_payout
         else:
             self.cost_coverage_per_solver[solver] = fees - gas_cost
-            self.total_coverage_per_solver[solver] = ref_score - surplus
+            self.total_coverage_per_solver[solver] = fees - capped_payout
 
         return True
 
