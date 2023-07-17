@@ -7,7 +7,7 @@ from typing import Any, Dict
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
-from src.constants import DAY_BLOCK_INTERVAL
+from src.constants import DAY_BLOCK_INTERVAL, CAP_PARAMETER
 
 
 class CostCoveragePerSolverTest(BaseTest):
@@ -53,7 +53,7 @@ class CostCoveragePerSolverTest(BaseTest):
             else:
                 ref_score = second_best_sol["scoreProtocol"]
         payout = surplus + fees - ref_score
-        capped_payout = min(payout, gas_cost + 0.01)
+        capped_payout = min(payout, gas_cost + CAP_PARAMETER)
         if solver in self.cost_coverage_per_solver:
             self.cost_coverage_per_solver[solver] += fees - gas_cost
             self.total_coverage_per_solver[solver] += fees - capped_payout
