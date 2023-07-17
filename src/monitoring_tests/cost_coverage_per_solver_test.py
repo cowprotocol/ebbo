@@ -43,7 +43,7 @@ class CostCoveragePerSolverTest(BaseTest):
         fees = float(int(solution["objective"]["fees"]) / 10**18)
         surplus = float(int(solution["objective"]["surplus"]) / 10**18)
         solver = solution["solver"]
-        ref_score = 0
+        ref_score = 0.0
         if len(competition_data["solutions"]) > 1:
             second_best_sol = competition_data["solutions"][-2]
             if "score" in second_best_sol:
