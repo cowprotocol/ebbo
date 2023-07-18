@@ -47,11 +47,12 @@ class CostCoveragePerSolverTest(BaseTest):
         if len(competition_data["solutions"]) > 1:
             second_best_sol = competition_data["solutions"][-2]
             if "score" in second_best_sol:
-                ref_score = float(int(second_best_sol["score"]) / 10**18)
+                ref_score_str = second_best_sol["score"]
             elif "scoreDiscounted" in second_best_sol:
-                ref_score = float(int(second_best_sol["scoreDiscounted"]) / 10**18)
+                ref_score_str = second_best_sol["scoreDiscounted"]
             else:
-                ref_score = float(int(second_best_sol["scoreProtocol"]) / 10**18)
+                ref_score_str = second_best_sol["scoreProtocol"]
+            ref_score = float(int(ref_score_str) / 10**18)
         payout = surplus + fees - ref_score
         capped_payout = min(payout, gas_cost + CAP_PARAMETER)
         if solver in self.cost_coverage_per_solver:
