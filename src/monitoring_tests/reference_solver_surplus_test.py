@@ -82,7 +82,8 @@ class ReferenceSolverSurplusTest(BaseTest):
                 [
                     f"Tx Hash: {competition_data['transactionHash']}",
                     f"Order UID: {uid}",
-                    f"Solution providing more surplus",
+                    "Solution providing more surplus",
+                    str(ref_solver_response[1]),
                 ]
             )
 
@@ -91,7 +92,7 @@ class ReferenceSolverSurplusTest(BaseTest):
                 and a_rel > SURPLUS_REL_DEVIATION
             ):
                 self.alert(log_output)
-                self.logger.info(ref_solver_log + str(ref_solver_response[1]))
+                self.logger.info(ref_solver_log)
             elif (
                 a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10
                 and a_rel > SURPLUS_REL_DEVIATION / 10
@@ -124,7 +125,7 @@ class ReferenceSolverSurplusTest(BaseTest):
             return None
         execution = self.solver_api.get_execution_from_solution(solution)
 
-        return (Trade(data, execution),solution)
+        return (Trade(data, execution), solution)
 
     def get_uid_trades(self, solution: dict[str, Any]) -> dict[str, Trade]:
         """Get a dictionary mapping UIDs to trades in a solution."""
