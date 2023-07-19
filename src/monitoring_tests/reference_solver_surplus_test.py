@@ -119,7 +119,7 @@ class ReferenceSolverSurplusTest(BaseTest):
 
     def get_trade_alternative(
         self, uid: str, auction_instance: dict[str, Any], solution: dict[str, Any]
-    ) -> Optional[Trade]:
+    ) -> Trade:
         """Parse alternative execution for an order with uid as settled by a reference solver
         given the liquidity in auction_instance.
         """
