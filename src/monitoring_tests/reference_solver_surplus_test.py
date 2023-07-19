@@ -52,13 +52,14 @@ class ReferenceSolverSurplusTest(BaseTest):
                 10**36,
             )
 
-            trade_alt = self.get_trade_alternative(uid, auction_instance)
-            if trade_alt is None:
+            ref_solver_response = self.get_trade_alternative(uid, auction_instance)
+            if ref_solver_response is None:
                 self.logger.warning(
                     f"No alternative trade for uid {uid} and "
                     f"auction id {auction_instance['metadata']['auction_id']}"
                 )
                 return True
+            trade_alt = ref_solver_response[0]
             if trade_alt.execution.buy_amount == 0:
                 continue
 
@@ -77,12 +78,20 @@ class ReferenceSolverSurplusTest(BaseTest):
                     f"Absolute difference: {float(a_abs_eth):.5f}ETH ({a_abs} atoms)",
                 ]
             )
+            ref_solver_log = "\t".join(
+                [
+                    f"Tx Hash: {competition_data['transactionHash']}",
+                    f"Order UID: {uid}",
+                    f"Solution providing more surplus",
+                ]
+            )
 
             if (
                 a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH
                 and a_rel > SURPLUS_REL_DEVIATION
             ):
                 self.alert(log_output)
+                self.logger.info(ref_solver_log + str(ref_solver_response[1]))
             elif (
                 a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10
                 and a_rel > SURPLUS_REL_DEVIATION / 10
@@ -95,7 +104,7 @@ class ReferenceSolverSurplusTest(BaseTest):
 
     def get_trade_alternative(
         self, uid: str, auction_instance: dict[str, Any]
-    ) -> Optional[Trade]:
+    ) -> Optional[tuple[Trade, dict[str, Any]]]:
         """Compute alternative execution for an order with uid as settled by a reference solver
         given the liquidity in auction_instance.
         """
@@ -115,7 +124,7 @@ class ReferenceSolverSurplusTest(BaseTest):
             return None
         execution = self.solver_api.get_execution_from_solution(solution)
 
-        return Trade(data, execution)
+        return (Trade(data, execution),solution)
 
     def get_uid_trades(self, solution: dict[str, Any]) -> dict[str, Trade]:
         """Get a dictionary mapping UIDs to trades in a solution."""
