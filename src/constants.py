@@ -19,6 +19,12 @@ FEE_RELATIVE_DEVIATION_FLAG = 1.0
 # reference solver test
 SOLVER_TIME_LIMIT = 20
 
+# how many blocks are contained in a single day
+DAY_BLOCK_INTERVAL = 7200
+
+# cap parameter, per CIP-20, measured in ETH
+CAP_PARAMETER = 0.01
+
 # requests
 SETTLEMENT_CONTRACT_ADDRESS = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
 REQUEST_TIMEOUT = 5
