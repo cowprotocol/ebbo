@@ -33,8 +33,8 @@ class ReferenceSolverSurplusTest(BaseTest):
     ) -> bool:
         """
         This function goes through each order that the winning solution executed
-        and finds non-winning solutions that executed the same order and
-        calculates surplus difference between that pair (winning and non-winning solution).
+        and compares its execution with the execution of that order by
+        a reference solver.
         """
 
         solution = competition_data["solutions"][-1]
@@ -52,13 +52,18 @@ class ReferenceSolverSurplusTest(BaseTest):
                 10**36,
             )
 
-            trade_alt = self.get_trade_alternative(uid, auction_instance)
-            if trade_alt is None:
-                self.logger.warning(
-                    f"No alternative trade for uid {uid} and "
+            ref_solver_response = self.solve_order_with_reference_solver(
+                uid, auction_instance
+            )
+            if ref_solver_response is None:
+                self.logger.debug(
+                    f"No reference solution for uid {uid} and "
                     f"auction id {auction_instance['metadata']['auction_id']}"
                 )
                 return True
+            trade_alt = self.get_trade_information(
+                uid, auction_instance, ref_solver_response
+            )
             if trade_alt.execution.buy_amount == 0:
                 continue
 
@@ -77,12 +82,20 @@ class ReferenceSolverSurplusTest(BaseTest):
                     f"Absolute difference: {float(a_abs_eth):.5f}ETH ({a_abs} atoms)",
                 ]
             )
+            ref_solver_log = "\t".join(
+                [
+                    f"Tx Hash: {competition_data['transactionHash']}",
+                    f"Order UID: {uid}",
+                    f"Solution providing more surplus: {ref_solver_response}",
+                ]
+            )
 
             if (
                 a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH
                 and a_rel > SURPLUS_REL_DEVIATION
             ):
                 self.alert(log_output)
+                self.logger.info(ref_solver_log)
             elif (
                 a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10
                 and a_rel > SURPLUS_REL_DEVIATION / 10
@@ -93,26 +106,26 @@ class ReferenceSolverSurplusTest(BaseTest):
 
         return True
 
-    def get_trade_alternative(
+    def solve_order_with_reference_solver(
         self, uid: str, auction_instance: dict[str, Any]
-    ) -> Optional[Trade]:
-        """Compute alternative execution for an order with uid as settled by a reference solver
+    ) -> Optional[dict[str, Any]]:
+        """Compute solution json for an order with uid as settled by a reference solver
         given the liquidity in auction_instance.
         """
-        data = self.auction_instance_api.get_order_data(uid, auction_instance)
         order_auction_instance = (
             self.auction_instance_api.generate_reduced_single_order_auction_instance(
                 uid, auction_instance
             )
         )
+        return self.solver_api.solve_instance(order_auction_instance)
 
-        solution = self.solver_api.solve_instance(order_auction_instance)
-        if solution is None:
-            self.logger.debug(
-                f"No reference solution for uid {uid} and "
-                f"auction id {auction_instance['metadata']['auction_id']}"
-            )
-            return None
+    def get_trade_information(
+        self, uid: str, auction_instance: dict[str, Any], solution: dict[str, Any]
+    ) -> Trade:
+        """Parse execution for an order with uid as settled by a reference solver
+        given the liquidity in auction_instance.
+        """
+        data = self.auction_instance_api.get_order_data(uid, auction_instance)
         execution = self.solver_api.get_execution_from_solution(solution)
 
         return Trade(data, execution)
