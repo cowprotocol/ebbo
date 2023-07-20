@@ -61,7 +61,7 @@ class ReferenceSolverSurplusTest(BaseTest):
                     f"auction id {auction_instance['metadata']['auction_id']}"
                 )
                 return True
-            trade_alt = self.get_trade_alternative(
+            trade_alt = self.get_trade_information(
                 uid, auction_instance, ref_solver_response
             )
             if trade_alt.execution.buy_amount == 0:
@@ -119,10 +119,10 @@ class ReferenceSolverSurplusTest(BaseTest):
         )
         return self.solver_api.solve_instance(order_auction_instance)
 
-    def get_trade_alternative(
+    def get_trade_information(
         self, uid: str, auction_instance: dict[str, Any], solution: dict[str, Any]
     ) -> Trade:
-        """Parse alternative execution for an order with uid as settled by a reference solver
+        """Parse execution for an order with uid as settled by a reference solver
         given the liquidity in auction_instance.
         """
         data = self.auction_instance_api.get_order_data(uid, auction_instance)
