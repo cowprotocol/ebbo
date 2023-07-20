@@ -61,7 +61,9 @@ class ReferenceSolverSurplusTest(BaseTest):
                     f"auction id {auction_instance['metadata']['auction_id']}"
                 )
                 return True
-            trade_alt = self.get_trade_alternative(uid, auction_instance, solution)
+            trade_alt = self.get_trade_alternative(
+                uid, auction_instance, ref_solver_response
+            )
             if trade_alt.execution.buy_amount == 0:
                 continue
 
@@ -84,7 +86,7 @@ class ReferenceSolverSurplusTest(BaseTest):
                 [
                     f"Tx Hash: {competition_data['transactionHash']}",
                     f"Order UID: {uid}",
-                    f"Solution providing more surplus: {solution}",
+                    f"Solution providing more surplus: {ref_solver_response}",
                 ]
             )
 

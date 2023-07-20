@@ -66,7 +66,7 @@ class SolverAPI:
         """
         orders = solution["orders"]
         if len(orders) == 1:
-            _, order_dict = solution["orders"].popitem()
+            (order_dict,) = solution["orders"].values()
             execution = self.get_execution_from_order(order_dict)
         elif len(orders) == 0:
             self.logger.debug("Trivial solution found.")
