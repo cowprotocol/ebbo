@@ -50,6 +50,8 @@ class CostCoveragePerSolverTest(BaseTest):
                 ref_score_str = second_best_sol["score"]
             elif "scoreDiscounted" in second_best_sol:
                 ref_score_str = second_best_sol["scoreDiscounted"]
+            elif "scoreProtocolWithSolverRisk" in second_best_sol:
+                ref_score_str = second_best_sol["scoreProtocolWithSolverRisk"]
             else:
                 ref_score_str = second_best_sol["scoreProtocol"]
             ref_score = float(int(ref_score_str) / 10**18)
