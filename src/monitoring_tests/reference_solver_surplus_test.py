@@ -94,7 +94,7 @@ class ReferenceSolverSurplusTest(BaseTest):
                 a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH
                 and a_rel > SURPLUS_REL_DEVIATION
             ):
-                self.alert(log_output)
+                self.logger.info(log_output)
                 self.logger.info(ref_solver_log)
             elif (
                 a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10
