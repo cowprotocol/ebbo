@@ -15,8 +15,9 @@ from src.constants import (
 
 class BuffersMonitoringTest(BaseTest):
     """
-    This test compares the surplus all orders from the winning settlement to
-    the different executions of these orders by other solvers in the competition.
+    This test checks the value of the settlement contract buffers
+    every 150 settlements and generates an alert if it is higher than 200_000 USD.
+    Price feeds from ethplorer and coingecko (as backup) are used.
     """
 
     def __init__(self) -> None:
@@ -88,8 +89,8 @@ class BuffersMonitoringTest(BaseTest):
 
     def run(self, tx_hash: str) -> bool:
         """
-        Wrapper function for the whole test. Checks if solver competition data is retrievable
-        and runs EBBO test, else returns True to add to list of unchecked hashes.
+        Wrapper function for the whole test. Checks if 150 settlements have been observed,
+        in which case it invokes the main function that checks the current value of buffers.
         """
         self.counter += 1
         if self.counter > BUFFER_INTERVAL:
