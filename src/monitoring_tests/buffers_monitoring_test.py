@@ -22,7 +22,7 @@ class BuffersMonitoringTest(BaseTest):
     def __init__(self) -> None:
         super().__init__()
         self.counter: int = 0
-        self.buffers_value = 0
+        self.buffers_value: float = 0.0
 
     def compute_buffers_value(self) -> bool:
         """
