@@ -3,7 +3,6 @@ Checks the value of buffers every 150 settlements by invoking
 the ehtplorer api, and in some cases, coingecko.
 """
 # pylint: disable=logging-fstring-interpolation
-from typing import Any
 import requests
 from src.monitoring_tests.base_test import BaseTest
 from src.constants import (
@@ -30,12 +29,15 @@ class BuffersMonitoringTest(BaseTest):
         Evaluates current state of buffers.
         """
         # get all token balances of the smart contract
-        request_url = "https://api.ethplorer.io/\
-            getAddressInfo/\
-            0x9008D19f58AAbD9eD0D60971565AA8510560ab41?\
-            apiKey=freekey"
         try:
-            resp = requests.get(request_url, headers=header, timeout=REQUEST_TIMEOUT)
+            resp = requests.get(
+                "https://api.ethplorer.io/\
+                    getAddressInfo/\
+                    0x9008D19f58AAbD9eD0D60971565AA8510560ab41?\
+                    apiKey=freekey",
+                headers=header,
+                timeout=REQUEST_TIMEOUT,
+            )
             rsp = resp.json()
 
             value_in_usd = 0.0
@@ -51,15 +53,12 @@ class BuffersMonitoringTest(BaseTest):
                     # smart contract we use a second price feed, from coingecko, to correct in case
                     # the initial price is indeed off
                     if token_buffer_value_in_usd > 10000:
-                        coingecko_request_url = (
+                        coingecko_resp = requests.get(
                             "https://api.coingecko.com/\
                                 api/v3/simple/token_price/\
                                 ethereum?contract_addresses="
                             + token["tokenInfo"]["address"]
-                            + "&vs_currencies=usd"
-                        )
-                        coingecko_resp = requests.get(
-                            coingecko_request_url,
+                            + "&vs_currencies=usd",
                             headers=header,
                             timeout=REQUEST_TIMEOUT,
                         )
@@ -78,7 +77,7 @@ class BuffersMonitoringTest(BaseTest):
             if self.buffers_value > BUFFER_VALUE_THRESHOLD:
                 self.alert(log_output)
             else:
-                self.info(log_output)
+                self.logger.info(log_output)
 
         except requests.RequestException as err:
             self.logger.warning(
