@@ -24,8 +24,11 @@ class Web3API:
 
     def __init__(self) -> None:
         load_dotenv()
-        infura_key = getenv("INFURA_KEY")
-        self.url = f"https://mainnet.infura.io/v3/{infura_key}"
+        if getenv("NODE_URL"):
+            self.url = getenv("NODE_URL")
+        else:
+            infura_key = getenv("INFURA_KEY")
+            self.url = f"https://mainnet.infura.io/v3/{infura_key}"
         self.web_3 = Web3(Web3.HTTPProvider(self.url))
         self.contract = self.web_3.eth.contract(
             address=Address(HexBytes(SETTLEMENT_CONTRACT_ADDRESS)), abi=gpv2_settlement

@@ -44,7 +44,7 @@ Install the following libraries as dependencies. <br>
     pip  install  python-dotenv
   
 
-To test either of the components, create a `.env` file in the root directory (ebbo) and set variables `ETHERSCAN_KEY` and `INFURA_KEY` as string values from [Etherscan API Key](https://etherscan.io/myapikey) in your profile and Infura once you have an account created one. You will also need a `DUNE_KEY` for running the historical data test. <br>
+To test either of the components, create a `.env` file in the root directory (ebbo) and set variables `ETHERSCAN_KEY` and `INFURA_KEY` as string values from [Etherscan API Key](https://etherscan.io/myapikey) in your profile and Infura once you have an account created one. You can also set `NODE_URL` instead of `INFURA_KEY` if you are using a different RPC provider. You will also need a `DUNE_KEY` for running the historical data test. <br>
 Sample `.env` structure:
 
     INFURA_KEY = 'string key here'
