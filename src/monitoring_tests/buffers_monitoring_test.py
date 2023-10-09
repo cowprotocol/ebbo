@@ -9,7 +9,7 @@ from src.constants import (
     BUFFER_INTERVAL,
     header,
     REQUEST_TIMEOUT,
-    BUFFER_VALUE_THRESHOLD,
+    BUFFERS_VALUE_USD_THRESHOLD,
 )
 
 
@@ -75,7 +75,7 @@ class BuffersMonitoringTest(BaseTest):
                     value_in_usd += token_buffer_value_in_usd
             self.buffers_value = value_in_usd
             log_output = f"Buffer value is {self.buffers_value} USD"
-            if self.buffers_value > BUFFER_VALUE_THRESHOLD:
+            if self.buffers_value > BUFFERS_VALUE_USD_THRESHOLD:
                 self.alert(log_output)
             else:
                 self.logger.info(log_output)

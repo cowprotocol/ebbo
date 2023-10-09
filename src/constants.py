@@ -29,7 +29,7 @@ CAP_PARAMETER = 0.01
 BUFFER_INTERVAL = 150
 
 # threshold of value of buffers above which an alert is generated
-BUFFER_VALUE_THRESHOLD = 200000
+BUFFERS_VALUE_USD_THRESHOLD = 200000
 
 # threshold parameter to generate an alert when receiving kickbacks
 KICKBACKS_ALERT_THRESHOLD = 0.03
