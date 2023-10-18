@@ -46,6 +46,8 @@ class BuffersMonitoringTest(BaseTest):
             kleros_list = self.kleros_api.get_token_list()
 
             value_in_usd = 0.0
+            if "tokens" not in ethplorer_rsp:
+                return False
             for token in ethplorer_rsp["tokens"]:
                 if token["tokenInfo"]["address"] not in kleros_list:
                     continue
@@ -77,9 +79,9 @@ class BuffersMonitoringTest(BaseTest):
             else:
                 self.logger.info(log_output)
 
-        except Exception as err:
+        except requests.RequestException as err:
             self.logger.warning(
-                f"Error while fetching buffer tokens and prices, error: {err}"
+                f"Connection Error while fetching buffer tokens and prices, error: {err}"
             )
             return False
         return True
