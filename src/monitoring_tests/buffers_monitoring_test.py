@@ -5,6 +5,8 @@ the ehtplorer api, and in some cases, coingecko.
 # pylint: disable=logging-fstring-interpolation
 import requests
 from src.monitoring_tests.base_test import BaseTest
+from src.apis.coingeckoapi import CoingeckoAPI
+from src.apis.klerosapi import KlerosAPI
 from src.constants import (
     BUFFER_INTERVAL,
     header,
@@ -22,6 +24,8 @@ class BuffersMonitoringTest(BaseTest):
 
     def __init__(self) -> None:
         super().__init__()
+        self.coingecko_api = CoingeckoAPI()
+        self.kleros_api = KlerosAPI()
         self.counter: int = 0
 
     def compute_buffers_value(self) -> bool:
@@ -30,7 +34,7 @@ class BuffersMonitoringTest(BaseTest):
         """
         # get all token balances of the smart contract
         try:
-            resp = requests.get(
+            ethplorer_data = requests.get(
                 "https://api.ethplorer.io/\
                     getAddressInfo/\
                     0x9008D19f58AAbD9eD0D60971565AA8510560ab41?\
@@ -38,20 +42,11 @@ class BuffersMonitoringTest(BaseTest):
                 headers=header,
                 timeout=REQUEST_TIMEOUT,
             )
-            rsp = resp.json()
-
-            kleros_resp = requests.get(
-                "http://t2crtokens.eth.link",
-                headers=header,
-                timeout=REQUEST_TIMEOUT,
-            )
-            kleros_rsp = kleros_resp.json()
-            kleros_list = []
-            for t in kleros_rsp["tokens"]:
-                kleros_list.append(t["address"])
+            ethplorer_rsp = ethplorer_data.json()
+            kleros_list = self.kleros_api.get_token_list()
 
             value_in_usd = 0.0
-            for token in rsp["tokens"]:
+            for token in ethplorer_rsp["tokens"]:
                 if token["tokenInfo"]["address"] not in kleros_list:
                     continue
                 balance = token["balance"]
@@ -65,19 +60,11 @@ class BuffersMonitoringTest(BaseTest):
                     # smart contract we use a second price feed, from coingecko, to correct in case
                     # the initial price is indeed off
                     if token_buffer_value_in_usd > 10000:
-                        coingecko_resp = requests.get(
-                            "https://api.coingecko.com/\
-                                api/v3/simple/token_price/\
-                                ethereum?contract_addresses="
-                            + token["tokenInfo"]["address"]
-                            + "&vs_currencies=usd",
-                            headers=header,
-                            timeout=REQUEST_TIMEOUT,
+                        coingecko_price_in_usd = (
+                            self.coingecko_api.get_token_price_in_usd(
+                                token["tokenInfo"]["address"]
+                            )
                         )
-                        coingecko_rsp = coingecko_resp.json()
-                        coingecko_price_in_usd = coingecko_rsp[
-                            token["tokenInfo"]["address"]
-                        ]["usd"]
                         coingecko_value_in_usd = (
                             balance / 10**decimals
                         ) * coingecko_price_in_usd
@@ -90,9 +77,9 @@ class BuffersMonitoringTest(BaseTest):
             else:
                 self.logger.info(log_output)
 
-        except requests.RequestException as err:
+        except Exception as err:
             self.logger.warning(
-                f"Connection error while fetching buffer tokens and prices, error: {err}"
+                f"Error while fetching buffer tokens and prices, error: {err}"
             )
             return False
         return True
