@@ -40,8 +40,20 @@ class BuffersMonitoringTest(BaseTest):
             )
             rsp = resp.json()
 
+            kleros_resp = requests.get(
+                "http://t2crtokens.eth.link",
+                headers=header,
+                timeout=REQUEST_TIMEOUT,
+            )
+            kleros_rsp = kleros_resp.json()
+            kleros_list = []
+            for t in kleros_rsp["tokens"]:
+                kleros_list.append(t["address"])
+
             value_in_usd = 0.0
             for token in rsp["tokens"]:
+                if token["tokenInfo"]["address"] not in kleros_list:
+                    continue
                 balance = token["balance"]
                 decimals = int(token["tokenInfo"]["decimals"])
                 if token["tokenInfo"]["price"] is not False:
