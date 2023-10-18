@@ -36,7 +36,7 @@ class CoingeckoAPI:
                 timeout=REQUEST_TIMEOUT,
             )
             coingecko_rsp = coingecko_data.json()
-            coingecko_price_in_usd = coingecko_rsp[address]["usd"]
+            coingecko_price_in_usd = float(coingecko_rsp[address]["usd"])
         except requests.RequestException as err:
             self.logger.warning(
                 f"Connection error while fetching Coingecko price for token {address}, error: {err}"
