@@ -48,8 +48,6 @@ class CostCoveragePerSolverTest(BaseTest):
             second_best_sol = competition_data["solutions"][-2]
             if "score" in second_best_sol:
                 ref_score_str = second_best_sol["score"]
-            elif "scoreDiscounted" in second_best_sol:
-                ref_score_str = second_best_sol["scoreDiscounted"]
             elif "scoreProtocolWithSolverRisk" in second_best_sol:
                 ref_score_str = second_best_sol["scoreProtocolWithSolverRisk"]
             else:
