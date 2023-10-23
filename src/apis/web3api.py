@@ -46,8 +46,8 @@ class Web3API:
             return None
 
     def get_filtered_receipts(
-        self, start_block: int, end_block: int, target: str, topics: list[Any] = []
-    ) -> list[Any]:
+        self, start_block: int, end_block: int, target: str, topics: list[Any]
+    ) -> Optional[list[Any]]:
         """
         Function filters receipts by contract address, and block ranges
         """
