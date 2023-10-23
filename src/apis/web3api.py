@@ -93,8 +93,7 @@ class Web3API:
         transaction = self.get_transaction(tx_hash)
         if transaction is None:
             return None
-        else:
-            return transaction["blockNumber"]
+        return transaction["blockNumber"]
 
     def get_receipt(self, tx_hash: str) -> Optional[TxReceipt]:
         """
