@@ -47,7 +47,7 @@ class Web3API:
 
     def get_filtered_receipts(
         self, start_block: int, end_block: int, target: str, topics: list[Any] = []
-    ) -> Optional[list[Any]]:
+    ) -> list[Any]:
         """
         Function filters receipts by contract address, and block ranges
         """
@@ -87,7 +87,7 @@ class Web3API:
     def get_incoming_eth_transfers_to_contract_within_block_range(
         self, start_block: int, end_block: int, target: str
     ) -> Optional[int]:
-        log_receipts = self.get_filtered_receipts(start_block, end_block, target)
+        log_receipts = self.get_filtered_receipts(start_block, end_block, target, [])
         if log_receipts is None:
             return None
         total_transfers_in_eth = 0
