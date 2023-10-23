@@ -94,7 +94,7 @@ class Web3API:
         log_receipts = self.get_filtered_receipts(start_block, end_block, target, [])
         if log_receipts is None:
             return None
-        total_transfers_in_eth = 0
+        total_transfers_in_eth = 0.0
         for txs in log_receipts:
             total_transfers_in_eth += int(txs["data"].hex(), 16) / 10**18
         return total_transfers_in_eth
