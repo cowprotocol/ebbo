@@ -86,7 +86,7 @@ class Web3API:
 
     def get_incoming_eth_transfers_to_contract_within_block_range(
         self, start_block: int, end_block: int, target: str
-    ) -> Optional[int]:
+    ) -> Optional[float]:
         """
         Function that computes total eth transfers to a target address
         within a certain block range
