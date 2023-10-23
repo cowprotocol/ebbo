@@ -45,34 +45,55 @@ class Web3API:
             self.logger.warning(f"Error while fetching block number: {err}")
             return None
 
+    def get_filtered_receipts(
+        self, start_block: int, end_block: int, target: str, topics: list[Any] = []
+    ) -> Optional[list[Any]]:
+        """
+        Function filters receipts by contract address, and block ranges
+        """
+        filter_criteria: FilterParams = {
+            "fromBlock": int(start_block),
+            "toBlock": int(end_block),
+            "address": self.web_3.to_checksum_address(target),
+            "topics": topics,
+        }
+        try:
+            log_receipts = self.web_3.eth.filter(filter_criteria).get_all_entries()
+        except ValueError as err:
+            self.logger.warning(f"ValueError while fetching hashes: {err}")
+            return None
+        return log_receipts
+
     def get_tx_hashes_by_block(
         self, start_block: int, end_block: int
     ) -> Optional[list[str]]:
         """
         Function filters hashes by contract address, and block ranges
         """
-        filter_criteria: FilterParams = {
-            "fromBlock": int(start_block),
-            "toBlock": int(end_block),
-            "address": self.web_3.to_checksum_address(SETTLEMENT_CONTRACT_ADDRESS),
-            "topics": [
-                HexStr(
-                    "0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17"
-                )
-            ],
-        }
+        topics = [
+            HexStr("0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17")
+        ]
+        log_receipts = self.get_filtered_receipts(
+            start_block, end_block, SETTLEMENT_CONTRACT_ADDRESS, topics
+        )
 
-        try:
-            log_receipts = self.web_3.eth.filter(filter_criteria).get_all_entries()
-        except ValueError as err:
-            self.logger.warning(f"ValueError while fetching hashes: {err}")
+        if log_receipts is None:
             return None
-
         settlement_hashes_list = list(
             {log_receipt["transactionHash"].hex() for log_receipt in log_receipts}
         )
-
         return settlement_hashes_list
+
+    def get_incoming_eth_transfers_to_contract_within_block_range(
+        self, start_block: int, end_block: int, target: str
+    ) -> Optional[int]:
+        log_receipts = self.get_filtered_receipts(start_block, end_block, target)
+        if log_receipts is None:
+            return None
+        total_transfers_in_eth = 0
+        for txs in log_receipts:
+            total_transfers_in_eth += int(txs["data"].hex(), 16) / 10**18
+        return total_transfers_in_eth
 
     def get_transaction(self, tx_hash: str) -> Optional[TxData]:
         """
