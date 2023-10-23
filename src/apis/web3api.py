@@ -87,6 +87,10 @@ class Web3API:
     def get_incoming_eth_transfers_to_contract_within_block_range(
         self, start_block: int, end_block: int, target: str
     ) -> Optional[int]:
+        """
+        Function that computes total eth transfers to a target address
+        within a certain block range
+        """
         log_receipts = self.get_filtered_receipts(start_block, end_block, target, [])
         if log_receipts is None:
             return None
