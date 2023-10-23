@@ -85,7 +85,7 @@ class Web3API:
             transaction = None
 
         return transaction
-    
+
     def get_tx_block_number(self, tx_hash: str) -> Optional[int]:
         """
         Takes tx hash as input, returns block number where tx took place.
@@ -94,8 +94,8 @@ class Web3API:
         if transaction is None:
             return None
         else:
-            return transaction['blockNumber']
-    
+            return transaction["blockNumber"]
+
     def get_receipt(self, tx_hash: str) -> Optional[TxReceipt]:
         """
         Get the receipt of a transaction from the transaction hash.
