@@ -28,7 +28,7 @@ class Web3API:
             self.url = getenv("NODE_URL")
         else:
             infura_key = getenv("INFURA_KEY")
-            #self.url = f"https://mainnet.infura.io/v3/{infura_key}"
+            # self.url = f"https://mainnet.infura.io/v3/{infura_key}"
             self.url = "https://mainnet.infura.io/v3/ec46e54a3d5a41e4930952e54bd0cd51"
         self.web_3 = Web3(Web3.HTTPProvider(self.url))
         self.contract = self.web_3.eth.contract(
@@ -89,7 +89,7 @@ class Web3API:
         self, start_block: int, end_block: int, target: str
     ) -> Optional[float]:
         """
-        Function that computes total eth transfers to a target address
+        Function that computes total eth transfers to a target Safe address
         within a certain block range
         """
         log_receipts = self.get_filtered_receipts(start_block, end_block, target, [])
@@ -97,7 +97,10 @@ class Web3API:
             return None
         total_transfers_in_eth = 0.0
         for txs in log_receipts:
-            if txs["topics"][0].hex() == "0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d":
+            if (
+                txs["topics"][0].hex()
+                == "0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d"
+            ):
                 total_transfers_in_eth += int(txs["data"].hex(), 16) / 10**18
         return total_transfers_in_eth
 
