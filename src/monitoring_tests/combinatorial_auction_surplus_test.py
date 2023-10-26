@@ -38,11 +38,16 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
 
-    def compare_token_pairs_surplus(self, competition_data: dict[str, Any]) -> bool:
-        """
-        This function goes through each token pair that the winning solution executed
-        and finds non-winning solutions that executed the only orders on the same token pair.
-        It then calculates surplus difference between the winning and non-winning solution.
+    def run_combinatorial_auction(self, competition_data: dict[str, Any]) -> bool:
+        """Run combinatorial auction on competition data.
+
+        The combinatorial auction consists of 4 steps:
+        1. Aggregate surplus on the different directed sell token-buy token pairs for all solutions
+           in the competition.
+        2. Compute a baseline for surplus on all token pairs from those solutions.
+        3. Filter solutions which to not provide at least as much surplus as the baseline on all
+           token pairs.
+        4. Choose one batch winner and multiple single order winners.
         """
 
         solutions = competition_data["solutions"]
@@ -238,6 +243,6 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         if solver_competition_data is None:
             return False
 
-        success = self.compare_token_pairs_surplus(solver_competition_data)
+        success = self.run_combinatorial_auction(solver_competition_data)
 
         return success
