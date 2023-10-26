@@ -84,7 +84,7 @@ class Web3API:
         )
         return settlement_hashes_list
 
-    def get_incoming_eth_transfers_to_contract_within_block_range(
+    def get_eth_transfers_by_block_range(
         self, start_block: int, end_block: int, target: str
     ) -> Optional[float]:
         """
