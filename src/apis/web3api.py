@@ -96,9 +96,9 @@ class Web3API:
         if log_receipts is None:
             return None
         total_transfers_in_eth = 0.0
-        for tx in log_receipts:
-            if tx["topics"][0].hex() == "0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d":
-                total_transfers_in_eth += int(tx["data"].hex(), 16) / 10**18
+        for txs in log_receipts:
+            if txs["topics"][0].hex() == "0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d":
+                total_transfers_in_eth += int(txs["data"].hex(), 16) / 10**18
         return total_transfers_in_eth
 
     def get_transaction(self, tx_hash: str) -> Optional[TxData]:
