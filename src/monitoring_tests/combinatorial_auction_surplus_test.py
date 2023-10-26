@@ -70,6 +70,12 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             solutions, aggregate_solutions, winning_solutions
         )
 
+        solutions_filtering_winner = [
+            solution["solver"]
+            for i, solution in enumerate(solutions)
+            if i in filter_mask[-1]
+        ]
+
         total_combinatorial_surplus = sum(
             sum(surplus for _, surplus in token_pair_surplus.items())
             for _, token_pair_surplus in winning_solvers.items()
@@ -83,6 +89,10 @@ class CombinatorialAuctionSurplusTest(BaseTest):
                 "Combinatorial auction surplus test:",
                 f"Tx Hash: {competition_data['transactionHash']}",
                 f"Winning Solver: {solution['solver']}",
+                f"Winning surplus: {aggregate_solution}",
+                f"Baseline surplus: {baseline_surplus}",
+                f"Solutions filtering winner: {filter_mask[-1]}",
+                f"Solvers filtering winner: {solutions_filtering_winner}",
                 f"Combinatorial winners: {winning_solvers}",
                 f"Total surplus: {float(total_surplus):.5f} ETH",
                 f"Combinatorial surplus: {float(total_combinatorial_surplus):.5f} ETH",
@@ -91,7 +101,10 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         )
         if a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH:
             self.alert(log_output)
-        elif a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10 or not filter_mask[-1]:
+        elif (
+            a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10
+            or not len(filter_mask[-1]) == 0
+        ):
             self.logger.info(log_output)
         else:
             self.logger.debug(log_output)
@@ -140,15 +153,20 @@ class CombinatorialAuctionSurplusTest(BaseTest):
                     10**36,
                 )
 
-            # use the minimum of surplus and objective
-            surplus = min(surplus_token_to_eth * trade.get_surplus(), objective)
+            surplus_dict[token_pair] = (
+                surplus_dict.get(token_pair, 0)
+                + surplus_token_to_eth * trade.get_surplus()
+            )
 
-            surplus_dict[token_pair] = surplus_dict.get(token_pair, 0) + surplus
+        # use the minimum of surplus and objective in case there is only one token pair
+        if len(surplus_dict) == 1:
+            for token_pair in surplus_dict:
+                surplus_dict[token_pair] = min(surplus_dict[token_pair], objective)
 
         return surplus_dict
 
     def compute_baseline_surplus(
-        self, aggregated_solutions: list[dict[tuple[str, str], Fraction]]
+        self, aggregate_solutions: list[dict[tuple[str, str], Fraction]]
     ) -> dict[tuple[str, str], tuple[Fraction, int]]:
         """Computes baseline surplus for all token pairs.
         The baseline is computed from those solutions which only contain orders for a single token
@@ -157,7 +175,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         well as the index of the corresponding solution in the solutions list.
         """
         result: dict[tuple[str, str], tuple[Fraction, int]] = {}
-        for i, aggregate_solution in enumerate(aggregated_solutions):
+        for i, aggregate_solution in enumerate(aggregate_solutions):
             if len(aggregate_solution) == 1:
                 token_pair, surplus = list(aggregate_solution.items())[0]
                 surplus_old = result.get(token_pair, (0, -1))[0]
@@ -169,20 +187,20 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         self,
         aggregate_solutions: list[dict[tuple[str, str], Fraction]],
         baseline_surplus: dict[tuple[str, str], tuple[Fraction, int]],
-    ) -> list[bool]:
+    ) -> list[list[int]]:
         """Filter out solutions which do not provide enough surplus.
         Only solutions are considered for ranking that supply more surplus than any of the single
         aggregate order solutions. The function returns a list of bools where False means the
         solution is filtered out.
         """
-        result = [True for solution in aggregate_solutions]
-        for i, aggregate_solution in enumerate(aggregate_solutions):
-            flag = True
+        result: list[list[int]] = []
+        for aggregate_solution in aggregate_solutions:
+            flag = []
             for token_pair, surplus in aggregate_solution.items():
-                surplus_ref = baseline_surplus.get(token_pair, (0, ""))[0]
+                surplus_ref, solution_index = baseline_surplus.get(token_pair, (0, -1))
                 if surplus < surplus_ref:
-                    flag = False
-            result[i] = flag
+                    flag.append(solution_index)
+            result.append(flag)
 
         return result
 
@@ -190,7 +208,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         self,
         aggregate_solutions: list[dict[tuple[str, str], Fraction]],
         baseline_surplus: dict[tuple[str, str], tuple[Fraction, int]],
-        filter_mask: list[bool],
+        filter_mask: list[list[int]],
     ) -> dict[tuple[str, str], int]:
         """Determine the winning solutions for the different token pairs.
         There is one batch winner, and the remaining token pairs are won by single aggregate order
@@ -199,7 +217,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         result: dict[tuple[str, str], int] = {}
         # one batch winner
         for i, _ in reversed(list(enumerate(aggregate_solutions))):
-            if filter_mask[i]:
+            if len(filter_mask[i]) == 0:
                 batch_winner_index = i
                 break
         for token_pair, _ in aggregate_solutions[batch_winner_index].items():
@@ -213,7 +231,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
     def determine_winning_solvers(
         self,
         solutions: list[dict[str, Any]],
-        aggregated_solutions: list[dict[tuple[str, str], Fraction]],
+        aggregate_solutions: list[dict[tuple[str, str], Fraction]],
         winning_solutions: dict[tuple[str, str], int],
     ) -> dict[str, dict[tuple[str, str], Fraction]]:
         """Determine the winning solvers and the surplus for each token pair.
@@ -226,9 +244,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             solver = solution["solver"]
             if not solver in result:
                 result[solver] = {}
-            result[solver][token_pair] = aggregated_solutions[solution_index][
-                token_pair
-            ]
+            result[solver][token_pair] = aggregate_solutions[solution_index][token_pair]
         return result
 
     def run(self, tx_hash: str) -> bool:
