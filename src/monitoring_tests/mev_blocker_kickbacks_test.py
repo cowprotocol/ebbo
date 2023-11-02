@@ -36,7 +36,13 @@ class MEVBlockerRefundsMonitoringTest(BaseTest):
         )
         if total_eth_kickbacks is None:
             return False
-        log_msg = f'"Kickback of {total_eth_kickbacks} ETH received due to {tx_hash}"'
+        log_output = "\t".join(
+            [
+                "MEV Blocker kickbacks test:",
+                f"Tx Hash: {tx_hash}",
+                f"Kickback: {total_eth_kickbacks:.5f}ETH",
+            ]
+        )
         if total_eth_kickbacks >= KICKBACKS_ALERT_THRESHOLD:
             self.alert(log_msg)
         else:
