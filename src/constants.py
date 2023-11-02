@@ -25,7 +25,7 @@ DAY_BLOCK_INTERVAL = 7200
 # cap parameter, per CIP-20, measured in ETH
 CAP_PARAMETER = 0.01
 
-# threshold parameter to alerts when receiving kickbacks
+# threshold parameter to generate an alert when receiving kickbacks
 KICKBACKS_ALERT_THRESHOLD = 0.03
 
 # relevant addresses

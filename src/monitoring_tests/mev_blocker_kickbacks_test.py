@@ -25,8 +25,7 @@ class MEVBlockerRefundsMonitoringTest(BaseTest):
     def run(self, tx_hash: str) -> bool:
         """
         Wrapper function for the whole test. Checks if kickback is more than
-        KICKBACK_ETH_THRESHOLD have been observed, in which case it generates
-        an alert.
+        KICKBACK_ETH_THRESHOLD, in which case it generates an alert.
         """
         block_number = self.web3_api.get_tx_block_number(tx_hash)
         if block_number is None:
