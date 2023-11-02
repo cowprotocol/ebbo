@@ -23,7 +23,9 @@ class TestCombinatorialAuctionSurplus(unittest.TestCase):
         # # combinatorial auction better than current auction
         # tx_hash = "0x46639ae0e516bcad7b052fb6bfb6227d0aa2707e9882dd8d86bab2ab6aeee155"
         # tx_hash = "0xe28b92ba73632d6b167fdb9bbfec10744ce208536901dd43379a6778c4408536"
-        tx_hash = "0xad0ede9fd68481b8ef4722d069598898e01d61427ccb378ca4c82c772c6644e0"
+        # tx_hash = "0xad0ede9fd68481b8ef4722d069598898e01d61427ccb378ca4c82c772c6644e0"
+        # tx_hash = "0xead8f01e8e24fdc306fca8fcac5146edc22c27e49a7aad6134adc2ad50ba8581"
+        tx_hash = "0x6200e744e5d6f9990271be53840c01044cc19f3a8526190e1eaac0bc5fefed85"
         self.assertTrue(surplus_test.run(tx_hash))
 
 

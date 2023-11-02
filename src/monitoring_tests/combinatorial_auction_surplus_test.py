@@ -135,7 +135,6 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         large costs.
         """
         trades_dict = self.get_uid_trades(solution)
-        objective = solution["objective"]["total"]
         surplus_dict: dict[tuple[str, str], Fraction] = {}
         for uid in trades_dict:
             trade = trades_dict[uid]
@@ -161,7 +160,10 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         # use the minimum of surplus and objective in case there is only one token pair
         if len(surplus_dict) == 1:
             for token_pair in surplus_dict:
-                surplus_dict[token_pair] = min(surplus_dict[token_pair], objective)
+                surplus_dict[token_pair] = min(
+                    surplus_dict[token_pair], solution["objective"]["total"]
+                )
+                # surplus_dict[token_pair] = solution["objective"]["total"]
 
         return surplus_dict
 
