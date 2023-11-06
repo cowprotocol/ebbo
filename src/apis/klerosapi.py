@@ -32,7 +32,7 @@ class KlerosAPI:
                 timeout=REQUEST_TIMEOUT,
             )
             kleros_rsp = kleros_data.json()
-            kleros_list = []
+            kleros_list: list[str] = []
             if "tokens" not in kleros_rsp:
                 return kleros_list
             for token in kleros_rsp["tokens"]:
