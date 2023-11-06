@@ -33,6 +33,8 @@ class KlerosAPI:
             )
             kleros_rsp = kleros_data.json()
             kleros_list = []
+            if "tokens" not in kleros_rsp:
+                return kleros_list
             for token in kleros_rsp["tokens"]:
                 kleros_list.append(token["address"].lower())
         except requests.RequestException as err:
