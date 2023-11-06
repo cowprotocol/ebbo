@@ -35,10 +35,7 @@ class BuffersMonitoringTest(BaseTest):
         # get all token balances of the smart contract
         try:
             ethplorer_data = requests.get(
-                "https://api.ethplorer.io/\
-                    getAddressInfo/\
-                    0x9008D19f58AAbD9eD0D60971565AA8510560ab41?\
-                    apiKey=freekey",
+                "https://api.ethplorer.io/getAddressInfo/0x9008D19f58AAbD9eD0D60971565AA8510560ab41?apiKey=freekey",
                 headers=header,
                 timeout=REQUEST_TIMEOUT,
             )
@@ -93,6 +90,7 @@ class BuffersMonitoringTest(BaseTest):
         """
         self.counter += 1
         if self.counter > BUFFER_INTERVAL:
+            print("HERE")
             success = self.compute_buffers_value()
             if success:
                 self.counter = 0
