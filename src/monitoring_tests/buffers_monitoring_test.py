@@ -6,7 +6,7 @@ the ehtplorer api, and in some cases, coingecko.
 import requests
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.coingeckoapi import CoingeckoAPI
-from src.apis.klerosapi import KlerosAPI
+from src.apis.tokenlistapi import TokenListAPI
 from src.constants import (
     BUFFER_INTERVAL,
     header,
@@ -25,7 +25,7 @@ class BuffersMonitoringTest(BaseTest):
     def __init__(self) -> None:
         super().__init__()
         self.coingecko_api = CoingeckoAPI()
-        self.kleros_api = KlerosAPI()
+        self.tokenlist_api = TokenListAPI()
         self.counter: int = 0
 
     def compute_buffers_value(self) -> bool:
@@ -41,13 +41,15 @@ class BuffersMonitoringTest(BaseTest):
                 timeout=REQUEST_TIMEOUT,
             )
             ethplorer_rsp = ethplorer_data.json()
-            kleros_list = self.kleros_api.get_token_list()
-
-            value_in_usd = 0.0
             if "tokens" not in ethplorer_rsp:
                 return False
+            token_list = self.tokenlist_api.get_token_list()
+            if token_list is None:
+                return False
+
+            value_in_usd = 0.0
             for token in ethplorer_rsp["tokens"]:
-                if token["tokenInfo"]["address"] not in kleros_list:
+                if token["tokenInfo"]["address"] not in token_list:
                     continue
                 balance = token["balance"]
                 decimals = int(token["tokenInfo"]["decimals"])
