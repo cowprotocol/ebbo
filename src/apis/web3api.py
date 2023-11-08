@@ -51,6 +51,8 @@ class Web3API:
         """
         Function filters receipts by contract address, and block ranges
         """
+        if start_block > end_block:
+            return []
         filter_criteria: FilterParams = {
             "fromBlock": int(start_block),
             "toBlock": int(end_block),
