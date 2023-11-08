@@ -91,7 +91,6 @@ class BuffersMonitoringTest(BaseTest):
         """
         self.counter += 1
         if self.counter > BUFFER_INTERVAL:
-            print("HERE")
             success = self.compute_buffers_value()
             if success:
                 self.counter = 0
