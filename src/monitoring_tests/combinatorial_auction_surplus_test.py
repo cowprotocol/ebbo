@@ -86,16 +86,33 @@ class CombinatorialAuctionSurplusTest(BaseTest):
 
         a_abs_eth = total_combinatorial_surplus - total_surplus
 
+        # convert surplus to float for logging
+        winning_aggregate_surplus_float = {
+            token_pair: float(surplus)
+            for token_pair, surplus in winning_aggregate_solution.items()
+        }
+        baseline_surplus_float = {
+            token_pair: (float(surplus_index[0]), surplus_index[1])
+            for token_pair, surplus_index in baseline_surplus.items()
+        }
+        winning_solvers_float = {
+            solver_name: {
+                token_pair: float(surplus)
+                for token_pair, surplus in aggregate_solution.items()
+            }
+            for solver_name, aggregate_solution in winning_solvers.items()
+        }
+
         log_output = "\t".join(
             [
                 "Combinatorial auction surplus test:",
                 f"Tx Hash: {competition_data['transactionHash']}",
                 f"Winning Solver: {winning_solution['solver']}",
-                f"Winning surplus: {aggregate_solution}",
-                f"Baseline surplus: {baseline_surplus}",
+                f"Winning surplus: {winning_aggregate_surplus_float}",
+                f"Baseline surplus: {baseline_surplus_float}",
                 f"Solutions filtering winner: {filter_mask[-1]}",
                 f"Solvers filtering winner: {solutions_filtering_winner}",
-                f"Combinatorial winners: {winning_solvers}",
+                f"Combinatorial winners: {winning_solvers_float}",
                 f"Total surplus: {float(total_surplus):.5f} ETH",
                 f"Combinatorial surplus: {float(total_combinatorial_surplus):.5f} ETH",
                 f"Absolute difference: {float(a_abs_eth):.5f}ETH",
