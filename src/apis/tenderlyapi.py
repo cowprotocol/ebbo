@@ -42,11 +42,9 @@ class TenderlyAPI:
         else:
             calldata = solution["callData"]
 
-        return self.simulate_transaction(
-            calldata, solution["solverAddress"], block_number
-        )
+        return self.simulate_calldata(calldata, solution["solverAddress"], block_number)
 
-    def simulate_transaction(
+    def simulate_calldata(
         self, calldata: str, solver: str, block_number: int
     ) -> Optional[dict[str, Any]]:
         """Simulate a transaction from solver with given calldata at a specified block number."""
