@@ -42,7 +42,7 @@ class TokenListAPI:
                         token_list.append(token["address"].lower())
             except requests.RequestException as err:
                 self.logger.warning(
-                    f"Connection error while fetching a token list, error: {err}"
+                    f"Exception while fetching a token list: {err}"
                 )
             if len(token_list) > 0:
                 return token_list
