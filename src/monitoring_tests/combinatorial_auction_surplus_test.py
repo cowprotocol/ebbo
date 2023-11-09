@@ -2,6 +2,7 @@
 Comparing order surplus per token pair to a reference solver in the competition.
 """
 # pylint: disable=logging-fstring-interpolation
+# pylint: disable=duplicate-code
 
 from typing import Any
 from fractions import Fraction
