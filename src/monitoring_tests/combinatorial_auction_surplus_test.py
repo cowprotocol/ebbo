@@ -14,7 +14,7 @@ from src.constants import SURPLUS_ABSOLUTE_DEVIATION_ETH
 
 
 class CombinatorialAuctionSurplusTest(BaseTest):
-    """Test how a combinatorial auctions would have settled the auction.
+    """Test how a combinatorial auction would have settled the auction.
     This test implements a logic for a combinatorial auction and compares the result to what
     actually happened.
 
@@ -22,8 +22,8 @@ class CombinatorialAuctionSurplusTest(BaseTest):
     - Aggregate surplus on the different directed sell token-buy token pairs for all solutions in
       the competition.
     - Compute a baseline for surplus on all token pairs from those solutions.
-    - Filter solutions which to not provide at least as much surplus as the baseline on all token
-      pairs.
+    - Filter solutions which do not provide at least as much surplus as the baseline on all token
+      pairs that the solution contains.
     - Choose one batch winner and multiple single order winners.
 
     The test logs an output whenever
@@ -51,7 +51,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         """
 
         solutions = competition_data["solutions"]
-        solution = competition_data["solutions"][-1]
+        winning_solution = competition_data["solutions"][-1]
 
         aggregate_solutions = [
             self.get_token_pairs_surplus(
@@ -59,7 +59,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             )
             for solution in solutions
         ]
-        aggregate_solution = aggregate_solutions[-1]
+        winning_aggregate_solution = aggregate_solutions[-1]
 
         baseline_surplus = self.compute_baseline_surplus(aggregate_solutions)
         filter_mask = self.filter_solutions(aggregate_solutions, baseline_surplus)
@@ -80,7 +80,9 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             sum(surplus for _, surplus in token_pair_surplus.items())
             for _, token_pair_surplus in winning_solvers.items()
         )
-        total_surplus = sum(surplus for _, surplus in aggregate_solution.items())
+        total_surplus = sum(
+            surplus for _, surplus in winning_aggregate_solution.items()
+        )
 
         a_abs_eth = total_combinatorial_surplus - total_surplus
 
@@ -88,7 +90,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             [
                 "Combinatorial auction surplus test:",
                 f"Tx Hash: {competition_data['transactionHash']}",
-                f"Winning Solver: {solution['solver']}",
+                f"Winning Solver: {winning_solution['solver']}",
                 f"Winning surplus: {aggregate_solution}",
                 f"Baseline surplus: {baseline_surplus}",
                 f"Solutions filtering winner: {filter_mask[-1]}",
@@ -141,14 +143,14 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             token_pair = (trade.data.sell_token.lower(), trade.data.buy_token.lower())
 
             # compute the conversion rate of the surplus token to ETH
-            if trade.get_surplus_token() == trade.data.sell_token:
-                surplus_token_to_eth = Fraction(
-                    int(prices[token_pair[0]]),
-                    10**36,
-                )
-            elif trade.get_surplus_token() == trade.data.buy_token:
+            if trade.get_surplus_token() == trade.data.buy_token:  # sell order
                 surplus_token_to_eth = Fraction(
                     int(prices[token_pair[1]]),
+                    10**36,
+                )
+            else:  # buy order
+                surplus_token_to_eth = Fraction(
+                    int(prices[token_pair[0]]),
                     10**36,
                 )
 
@@ -163,7 +165,6 @@ class CombinatorialAuctionSurplusTest(BaseTest):
                 surplus_dict[token_pair] = min(
                     surplus_dict[token_pair], solution["objective"]["total"]
                 )
-                # surplus_dict[token_pair] = solution["objective"]["total"]
 
         return surplus_dict
 
@@ -179,8 +180,11 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         result: dict[tuple[str, str], tuple[Fraction, int]] = {}
         for i, aggregate_solution in enumerate(aggregate_solutions):
             if len(aggregate_solution) == 1:
-                token_pair, surplus = list(aggregate_solution.items())[0]
+                # extract the single key-value pair from the aggregate_solution dict
+                ((token_pair, surplus),) = aggregate_solution.items()
+                # get the previous best surplus or zero (with dummy index -1 which is not accessed)
                 surplus_old = result.get(token_pair, (0, -1))[0]
+                # if surplus is larger than previously best surplus, overwrite entry in result
                 if surplus > surplus_old:
                     result[token_pair] = (surplus, i)
         return result
@@ -192,16 +196,19 @@ class CombinatorialAuctionSurplusTest(BaseTest):
     ) -> list[list[int]]:
         """Filter out solutions which do not provide enough surplus.
         Only solutions are considered for ranking that supply more surplus than any of the single
-        aggregate order solutions. The function returns a list of bools where False means the
-        solution is filtered out.
+        aggregate order solutions on all token pairs they touch.
+        The function returns a list of integers for each solution. The integers in those lists
+        correspond to those baselines that would have resulted in filtering of the solution. This
+        information is used e.g. to trigger alerts depending on which solver resulted in filtering.
         """
         result: list[list[int]] = []
         for aggregate_solution in aggregate_solutions:
             flag = []
             for token_pair, surplus in aggregate_solution.items():
-                surplus_ref, solution_index = baseline_surplus.get(token_pair, (0, -1))
-                if surplus < surplus_ref:
-                    flag.append(solution_index)
+                if token_pair in baseline_surplus:
+                    surplus_ref, solution_index = baseline_surplus[token_pair]
+                    if surplus < surplus_ref:
+                        flag.append(solution_index)
             result.append(flag)
 
         return result
