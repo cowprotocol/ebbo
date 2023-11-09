@@ -2,7 +2,6 @@
 Comparing order surplus per token pair to a reference solver in the competition.
 """
 # pylint: disable=logging-fstring-interpolation
-# pylint: disable=duplicate-code
 
 from typing import Any
 from fractions import Fraction
@@ -39,6 +38,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         self.orderbook_api = OrderbookAPI()
 
     def run_combinatorial_auction(self, competition_data: dict[str, Any]) -> bool:
+        # pylint: disable=too-many-locals
         """Run combinatorial auction on competition data.
 
         The combinatorial auction consists of 4 steps:
