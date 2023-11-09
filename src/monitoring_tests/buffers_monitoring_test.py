@@ -88,8 +88,9 @@ class BuffersMonitoringTest(BaseTest):
 
     def run(self, tx_hash: str) -> bool:
         """
-        Wrapper function for the whole test. Checks if 150 settlements have been observed,
-        in which case it invokes the main function that checks the current value of buffers.
+        Wrapper function for the whole test. Checks if BUFFER_INTERVAL many settlements have
+        been observed, in which case it invokes the main function that checks the current
+        value of buffers.
         """
         self.counter += 1
         if self.counter > BUFFER_INTERVAL:
