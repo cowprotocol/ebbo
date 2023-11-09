@@ -41,9 +41,7 @@ class TokenListAPI:
                     for token in rsp["tokens"]:
                         token_list.append(token["address"].lower())
             except requests.RequestException as err:
-                self.logger.warning(
-                    f"Exception while fetching a token list: {err}"
-                )
+                self.logger.warning(f"Exception while fetching a token list: {err}")
             if len(token_list) > 0:
                 return token_list
         return None
