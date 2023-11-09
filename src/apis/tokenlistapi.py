@@ -18,19 +18,18 @@ class TokenListAPI:
 
     def __init__(self) -> None:
         self.logger = get_logger()
+        self.token_lists = [
+            "http://t2crtokens.eth.link",
+            "https://tokens.1inch.eth.link",
+            "https://tokenlist.aave.eth.link",
+        ]
 
     def get_token_list(self) -> Optional[list[str]]:
         """
         Returns a token list.
         """
-        kleros_url = "http://t2crtokens.eth.link"
-        one_inch_url = "https://tokens.1inch.eth.link"
-        aave_url = "https://tokenlist.aave.eth.link"
-
-        url_list = [kleros_url, one_inch_url, aave_url]
-
         token_list: list[str] = []
-        for url in url_list:
+        for url in self.token_lists:
             try:
                 data = requests.get(
                     url,
