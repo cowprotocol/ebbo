@@ -27,6 +27,9 @@ from src.monitoring_tests.cost_coverage_per_solver_test import (
 from src.monitoring_tests.mev_blocker_kickbacks_test import (
     MEVBlockerRefundsMonitoringTest,
 )
+from src.monitoring_tests.buffers_monitoring_test import (
+    BuffersMonitoringTest,
+)
 from src.constants import SLEEP_TIME_IN_SEC
 
 
@@ -44,6 +47,7 @@ def main() -> None:
         PartialFillCostCoverageTest(),
         CostCoveragePerSolverTest(),
         MEVBlockerRefundsMonitoringTest(),
+        BuffersMonitoringTest(),
     ]
 
     start_block: Optional[int] = None
