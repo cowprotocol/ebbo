@@ -30,6 +30,9 @@ from src.monitoring_tests.mev_blocker_kickbacks_test import (
 from src.monitoring_tests.buffers_monitoring_test import (
     BuffersMonitoringTest,
 )
+from src.monitoring_tests.combinatorial_auction_surplus_test import (
+    CombinatorialAuctionSurplusTest,
+)
 from src.constants import SLEEP_TIME_IN_SEC
 
 
@@ -48,6 +51,7 @@ def main() -> None:
         CostCoveragePerSolverTest(),
         MEVBlockerRefundsMonitoringTest(),
         BuffersMonitoringTest(),
+        CombinatorialAuctionSurplusTest(),
     ]
 
     start_block: Optional[int] = None
