@@ -274,10 +274,11 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             result[solver][token_pair] = aggregate_solutions[solution_index][token_pair]
         return result
 
-    def run(self, tx_hash: str) -> bool:
         """
+    def run(self, tx_hash: str) -> bool:
+        """Runs the combinatoral auction surplus test
         Wrapper function for the whole test. Checks if solver competition data is retrievable
-        and runs EBBO test, else returns True to add to list of unchecked hashes.
+        and runs the test, else returns False to add to list of unchecked hashes.
         """
 
         solver_competition_data = self.orderbook_api.get_solver_competition_data(
