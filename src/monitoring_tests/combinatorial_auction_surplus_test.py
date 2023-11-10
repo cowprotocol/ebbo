@@ -39,7 +39,6 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         self.orderbook_api = OrderbookAPI()
 
     def run_combinatorial_auction(self, competition_data: dict[str, Any]) -> bool:
-        # pylint: disable=too-many-locals
         """Run combinatorial auction on competition data.
 
         The combinatorial auction consists of 4 steps:
@@ -87,33 +86,16 @@ class CombinatorialAuctionSurplusTest(BaseTest):
 
         a_abs_eth = total_combinatorial_surplus - total_surplus
 
-        # convert surplus to float for logging
-        winning_aggregate_surplus_float = {
-            token_pair: float(surplus)
-            for token_pair, surplus in winning_aggregate_solution.items()
-        }
-        baseline_surplus_float = {
-            token_pair: (float(surplus_index[0]), surplus_index[1])
-            for token_pair, surplus_index in baseline_surplus.items()
-        }
-        winning_solvers_float = {
-            solver_name: {
-                token_pair: float(surplus)
-                for token_pair, surplus in aggregate_solution.items()
-            }
-            for solver_name, aggregate_solution in winning_solvers.items()
-        }
-
         log_output = "\t".join(
             [
                 "Combinatorial auction surplus test:",
                 f"Tx Hash: {competition_data['transactionHash']}",
                 f"Winning Solver: {winning_solution['solver']}",
-                f"Winning surplus: {winning_aggregate_surplus_float}",
-                f"Baseline surplus: {baseline_surplus_float}",
+                f"Winning surplus: {self.convert_fractions_to_floats(winning_aggregate_solution)}",
+                f"Baseline surplus: {self.convert_fractions_to_floats(baseline_surplus)}",
                 f"Solutions filtering winner: {filter_mask[-1]}",
                 f"Solvers filtering winner: {solutions_filtering_winner}",
-                f"Combinatorial winners: {winning_solvers_float}",
+                f"Combinatorial winners: {self.convert_fractions_to_floats(winning_solvers)}",
                 f"Total surplus: {float(total_surplus):.5f} ETH",
                 f"Combinatorial surplus: {float(total_combinatorial_surplus):.5f} ETH",
                 f"Absolute difference: {float(a_abs_eth):.5f}ETH",
@@ -274,7 +256,21 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             result[solver][token_pair] = aggregate_solutions[solution_index][token_pair]
         return result
 
+    def convert_fractions_to_floats(self, obj: Any, precision: int = 4) -> Any:
+        """Convert fractions in nested object to rounded floats.
+        This function is only used for logging.
         """
+        if isinstance(obj, dict):
+            return {
+                k: self.convert_fractions_to_floats(v, precision)
+                for k, v in obj.items()
+            }
+        if isinstance(obj, tuple):
+            return tuple(self.convert_fractions_to_floats(x, precision) for x in obj)
+        if isinstance(obj, Fraction):
+            return round(float(obj), precision)
+        return obj
+
     def run(self, tx_hash: str) -> bool:
         """Runs the combinatoral auction surplus test
         Wrapper function for the whole test. Checks if solver competition data is retrievable
