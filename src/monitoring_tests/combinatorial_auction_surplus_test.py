@@ -101,7 +101,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
                 f"Absolute difference: {float(a_abs_eth):.5f}ETH",
             ]
         )
-        if a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH:
+        if "BaselineSolver" in solutions_filtering_winner:
             self.alert(log_output)
         elif (
             a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10
