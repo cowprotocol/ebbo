@@ -25,8 +25,20 @@ DAY_BLOCK_INTERVAL = 7200
 # cap parameter, per CIP-20, measured in ETH
 CAP_PARAMETER = 0.01
 
-# requests
+# number of tx hashes before a new buffers check is ran
+BUFFER_INTERVAL = 150
+
+# threshold of value of buffers above which an alert is generated
+BUFFERS_VALUE_USD_THRESHOLD = 200000
+
+# threshold parameter to generate an alert when receiving kickbacks
+KICKBACKS_ALERT_THRESHOLD = 0.03
+
+# relevant addresses
 SETTLEMENT_CONTRACT_ADDRESS = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
+MEV_BLOCKER_KICKBACKS_ADDRESS = "0xCe91228789B57DEb45e66Ca10Ff648385fE7093b"
+
+# requests
 REQUEST_TIMEOUT = 5
 SUCCESS_CODE = 200
 FAIL_CODE = 404

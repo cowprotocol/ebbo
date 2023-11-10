@@ -24,6 +24,12 @@ from src.monitoring_tests.reference_solver_surplus_test import (
 from src.monitoring_tests.cost_coverage_per_solver_test import (
     CostCoveragePerSolverTest,
 )
+from src.monitoring_tests.mev_blocker_kickbacks_test import (
+    MEVBlockerRefundsMonitoringTest,
+)
+from src.monitoring_tests.buffers_monitoring_test import (
+    BuffersMonitoringTest,
+)
 from src.monitoring_tests.combinatorial_auction_surplus_test import (
     CombinatorialAuctionSurplusTest,
 )
@@ -43,6 +49,8 @@ def main() -> None:
         PartialFillFeeQuoteTest(),
         PartialFillCostCoverageTest(),
         CostCoveragePerSolverTest(),
+        MEVBlockerRefundsMonitoringTest(),
+        BuffersMonitoringTest(),
         CombinatorialAuctionSurplusTest(),
     ]
 
