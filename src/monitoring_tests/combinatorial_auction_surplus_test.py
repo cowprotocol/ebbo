@@ -163,7 +163,8 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         if len(surplus_dict) == 1:
             for token_pair in surplus_dict:
                 surplus_dict[token_pair] = min(
-                    surplus_dict[token_pair], solution["objective"]["total"]
+                    surplus_dict[token_pair],
+                    Fraction(solution["objective"]["total"]) / 10**18,
                 )
 
         return surplus_dict
