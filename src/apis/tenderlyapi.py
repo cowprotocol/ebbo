@@ -22,13 +22,47 @@ class TenderlyAPI:
     def __init__(self) -> None:
         self.logger = get_logger()
         load_dotenv()
-        self.tenderly_url = (
+        self.node_url = "https://mainnet.gateway.tenderly.co/" + str(
+            getenv("TENDERLY_NODE_ACCESS_KEY")
+        )
+        self.simulation_url = (
             "https://api.tenderly.co/api/v1/account/"
             + str(getenv("TENDERLY_USER"))
             + "/project/"
             + str(getenv("TENDERLY_PROJECT"))
             + "/simulate"
         )
+
+    def trace_transaction(self, tx_hash: str) -> dict[str, Any] | None:
+        """Get trace for given hash"""
+        trace_input = {
+            "id": 0,
+            "jsonrpc": "2.0",
+            "method": "tenderly_traceTransaction",
+            "params": [tx_hash],
+        }
+
+        trace_output: dict[str, Any] | None = None
+        try:
+            json_trace_output = requests.post(
+                self.node_url,
+                headers={
+                    "Content-Type": "application/json",
+                },
+                timeout=REQUEST_TIMEOUT,
+                json=trace_input,
+            )
+            if json_trace_output.ok:
+                trace_output = json_trace_output.json()
+            else:
+                return None
+        except requests.RequestException as err:
+            self.logger.warning(
+                f"Error while simulating transaction.\
+                    Simulation input: {trace_input}, error: {err}"
+            )
+            return None
+        return trace_output
 
     def simulate_solution(
         self, solution: dict[str, Any], block_number: int, internalize: bool = True
@@ -73,7 +107,7 @@ class TenderlyAPI:
             }
 
             json_simulation_output = requests.post(
-                self.tenderly_url,
+                self.simulation_url,
                 headers={
                     "X-Access-Key": str(getenv("TENDERLY_ACCESS_KEY")),
                 },
