@@ -13,6 +13,8 @@ from src.constants import (
     REQUEST_TIMEOUT,
 )
 
+TRACE_REQUEST_TIMEOUT = 10
+
 
 class TenderlyAPI:
     """
@@ -49,7 +51,7 @@ class TenderlyAPI:
                 headers={
                     "Content-Type": "application/json",
                 },
-                timeout=REQUEST_TIMEOUT,
+                timeout=TRACE_REQUEST_TIMEOUT,
                 json=trace_input,
             )
             if json_trace_output.ok:
