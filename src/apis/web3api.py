@@ -212,8 +212,10 @@ class Web3API:
                 executed_amount * Fraction(sell_token_price, buy_token_price)
             )
             sell_amount = int(
-                buy_amount * Fraction(buy_token_price_ucp, sell_token_price_ucp)
-            )
+                executed_amount
+                * Fraction(sell_token_price, buy_token_price)
+                * Fraction(buy_token_price_ucp, sell_token_price_ucp)
+            )  # this equals executed_amount if prices and uniform clearing prices coincide
             fee_amount = precomputed_fee_amount + executed_amount - sell_amount
         else:  # buy order
             buy_amount = executed_amount
