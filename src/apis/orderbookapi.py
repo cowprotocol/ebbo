@@ -7,6 +7,7 @@ from typing import Any, Optional
 import json
 import requests
 from src.helper_functions import get_logger
+from src.models import Trade, OrderData, OrderExecution
 from src.constants import (
     header,
     REQUEST_TIMEOUT,
@@ -57,3 +58,4 @@ class OrderbookAPI:
             )
             return None
         return solver_competition_data
+
