@@ -30,7 +30,7 @@ class SolverCompetitionSurplusTest(BaseTest):
 
         solution = competition_data["solutions"][-1]
 
-        trades_dict = self.get_uid_trades(solution)
+        trades_dict = self.orderbook_api.get_uid_trades(solution)
         if trades_dict is None:
             return False
 
@@ -97,18 +97,6 @@ class SolverCompetitionSurplusTest(BaseTest):
             trade_alt_list.append((solution_alt["solver"], trade_alt))
 
         return trade_alt_list
-
-    def get_uid_trades(self, solution: dict[str, Any]) -> dict[str, Trade] | None:
-        """Get a dictionary mapping UIDs to trades in a solution."""
-        trades_dict: dict[str, Trade] = {}
-        for execution in solution["orders"]:
-            uid = execution["id"]
-            order_data = self.orderbook_api.get_order_data(uid)
-            if order_data is None:
-                return None
-            trades_dict[uid] = self.orderbook_api.get_trade(order_data, execution)
-
-        return trades_dict
 
     def get_uid_order_execution(
         self, solution: dict[str, Any]
