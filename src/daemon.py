@@ -12,14 +12,8 @@ from src.apis.web3api import Web3API
 from src.monitoring_tests.solver_competition_surplus_test import (
     SolverCompetitionSurplusTest,
 )
-from src.monitoring_tests.partially_fillable_cost_coverage_test import (
-    PartialFillCostCoverageTest,
-)
 from src.monitoring_tests.reference_solver_surplus_test import (
     ReferenceSolverSurplusTest,
-)
-from src.monitoring_tests.cost_coverage_per_solver_test import (
-    CostCoveragePerSolverTest,
 )
 from src.monitoring_tests.mev_blocker_kickbacks_test import (
     MEVBlockerRefundsMonitoringTest,
@@ -43,8 +37,6 @@ def main() -> None:
     tests = [
         SolverCompetitionSurplusTest(),
         ReferenceSolverSurplusTest(),
-        PartialFillCostCoverageTest(),
-        CostCoveragePerSolverTest(),
         MEVBlockerRefundsMonitoringTest(),
         BuffersMonitoringTest(),
         CombinatorialAuctionSurplusTest(),
