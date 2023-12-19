@@ -7,7 +7,6 @@ from typing import Any, Optional
 import json
 import requests
 from src.helper_functions import get_logger
-from src.models import Trade, OrderExecution
 from src.constants import (
     header,
     REQUEST_TIMEOUT,
