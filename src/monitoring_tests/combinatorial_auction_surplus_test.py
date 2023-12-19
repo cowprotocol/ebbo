@@ -48,7 +48,6 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         """
 
         solutions = competition_data["solutions"]
-        winning_solution = competition_data["solutions"][-1]
 
         aggregate_solutions: list[dict[tuple[str, str], Fraction]] = []
         for solution in solutions:
@@ -58,8 +57,6 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             if aggregate_solution is None:
                 return False
             aggregate_solutions.append(aggregate_solution)
-
-        winning_aggregate_solution = aggregate_solutions[-1]
 
         baseline_surplus = self.compute_baseline_surplus(aggregate_solutions)
         filter_mask = self.filter_solutions(aggregate_solutions, baseline_surplus)
@@ -80,9 +77,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             sum(surplus for _, surplus in token_pair_surplus.items())
             for _, token_pair_surplus in winning_solvers.items()
         )
-        total_surplus = sum(
-            surplus for _, surplus in winning_aggregate_solution.items()
-        )
+        total_surplus = sum(surplus for _, surplus in aggregate_solutions[-1].items())
 
         a_abs_eth = total_combinatorial_surplus - total_surplus
 
@@ -90,8 +85,8 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             [
                 "Combinatorial auction surplus test:",
                 f"Tx Hash: {competition_data['transactionHash']}",
-                f"Winning Solver: {winning_solution['solver']}",
-                f"Winning surplus: {self.convert_fractions_to_floats(winning_aggregate_solution)}",
+                f"Winning Solver: {competition_data['solutions'][-1]['solver']}",
+                f"Winning surplus: {self.convert_fractions_to_floats(aggregate_solutions[-1])}",
                 f"Baseline surplus: {self.convert_fractions_to_floats(baseline_surplus)}",
                 f"Solutions filtering winner: {filter_mask[-1]}",
                 f"Solvers filtering winner: {solutions_filtering_winner}",
