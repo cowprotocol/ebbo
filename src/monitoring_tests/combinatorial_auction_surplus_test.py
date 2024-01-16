@@ -7,9 +7,7 @@ Comparing order surplus per token pair to a reference solver in the competition.
 from typing import Any
 from fractions import Fraction
 from src.monitoring_tests.base_test import BaseTest
-from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
-from src.models import Trade
 from src.constants import SURPLUS_ABSOLUTE_DEVIATION_ETH
 
 
@@ -35,7 +33,6 @@ class CombinatorialAuctionSurplusTest(BaseTest):
 
     def __init__(self) -> None:
         super().__init__()
-        self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
 
     def run_combinatorial_auction(self, competition_data: dict[str, Any]) -> bool:
@@ -51,15 +48,15 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         """
 
         solutions = competition_data["solutions"]
-        winning_solution = competition_data["solutions"][-1]
 
-        aggregate_solutions = [
-            self.get_token_pairs_surplus(
+        aggregate_solutions: list[dict[tuple[str, str], Fraction]] = []
+        for solution in solutions:
+            aggregate_solution = self.get_token_pairs_surplus(
                 solution, competition_data["auction"]["prices"]
             )
-            for solution in solutions
-        ]
-        winning_aggregate_solution = aggregate_solutions[-1]
+            if aggregate_solution is None:
+                return False
+            aggregate_solutions.append(aggregate_solution)
 
         baseline_surplus = self.compute_baseline_surplus(aggregate_solutions)
         filter_mask = self.filter_solutions(aggregate_solutions, baseline_surplus)
@@ -80,9 +77,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             sum(surplus for _, surplus in token_pair_surplus.items())
             for _, token_pair_surplus in winning_solvers.items()
         )
-        total_surplus = sum(
-            surplus for _, surplus in winning_aggregate_solution.items()
-        )
+        total_surplus = sum(surplus for _, surplus in aggregate_solutions[-1].items())
 
         a_abs_eth = total_combinatorial_surplus - total_surplus
 
@@ -90,8 +85,8 @@ class CombinatorialAuctionSurplusTest(BaseTest):
             [
                 "Combinatorial auction surplus test:",
                 f"Tx Hash: {competition_data['transactionHash']}",
-                f"Winning Solver: {winning_solution['solver']}",
-                f"Winning surplus: {self.convert_fractions_to_floats(winning_aggregate_solution)}",
+                f"Winning Solver: {competition_data['solutions'][-1]['solver']}",
+                f"Winning surplus: {self.convert_fractions_to_floats(aggregate_solutions[-1])}",
                 f"Baseline surplus: {self.convert_fractions_to_floats(baseline_surplus)}",
                 f"Solutions filtering winner: {filter_mask[-1]}",
                 f"Solvers filtering winner: {solutions_filtering_winner}",
@@ -113,30 +108,16 @@ class CombinatorialAuctionSurplusTest(BaseTest):
 
         return True
 
-    def get_uid_trades(self, solution: dict[str, Any]) -> dict[str, Trade]:
-        """Get a dictionary mapping UIDs to trades in a solution."""
-        calldata = solution["callData"]
-        settlement = self.web3_api.get_settlement_from_calldata(calldata)
-        trades = self.web3_api.get_trades(settlement)
-        trades_dict = {
-            solution["orders"][i]["id"]: trade for (i, trade) in enumerate(trades)
-        }
-        return trades_dict
-
     def get_token_pairs_surplus(
         self, solution: dict[str, Any], prices: dict[str, float]
-    ) -> dict[tuple[str, str], Fraction]:
+    ) -> dict[tuple[str, str], Fraction] | None:
         """Aggregate surplus of a solution on the different token pairs.
         The result is a dict containing directed token pairs and the aggregated surplus on them.
-
-        Instead of surplus we use the minimum of surplus and the objective. This is more
-        conservative than just using objective. If fees are larger than costs, the objective is
-        larger than surplus and surplus is used for the comparison. If fees are larger than costs,
-        the objective is smaller than surplus and the objective is used instead of surplus for
-        filtering. This takes care of the case of solvers providing a lot of surplus but at really
-        large costs.
         """
-        trades_dict = self.get_uid_trades(solution)
+        trades_dict = self.orderbook_api.get_uid_trades(solution)
+        if trades_dict is None:
+            return None
+
         surplus_dict: dict[tuple[str, str], Fraction] = {}
         for uid in trades_dict:
             trade = trades_dict[uid]
@@ -158,14 +139,6 @@ class CombinatorialAuctionSurplusTest(BaseTest):
                 surplus_dict.get(token_pair, 0)
                 + surplus_token_to_eth * trade.get_surplus()
             )
-
-        # use the minimum of surplus and objective in case there is only one token pair
-        if len(surplus_dict) == 1:
-            for token_pair in surplus_dict:
-                surplus_dict[token_pair] = min(
-                    surplus_dict[token_pair],
-                    Fraction(solution["objective"]["total"]) / 10**18,
-                )
 
         return surplus_dict
 

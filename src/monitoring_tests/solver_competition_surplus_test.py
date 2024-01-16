@@ -6,9 +6,8 @@ Comparing order surplus accross different solutions.
 from typing import Any
 from fractions import Fraction
 from src.monitoring_tests.base_test import BaseTest
-from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
-from src.models import Trade
+from src.models import Trade, OrderExecution
 from src.constants import SURPLUS_ABSOLUTE_DEVIATION_ETH, SURPLUS_REL_DEVIATION
 
 
@@ -20,7 +19,6 @@ class SolverCompetitionSurplusTest(BaseTest):
 
     def __init__(self) -> None:
         super().__init__()
-        self.web3_api = Web3API()
         self.orderbook_api = OrderbookAPI()
 
     def compare_orders_surplus(self, competition_data: dict[str, Any]) -> bool:
@@ -32,7 +30,9 @@ class SolverCompetitionSurplusTest(BaseTest):
 
         solution = competition_data["solutions"][-1]
 
-        trades_dict = self.get_uid_trades(solution)
+        trades_dict = self.orderbook_api.get_uid_trades(solution)
+        if trades_dict is None:
+            return False
 
         for uid in trades_dict:
             trade = trades_dict[uid]
@@ -46,10 +46,10 @@ class SolverCompetitionSurplusTest(BaseTest):
             )
 
             trade_alt_dict = self.get_trade_alternatives(
-                uid, competition_data["solutions"][0:-1]
+                trade, uid, competition_data["solutions"][0:-1]
             )
 
-            for solver_alt, trade_alt in trade_alt_dict.items():
+            for solver_alt, trade_alt in trade_alt_dict:
                 a_abs = trade_alt.compare_surplus(trade)
                 a_abs_eth = a_abs * token_to_eth
                 a_rel = trade_alt.compare_price(trade)
@@ -82,35 +82,38 @@ class SolverCompetitionSurplusTest(BaseTest):
         return True
 
     def get_trade_alternatives(
-        self, uid: str, solution_alternatives: list[dict[str, Any]]
-    ) -> dict[str, Trade]:
+        self, trade: Trade, uid: str, solution_alternatives: list[dict[str, Any]]
+    ) -> list[tuple[str, Trade]]:
         """Compute surplus and exchange rate for an order with uid as settled in alternative
         solutions."""
-        trade_alt_dict: dict[str, Trade] = {}
+        trade_alt_list: list[tuple[str, Trade]] = []
+        order_data = trade.data
         for solution_alt in solution_alternatives:
-            if (
-                solution_alt["objective"]["fees"]
-                < 0.9 * solution_alt["objective"]["cost"]
-            ):
-                continue
-            trades_dict_alt = self.get_uid_trades(solution_alt)
+            executions_dict_alt = self.get_uid_order_execution(solution_alt)
             try:
-                trade_alt = trades_dict_alt[uid]
+                trade_alt = Trade(order_data, executions_dict_alt[uid])
             except KeyError:
                 continue
-            trade_alt_dict[solution_alt["solver"]] = trade_alt
+            trade_alt_list.append((solution_alt["solver"], trade_alt))
 
-        return trade_alt_dict
+        return trade_alt_list
 
-    def get_uid_trades(self, solution: dict[str, Any]) -> dict[str, Trade]:
-        """Get a dictionary mapping UIDs to trades in a solution."""
-        calldata = solution["callData"]
-        settlement = self.web3_api.get_settlement_from_calldata(calldata)
-        trades = self.web3_api.get_trades(settlement)
-        trades_dict = {
-            solution["orders"][i]["id"]: trade for (i, trade) in enumerate(trades)
-        }
-        return trades_dict
+    def get_uid_order_execution(
+        self, solution: dict[str, Any]
+    ) -> dict[str, OrderExecution]:
+        """Given a solution from the competition endpoint, compute the executin for all included
+        orders.
+        """
+        result: dict[str, OrderExecution] = {}
+        for order in solution["orders"]:
+            buy_amount = int(order["buyAmount"])
+            sell_amount = int(order["sellAmount"])
+            # fee amount is set to zero for the moment, could be computed from clearing prices
+            # and buy and sell token of the order
+            fee_amount = 0
+            order_execution = OrderExecution(buy_amount, sell_amount, fee_amount)
+            result[order["id"]] = order_execution
+        return result
 
     def run(self, tx_hash: str) -> bool:
         """
