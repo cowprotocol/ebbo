@@ -59,7 +59,7 @@ def main() -> None:
             continue
 
         tx_hashes = web3_api.get_tx_hashes_by_block(start_block, end_block)
-        if tx_hashes == []:
+        if not tx_hashes:
             continue
 
         web3_api.logger.debug(f"{len(tx_hashes)} hashes found: {tx_hashes}")
