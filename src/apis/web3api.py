@@ -66,9 +66,7 @@ class Web3API:
             return None
         return log_receipts
 
-    def get_tx_hashes_by_block(
-        self, start_block: int, end_block: int
-    ) -> list[str]:
+    def get_tx_hashes_by_block(self, start_block: int, end_block: int) -> list[str]:
         """
         Function filters hashes by contract address, and block ranges
         """
