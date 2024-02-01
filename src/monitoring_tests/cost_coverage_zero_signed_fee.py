@@ -8,7 +8,6 @@ from typing import Any, Dict
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.apis.orderbookapi import OrderbookAPI
-from src.constants import DAY_BLOCK_INTERVAL, CAP_PARAMETER
 
 
 class CostCoverageForZeroSignedFee(BaseTest):
@@ -37,17 +36,12 @@ class CostCoverageForZeroSignedFee(BaseTest):
 
         solution = competition_data["solutions"][-1]
         tx_hash = competition_data["transactionHash"]
-        print("Processing " + tx_hash)
-        solver = solution["solver"]
         ucp = solution["clearingPrices"]
         orders = solution["orders"]
         native_prices = competition_data["auction"]["prices"]
         total_fee = 0
-        for x in orders:
-            id = x["id"]
-            raw_sell_amount = int(x["sellAmount"])
-            raw_buy_amount = int(x["buyAmount"])
-            order_data = self.orderbook_api.get_order_data(id)
+        for order in orders:
+            order_data = self.orderbook_api.get_order_data(order["id"])
             if order_data is None:
                 return False
             sell_token = order_data["sellToken"]
@@ -63,8 +57,10 @@ class CostCoverageForZeroSignedFee(BaseTest):
 
             fee = (
                 (
-                    raw_sell_amount
-                    - raw_buy_amount * int(ucp[buy_token]) / int(ucp[sell_token])
+                    int(order["sellAmount"])
+                    - int(order["buyAmount"])
+                    * int(ucp[buy_token])
+                    / int(ucp[sell_token])
                 )
                 * int(native_prices[sell_token])
                 / 10**36
