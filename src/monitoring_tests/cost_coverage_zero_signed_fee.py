@@ -30,8 +30,6 @@ class CostCoverageForZeroSignedFee(BaseTest):
         execution cost of the corresponding settlement. This is refered to as cost_coverage,
         and is supposed to monitor how well the fees end up approximating the execution cost
         of a solution.
-        We also look at the coverage, from the protocol perspective, of each settlement, i.e.,
-        we compare the payout made to the solver with the fees collected.
         """
 
         solution = competition_data["solutions"][-1]
@@ -39,6 +37,7 @@ class CostCoverageForZeroSignedFee(BaseTest):
         orders = solution["orders"]
         native_prices = competition_data["auction"]["prices"]
         total_fee = 0.0
+        zero_signed_fee_market = False
         for order in orders:
             order_data = self.orderbook_api.get_order_data(order["id"])
             if order_data is None:
@@ -48,11 +47,10 @@ class CostCoverageForZeroSignedFee(BaseTest):
             full_appdata = ast.literal_eval(order_data["fullAppData"])
 
             if (
-                order_data["class"] != "limit"
-                or full_appdata["metadata"]["orderClass"]["orderClass"] != "market"
+                order_data["class"] == "limit"
+                and full_appdata["metadata"]["orderClass"]["orderClass"] == "market"
             ):
-                print("Ignoring hash as it contains irrelevant orders")
-                return True
+                zero_signed_fee_market = True
 
             fee = (
                 (
@@ -65,11 +63,17 @@ class CostCoverageForZeroSignedFee(BaseTest):
                 / 10**36
             )
             total_fee += fee
-        diff = total_fee - gas_cost
-        if diff > 0.002 or diff < -0.001:
-            self.logger.info(
-                f'"Fees - gasCost" is {diff} for {competition_data["transactionHash"]}.'
-            )
+        if total_fee - gas_cost > 0.002 or total_fee - gas_cost < -0.002:
+            if zero_signed_fee_market:
+                self.alert(
+                    f'"Fees - gasCost" is {total_fee - gas_cost} \
+                        for {competition_data["transactionHash"]}.'
+                )
+            else:
+                self.logger.info(
+                    f'"Fees - gasCost" is {total_fee - gas_cost} \
+                    for {competition_data["transactionHash"]}.'
+                )
         return True
 
     def run(self, tx_hash: str) -> bool:
