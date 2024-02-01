@@ -111,10 +111,9 @@ class Web3API:
         """
         try:
             transaction = self.web_3.eth.get_transaction(HexStr(tx_hash))
-        except ValueError as err:
+        except Exception as err:
             self.logger.warning(f"Error while fetching transaction: {err}")
             transaction = None
-
         return transaction
 
     def get_tx_block_number(self, tx_hash: str) -> Optional[int]:

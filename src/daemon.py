@@ -24,6 +24,9 @@ from src.monitoring_tests.buffers_monitoring_test import (
 from src.monitoring_tests.combinatorial_auction_surplus_test import (
     CombinatorialAuctionSurplusTest,
 )
+from src.monitoring_tests.cost_coverage_zero_signed_fee import (
+    CostCoverageForZeroSignedFee,
+)
 from src.constants import SLEEP_TIME_IN_SEC
 
 
@@ -40,6 +43,7 @@ def main() -> None:
         MEVBlockerRefundsMonitoringTest(),
         BuffersMonitoringTest(),
         CombinatorialAuctionSurplusTest(),
+        CostCoverageForZeroSignedFee(),
     ]
 
     start_block: Optional[int] = None
@@ -55,7 +59,7 @@ def main() -> None:
             continue
 
         tx_hashes = web3_api.get_tx_hashes_by_block(start_block, end_block)
-        if tx_hashes is None:
+        if tx_hashes == []:
             continue
 
         web3_api.logger.debug(f"{len(tx_hashes)} hashes found: {tx_hashes}")
