@@ -111,7 +111,7 @@ class Web3API:
         """
         try:
             transaction = self.web_3.eth.get_transaction(HexStr(tx_hash))
-        except Exception as err:
+        except Exception as err:  # pylint: disable=W0718
             self.logger.warning(f"Error while fetching transaction: {err}")
             transaction = None
         return transaction

@@ -35,7 +35,6 @@ class CostCoverageForZeroSignedFee(BaseTest):
         """
 
         solution = competition_data["solutions"][-1]
-        tx_hash = competition_data["transactionHash"]
         ucp = solution["clearingPrices"]
         orders = solution["orders"]
         native_prices = competition_data["auction"]["prices"]
@@ -68,8 +67,9 @@ class CostCoverageForZeroSignedFee(BaseTest):
             total_fee += fee
         diff = total_fee - gas_cost
         if diff > 0.002 or diff < -0.001:
-            log_msg = f'"Fees - gasCost" is {diff} for {tx_hash}: '
-            self.logger.info(log_msg)
+            self.logger.info(
+                f'"Fees - gasCost" is {diff} for {competition_data["transactionHash"]}.'
+            )
         return True
 
     def run(self, tx_hash: str) -> bool:
