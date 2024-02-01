@@ -68,7 +68,7 @@ class Web3API:
 
     def get_tx_hashes_by_block(
         self, start_block: int, end_block: int
-    ) -> Optional[list[str]]:
+    ) -> list[str]:
         """
         Function filters hashes by contract address, and block ranges
         """
@@ -80,7 +80,7 @@ class Web3API:
         )
 
         if log_receipts is None:
-            return None
+            return []
         settlement_hashes_list = list(
             {log_receipt["transactionHash"].hex() for log_receipt in log_receipts}
         )

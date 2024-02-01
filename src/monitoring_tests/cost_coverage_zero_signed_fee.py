@@ -38,7 +38,7 @@ class CostCoverageForZeroSignedFee(BaseTest):
         ucp = solution["clearingPrices"]
         orders = solution["orders"]
         native_prices = competition_data["auction"]["prices"]
-        total_fee = 0
+        total_fee = 0.0
         for order in orders:
             order_data = self.orderbook_api.get_order_data(order["id"])
             if order_data is None:
