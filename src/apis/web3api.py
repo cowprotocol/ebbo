@@ -66,9 +66,7 @@ class Web3API:
             return None
         return log_receipts
 
-    def get_tx_hashes_by_block(
-        self, start_block: int, end_block: int
-    ) -> Optional[list[str]]:
+    def get_tx_hashes_by_block(self, start_block: int, end_block: int) -> list[str]:
         """
         Function filters hashes by contract address, and block ranges
         """
@@ -80,7 +78,7 @@ class Web3API:
         )
 
         if log_receipts is None:
-            return None
+            return []
         settlement_hashes_list = list(
             {log_receipt["transactionHash"].hex() for log_receipt in log_receipts}
         )
@@ -111,10 +109,9 @@ class Web3API:
         """
         try:
             transaction = self.web_3.eth.get_transaction(HexStr(tx_hash))
-        except ValueError as err:
+        except Exception as err:  # pylint: disable=W0718
             self.logger.warning(f"Error while fetching transaction: {err}")
             transaction = None
-
         return transaction
 
     def get_tx_block_number(self, tx_hash: str) -> Optional[int]:
