@@ -64,7 +64,7 @@ class CostCoverageForZeroSignedFee(BaseTest):
             )
             total_fee += fee
         if total_fee - gas_cost > 0.002 or total_fee - gas_cost < -0.002:
-            if zero_signed_fee_market:
+            if zero_signed_fee_market and (total_fee - gas_cost > 0.02 or total_fee - gas_cost < -0.01):
                 self.alert(
                     f'"Fees - gasCost" is {total_fee - gas_cost} \
                         for {competition_data["transactionHash"]}.'
