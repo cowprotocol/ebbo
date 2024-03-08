@@ -47,8 +47,8 @@ class UniformDirectedPricesTest(BaseTest):
             for rate in token_pairs[token_pair]:
                 if rate < min_rate:
                     min_rate = rate
-            lower_r = rate * (1 - UDP_SENSITIVITY_THRESHOLD)
-            upper_r = rate * (1 + UDP_SENSITIVITY_THRESHOLD)
+            lower_r = min_rate * (1 - UDP_SENSITIVITY_THRESHOLD)
+            upper_r = min_rate * (1 + UDP_SENSITIVITY_THRESHOLD)
             for rate in token_pairs[token_pair]:
                 if rate < lower_r or rate > upper_r:
                     log_output = "\t".join(
