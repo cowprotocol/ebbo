@@ -1,7 +1,7 @@
 """
 Checks the uniform directed prices constraint that was introduced with CIP-38
 """
-# pylint: disable=logging-fstring-interpolation
+# pylint: disable=duplicate-code
 from typing import Any
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.orderbookapi import OrderbookAPI
