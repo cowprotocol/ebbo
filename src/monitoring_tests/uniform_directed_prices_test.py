@@ -9,7 +9,6 @@ from src.constants import (
     UDP_SENSITIVITY_THRESHOLD,
 )
 
-
 class UniformDirectedPricesTest(BaseTest):
     """
     This test checks whether the Uniform Directed Prices constraint,
