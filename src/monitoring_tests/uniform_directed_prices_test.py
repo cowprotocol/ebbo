@@ -32,14 +32,14 @@ class UniformDirectedPricesTest(BaseTest):
         token_pairs = {}
         for uid in trades_dict:
             trade = trades_dict[uid]
-            sell_token = trade.data.sell_token
-            buy_token = trade.data.buy_token
-            sell_amount = trade.execution.sell_amount
-            buy_amount = trade.execution.buy_amount
-            if (sell_token, buy_token) not in token_pairs:
-                token_pairs[(sell_token, buy_token)] = [sell_amount / buy_amount]
+            if (trade.data.sell_token, trade.data.buy_token) not in token_pairs:
+                token_pairs[(trade.data.sell_token, trade.data.buy_token)] = [
+                    trade.execution.sell_amount / trade.execution.buy_amount
+                ]
             else:
-                token_pairs[(sell_token, buy_token)].append(sell_amount / buy_amount)
+                token_pairs[(trade.data.sell_token, trade.data.buy_token)].append(
+                    trade.execution.sell_amount / trade.execution.buy_amount
+                )
         for token_pair in token_pairs:
             if len(token_pairs[token_pair]) == 1:
                 continue
