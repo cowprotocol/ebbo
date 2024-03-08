@@ -31,6 +31,9 @@ BUFFERS_VALUE_USD_THRESHOLD = 200000
 # threshold parameter to generate an alert when receiving kickbacks
 KICKBACKS_ALERT_THRESHOLD = 0.1
 
+# threshold to generate an alert for violating UDP
+UDP_SENSITIVITY_THRESHOLD = 0.005
+
 # relevant addresses
 SETTLEMENT_CONTRACT_ADDRESS = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
 MEV_BLOCKER_KICKBACKS_ADDRESS = "0xCe91228789B57DEb45e66Ca10Ff648385fE7093b"
