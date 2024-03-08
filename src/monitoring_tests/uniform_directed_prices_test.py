@@ -40,7 +40,7 @@ class UniformDirectedPricesTest(BaseTest):
                 token_pairs[(trade.data.sell_token, trade.data.buy_token)].append(
                     trade.execution.sell_amount / trade.execution.buy_amount
                 )
-        for (pair,trades_list) in token_pairs.items():
+        for (pair, trades_list) in token_pairs.items():
             if len(trades_list) == 1:
                 continue
             min_rate = trades_list[0]
