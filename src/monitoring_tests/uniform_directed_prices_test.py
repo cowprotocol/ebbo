@@ -40,22 +40,22 @@ class UniformDirectedPricesTest(BaseTest):
                 token_pairs[(trade.data.sell_token, trade.data.buy_token)].append(
                     trade.execution.sell_amount / trade.execution.buy_amount
                 )
-        for token_pair in token_pairs:
-            if len(token_pairs[token_pair]) == 1:
+        for (pair,trades_list) in token_pairs.items():
+            if len(trades_list) == 1:
                 continue
-            min_rate = token_pairs[token_pair][0]
-            for rate in token_pairs[token_pair]:
+            min_rate = trades_list[0]
+            for rate in trades_list:
                 if rate < min_rate:
                     min_rate = rate
             lower_r = min_rate * (1 - UDP_SENSITIVITY_THRESHOLD)
             upper_r = min_rate * (1 + UDP_SENSITIVITY_THRESHOLD)
-            for rate in token_pairs[token_pair]:
+            for rate in trades_list:
                 if rate < lower_r or rate > upper_r:
                     log_output = "\t".join(
                         [
                             "Uniform Directed Prices test:",
                             f"Tx Hash: {competition_data['transactionHash']}",
-                            f"Token pair: {token_pair}",
+                            f"Token pair: {pair}",
                         ]
                     )
                     self.alert(log_output)
