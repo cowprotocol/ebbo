@@ -23,7 +23,7 @@ class UniformDirectedPricesTest(BaseTest):
     def check_udp(self, competition_data: dict[str, Any]) -> bool:
         """
         This function checks whether there are multiple orders in the same directed token pair,
-        and if so, checks wheter UDP is satisfied.
+        and if so, checks whether UDP is satisfied.
         """
         solution = competition_data["solutions"][-1]
         trades_dict = self.orderbook_api.get_uid_trades(solution)
