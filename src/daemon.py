@@ -27,6 +27,9 @@ from src.monitoring_tests.combinatorial_auction_surplus_test import (
 from src.monitoring_tests.cost_coverage_zero_signed_fee import (
     CostCoverageForZeroSignedFee,
 )
+from src.monitoring_tests.uniform_directed_prices_test import (
+    UniformDirectedPricesTest,
+)
 from src.constants import SLEEP_TIME_IN_SEC
 
 
@@ -44,6 +47,7 @@ def main() -> None:
         BuffersMonitoringTest(),
         CombinatorialAuctionSurplusTest(),
         CostCoverageForZeroSignedFee(),
+        UniformDirectedPricesTest(),
     ]
 
     start_block: Optional[int] = None
