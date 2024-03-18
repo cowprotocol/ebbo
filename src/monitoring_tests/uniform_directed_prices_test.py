@@ -49,7 +49,7 @@ class UniformDirectedPricesTest(BaseTest):
             if len(prices_list) == 1:
                 continue
             min_rate = min(prices_list)
-            upper_r = min_rate * (1 + UDP_SENSITIVITY_THRESHOLD)
+            max_rate = max(prices_list)
 
             log_output = "\t".join(
                 [
@@ -60,12 +60,10 @@ class UniformDirectedPricesTest(BaseTest):
                     f"Directional prices: {[float(p) for p in prices_list]}",
                 ]
             )
-            for rate in prices_list:
-                if rate > min_rate * (1 + UDP_SENSITIVITY_THRESHOLD):
-                    self.alert(log_output)
-                    break
-                elif rate > min_rate * (1 + UDP_SENSITIVITY_THRESHOLD / 10):
-                    self.logger.info(log_output)
+            if max_rate > min_rate * (1 + UDP_SENSITIVITY_THRESHOLD):
+                self.alert(log_output)
+            elif max_rate > min_rate * (1 + UDP_SENSITIVITY_THRESHOLD / 10):
+                self.logger.info(log_output)
 
         return True
 
