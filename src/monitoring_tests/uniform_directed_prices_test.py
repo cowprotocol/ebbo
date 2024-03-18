@@ -3,6 +3,7 @@ Checks the uniform directed prices constraint that was introduced with CIP-38
 """
 # pylint: disable=duplicate-code
 from typing import Any
+from fractions import Fraction
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.orderbookapi import OrderbookAPI
 from src.constants import (
@@ -27,38 +28,45 @@ class UniformDirectedPricesTest(BaseTest):
         """
         solution = competition_data["solutions"][-1]
         trades_dict = self.orderbook_api.get_uid_trades(solution)
+
         if trades_dict is None:
             return False
-        token_pairs = {}
-        for uid in trades_dict:
-            trade = trades_dict[uid]
-            if (trade.data.sell_token, trade.data.buy_token) not in token_pairs:
-                token_pairs[(trade.data.sell_token, trade.data.buy_token)] = [
-                    trade.execution.sell_amount / trade.execution.buy_amount
-                ]
-            else:
-                token_pairs[(trade.data.sell_token, trade.data.buy_token)].append(
-                    trade.execution.sell_amount / trade.execution.buy_amount
-                )
-        for pair, trades_list in token_pairs.items():
-            if len(trades_list) == 1:
+
+        directional_prices: dict[tuple[str, str], list[Fraction]] = {}
+        for _, trade in trades_dict.items():
+            token_pair = (
+                trade.data.sell_token.lower(),
+                trade.data.buy_token.lower(),
+            )
+            directional_price = Fraction(
+                trade.execution.sell_amount, trade.execution.buy_amount
+            )
+            if token_pair not in directional_prices:
+                directional_prices[token_pair] = []
+            directional_prices[token_pair].append(directional_price)
+
+        for pair, prices_list in directional_prices.items():
+            if len(prices_list) == 1:
                 continue
-            min_rate = trades_list[0]
-            for rate in trades_list:
-                if rate < min_rate:
-                    min_rate = rate
-            lower_r = min_rate * (1 - UDP_SENSITIVITY_THRESHOLD)
+            min_rate = min(prices_list)
             upper_r = min_rate * (1 + UDP_SENSITIVITY_THRESHOLD)
-            for rate in trades_list:
-                if rate < lower_r or rate > upper_r:
-                    log_output = "\t".join(
-                        [
-                            "Uniform Directed Prices test:",
-                            f"Tx Hash: {competition_data['transactionHash']}",
-                            f"Token pair: {pair}",
-                        ]
-                    )
+
+            log_output = "\t".join(
+                [
+                    "Uniform Directed Prices test:",
+                    f"Tx Hash: {competition_data['transactionHash']}",
+                    f"Winning Solver: {solution['solver']}",
+                    f"Token pair: {pair}",
+                    f"Directional prices: {[float(p) for p in prices_list]}",
+                ]
+            )
+            for rate in prices_list:
+                if rate > min_rate * (1 + UDP_SENSITIVITY_THRESHOLD):
                     self.alert(log_output)
+                    break
+                elif rate > min_rate * (1 + UDP_SENSITIVITY_THRESHOLD / 10):
+                    self.logger.info(log_output)
+
         return True
 
     def run(self, tx_hash: str) -> bool:
