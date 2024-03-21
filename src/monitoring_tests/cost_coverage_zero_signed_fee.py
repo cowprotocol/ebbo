@@ -13,7 +13,8 @@ from src.apis.orderbookapi import OrderbookAPI
 class CostCoverageForZeroSignedFee(BaseTest):
     """
     This test checks the cost coverage of in-market orders that are
-    sent as zero-signed fee orders from CoW Swap.    """
+    sent as zero-signed fee orders from CoW Swap.
+    """
 
     def __init__(self) -> None:
         super().__init__()
