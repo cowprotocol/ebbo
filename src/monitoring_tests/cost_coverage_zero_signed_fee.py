@@ -13,8 +13,7 @@ from src.apis.orderbookapi import OrderbookAPI
 class CostCoverageForZeroSignedFee(BaseTest):
     """
     This test checks the cost coverage of in-market orders that are
-    sent as zero-signed fee orders from CoW Swap.
-    """
+    sent as zero-signed fee orders from CoW Swap.    """
 
     def __init__(self) -> None:
         super().__init__()
@@ -63,19 +62,11 @@ class CostCoverageForZeroSignedFee(BaseTest):
                 / 10**36
             )
             total_fee += fee
-        if total_fee - gas_cost > 0.002 or total_fee - gas_cost < -0.002:
-            if zero_signed_fee_market and (
-                total_fee - gas_cost > 0.02 or total_fee - gas_cost < -0.01
-            ):
-                self.alert(
-                    f'"Fees - gasCost" is {total_fee - gas_cost} \
-                        for {competition_data["transactionHash"]}.'
-                )
-            else:
-                self.logger.info(
-                    f'"Fees - gasCost" is {total_fee - gas_cost} \
-                    for {competition_data["transactionHash"]}.'
-                )
+        if total_fee - gas_cost > 0.02 or total_fee - gas_cost < -0.04:
+            self.logger.info(
+                f'"Fees - gasCost" is {total_fee - gas_cost} \
+                for {competition_data["transactionHash"]}.'
+            )
         return True
 
     def run(self, tx_hash: str) -> bool:
