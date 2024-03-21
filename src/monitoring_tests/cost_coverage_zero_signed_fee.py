@@ -3,7 +3,6 @@ Computing cost coverage per solver.
 """
 # pylint: disable=logging-fstring-interpolation
 
-import ast
 from typing import Any, Dict
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
