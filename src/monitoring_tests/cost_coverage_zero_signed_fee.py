@@ -37,20 +37,12 @@ class CostCoverageForZeroSignedFee(BaseTest):
         orders = solution["orders"]
         native_prices = competition_data["auction"]["prices"]
         total_fee = 0.0
-        zero_signed_fee_market = False
         for order in orders:
             order_data = self.orderbook_api.get_order_data(order["id"])
             if order_data is None:
                 return False
             sell_token = order_data["sellToken"]
             buy_token = order_data["buyToken"]
-            full_appdata = ast.literal_eval(order_data["fullAppData"])
-
-            if (
-                order_data["class"] == "limit"
-                and full_appdata["metadata"]["orderClass"]["orderClass"] == "market"
-            ):
-                zero_signed_fee_market = True
 
             fee = (
                 (
