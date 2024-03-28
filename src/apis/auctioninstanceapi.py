@@ -16,8 +16,12 @@ from src.constants import (
     FAIL_CODE,
 )
 
-PROD_BASE_URL = "https://solver-instances.s3.eu-central-1.amazonaws.com/prod-mainnet/"
-BARN_BASE_URL = "https://solver-instances.s3.eu-central-1.amazonaws.com/barn-mainnet/"
+PROD_BASE_URL = (
+    "https://solver-instances.s3.eu-central-1.amazonaws.com/prod/mainnet/legacy/"
+)
+BARN_BASE_URL = (
+    "https://solver-instances.s3.eu-central-1.amazonaws.com/barn/mainnet/legacy/"
+)
 
 
 class AuctionInstanceAPI:
