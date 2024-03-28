@@ -3,7 +3,6 @@ Computing cost coverage per solver.
 """
 # pylint: disable=logging-fstring-interpolation
 
-import ast
 from typing import Any, Dict
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
@@ -37,20 +36,12 @@ class CostCoverageForZeroSignedFee(BaseTest):
         orders = solution["orders"]
         native_prices = competition_data["auction"]["prices"]
         total_fee = 0.0
-        zero_signed_fee_market = False
         for order in orders:
             order_data = self.orderbook_api.get_order_data(order["id"])
             if order_data is None:
                 return False
             sell_token = order_data["sellToken"]
             buy_token = order_data["buyToken"]
-            full_appdata = ast.literal_eval(order_data["fullAppData"])
-
-            if (
-                order_data["class"] == "limit"
-                and full_appdata["metadata"]["orderClass"]["orderClass"] == "market"
-            ):
-                zero_signed_fee_market = True
 
             fee = (
                 (
@@ -63,19 +54,16 @@ class CostCoverageForZeroSignedFee(BaseTest):
                 / 10**36
             )
             total_fee += fee
-        if total_fee - gas_cost > 0.002 or total_fee - gas_cost < -0.002:
-            if zero_signed_fee_market and (
-                total_fee - gas_cost > 0.02 or total_fee - gas_cost < -0.01
-            ):
-                self.alert(
-                    f'"Fees - gasCost" is {total_fee - gas_cost} \
-                        for {competition_data["transactionHash"]}.'
-                )
-            else:
-                self.logger.info(
-                    f'"Fees - gasCost" is {total_fee - gas_cost} \
+        if total_fee - gas_cost > 0.02:
+            self.alert(
+                f'"Fees - gasCost" is {total_fee - gas_cost} \
                     for {competition_data["transactionHash"]}.'
-                )
+            )
+        elif total_fee - gas_cost < -0.04:
+            self.logger.info(
+                f'"Fees - gasCost" is {total_fee - gas_cost} \
+                for {competition_data["transactionHash"]}.'
+            )
         return True
 
     def run(self, tx_hash: str) -> bool:
