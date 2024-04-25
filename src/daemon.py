@@ -24,9 +24,6 @@ from src.monitoring_tests.buffers_monitoring_test import (
 from src.monitoring_tests.combinatorial_auction_surplus_test import (
     CombinatorialAuctionSurplusTest,
 )
-from src.monitoring_tests.cost_coverage_zero_signed_fee import (
-    CostCoverageForZeroSignedFee,
-)
 from src.monitoring_tests.uniform_directed_prices_test import (
     UniformDirectedPricesTest,
 )
@@ -46,7 +43,6 @@ def main() -> None:
         MEVBlockerRefundsMonitoringTest(),
         BuffersMonitoringTest(),
         CombinatorialAuctionSurplusTest(),
-        CostCoverageForZeroSignedFee(),
         UniformDirectedPricesTest(),
     ]
 
