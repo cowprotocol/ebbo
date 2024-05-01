@@ -1,6 +1,7 @@
 """
 Comparing order surplus per token pair to a reference solver in the competition.
 """
+
 # pylint: disable=logging-fstring-interpolation
 # pylint: disable=duplicate-code
 
@@ -8,7 +9,10 @@ from typing import Any
 from fractions import Fraction
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.orderbookapi import OrderbookAPI
-from src.constants import SURPLUS_ABSOLUTE_DEVIATION_ETH
+from src.constants import (
+    SURPLUS_ABSOLUTE_DEVIATION_ETH,
+    COMBINATORIAL_AUCTION_ABSOLUTE_DEVIATION_ETH,
+)
 
 
 class CombinatorialAuctionSurplusTest(BaseTest):
@@ -70,7 +74,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         solutions_filtering_winner = [
             solution["solver"]
             for i, solution in enumerate(solutions)
-            if i in filter_mask[-1]
+            if i in [ind for ind, _ in filter_mask[-1]]
         ]
 
         total_combinatorial_surplus = sum(
@@ -88,7 +92,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
                 f"Winning Solver: {competition_data['solutions'][-1]['solver']}",
                 f"Winning surplus: {self.convert_fractions_to_floats(aggregate_solutions[-1])}",
                 f"Baseline surplus: {self.convert_fractions_to_floats(baseline_surplus)}",
-                f"Solutions filtering winner: {filter_mask[-1]}",
+                f"Solutions filtering winner: {self.convert_fractions_to_floats(filter_mask[-1])}",
                 f"Solvers filtering winner: {solutions_filtering_winner}",
                 f"Combinatorial winners: {self.convert_fractions_to_floats(winning_solvers)}",
                 f"Total surplus: {float(total_surplus):.5f} ETH",
@@ -96,7 +100,12 @@ class CombinatorialAuctionSurplusTest(BaseTest):
                 f"Absolute difference: {float(a_abs_eth):.5f}ETH",
             ]
         )
-        if "baseline" in solutions_filtering_winner:
+
+        if any(
+            solutions[ind]["solver"] == "baseline"
+            and surplus_difference > COMBINATORIAL_AUCTION_ABSOLUTE_DEVIATION_ETH
+            for ind, surplus_difference in filter_mask[-1]
+        ):
             self.alert(log_output)
         elif (
             a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10
@@ -167,22 +176,25 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         self,
         aggregate_solutions: list[dict[tuple[str, str], Fraction]],
         baseline_surplus: dict[tuple[str, str], tuple[Fraction, int]],
-    ) -> list[list[int]]:
-        """Filter out solutions which do not provide enough surplus.
+    ) -> list[list[tuple[int, Fraction]]]:
+        """Check which baseline solutions filter out solutions.
         Only solutions are considered for ranking that supply more surplus than any of the single
-        aggregate order solutions on all token pairs they touch.
-        The function returns a list of integers for each solution. The integers in those lists
-        correspond to those baselines that would have resulted in filtering of the solution. This
-        information is used e.g. to trigger alerts depending on which solver resulted in filtering.
+        aggregate order solutions on all directed token pairs they touch.
+        For each solution a list of tuples is returned. The first entry of each tuple is an integer
+         corresponding to the index of a baseline solution would have resulted in filtering of the
+        given solution. The second entry is the difference in surplus of the filtered and filtering
+        solution.
+        This information is used e.g. to trigger alerts depending on which solver resulted in
+        filtering.
         """
-        result: list[list[int]] = []
+        result: list[list[tuple[int, Fraction]]] = []
         for aggregate_solution in aggregate_solutions:
             flag = []
             for token_pair, surplus in aggregate_solution.items():
                 if token_pair in baseline_surplus:
                     surplus_ref, solution_index = baseline_surplus[token_pair]
                     if surplus < surplus_ref:
-                        flag.append(solution_index)
+                        flag.append((solution_index, surplus_ref - surplus))
             result.append(flag)
 
         return result
@@ -191,7 +203,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         self,
         aggregate_solutions: list[dict[tuple[str, str], Fraction]],
         baseline_surplus: dict[tuple[str, str], tuple[Fraction, int]],
-        filter_mask: list[list[int]],
+        filter_mask: list[list[tuple[int, Fraction]]],
     ) -> dict[tuple[str, str], int]:
         """Determine the winning solutions for the different token pairs.
         There is one batch winner, and the remaining token pairs are won by single aggregate order
@@ -239,6 +251,8 @@ class CombinatorialAuctionSurplusTest(BaseTest):
                 k: self.convert_fractions_to_floats(v, precision)
                 for k, v in obj.items()
             }
+        if isinstance(obj, list):
+            return [self.convert_fractions_to_floats(v, precision) for v in obj]
         if isinstance(obj, tuple):
             return tuple(self.convert_fractions_to_floats(x, precision) for x in obj)
         if isinstance(obj, Fraction):
