@@ -65,7 +65,9 @@ class CoWAMMCommitmentTest(BaseTest):
 
     def get_cowamm_address(self, interaction: dict[str, Any]) -> str:
         """Get the address of the CoW AMM from the commit interaction"""
-        decoded_interaction = self.contract.decode_function_input(interaction["callData"])[1]
+        decoded_interaction = self.contract.decode_function_input(
+            interaction["callData"]
+        )[1]
         cowamm_address = str(decoded_interaction["owner"])
         return cowamm_address
 
