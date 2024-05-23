@@ -47,7 +47,7 @@ def main() -> None:
         BuffersMonitoringTest(),
         CombinatorialAuctionSurplusTest(),
         UniformDirectedPricesTest(),
-        CoWAMMCommitmentTest()
+        CoWAMMCommitmentTest(),
     ]
 
     start_block: Optional[int] = None
