@@ -38,7 +38,7 @@ class CoWAMMCommitmentTest(BaseTest):
         If there is a preinteraction with a call to the commit function of the CoW AMM contant
         product smart contract, the commitment of that AMM is checked at the current point in
         time.
-        
+
         This is not a check for including a commit in post interactions or within interactions.
         It also does not check if the uncommit happened immediately, but just checks if the
         current commitment is to the default order.
@@ -88,7 +88,7 @@ class CoWAMMCommitmentTest(BaseTest):
 
     def run(self, tx_hash: str) -> bool:
         """
-        Wrapper function for the whole test. Checks that commitments for custom CoW AMM of CoW 
+        Wrapper function for the whole test. Checks that commitments for custom CoW AMM of CoW
         AMM orders are reset
         """
 
