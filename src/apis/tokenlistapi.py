@@ -45,3 +45,24 @@ class TokenListAPI:
             if len(token_list) > 0:
                 return token_list
         return None
+
+    def get_token_decimals(self) -> Optional[dict[str, int | None]]:
+        """
+        Returns a dictionary of token addresses and decimals.
+        """
+        token_decimals: dict[str, int | None] = {}
+        for url in self.token_lists:
+            try:
+                data = requests.get(
+                    url,
+                    headers=header,
+                    timeout=REQUEST_TIMEOUT,
+                )
+                rsp = data.json()
+                if "tokens" in rsp:
+                    for token in rsp["tokens"]:
+                        token_decimals[token["address"].lower()] = token["decimals"]
+            except requests.RequestException as err:
+                self.logger.warning(f"Exception while fetching a token list: {err}")
+            return token_decimals
+        return None
