@@ -53,5 +53,6 @@ class MEVBlockerRefundsMonitoringTest(BaseTest):
         if eth_kickbacks >= KICKBACKS_ALERT_THRESHOLD:
             self.alert(log_output)
         else:
-            self.logger.info(log_output)
+            if eth_kickbacks > 0:
+                self.logger.info(log_output)
         return True
