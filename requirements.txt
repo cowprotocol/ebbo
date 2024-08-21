@@ -1,6 +1,6 @@
 black==23.3.0
 mypy==1.4.1
-pylint==2.17.4
+pylint
 pytest==7.4.0
 python-dotenv>=0.20.0
 web3==6.5.0
