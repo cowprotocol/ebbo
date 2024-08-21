@@ -7,7 +7,8 @@ more than KICKBACKS_ALERT_THRESHOLD
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.constants import (
-    MEV_BLOCKER_KICKBACKS_ADDRESS,
+    COW_DAO_MEV_BLOCKER_KICKBACKS_ADDRESS,
+    COPIUM_MEV_BLOCKER_KICKBACKS_ADDRESS,
     KICKBACKS_ALERT_THRESHOLD,
 )
 
@@ -31,19 +32,28 @@ class MEVBlockerRefundsMonitoringTest(BaseTest):
         if block_number is None:
             return False
 
-        total_eth_kickbacks = self.web3_api.get_eth_transfers_by_block_range(
-            block_number, block_number, MEV_BLOCKER_KICKBACKS_ADDRESS
+        cow_dao_total_eth_kickbacks = self.web3_api.get_eth_transfers_by_block_range(
+            block_number, block_number, COW_DAO_MEV_BLOCKER_KICKBACKS_ADDRESS
         )
-        if total_eth_kickbacks is None:
+        copium_total_eth_kickbacks = self.web3_api.get_eth_transfers_by_block_range(
+            block_number, block_number, COPIUM_MEV_BLOCKER_KICKBACKS_ADDRESS
+        )
+        eth_kickbacks = None
+        if cow_dao_total_eth_kickbacks is not None:
+            eth_kickbacks = cow_dao_total_eth_kickbacks
+        if copium_total_eth_kickbacks is not None:
+            eth_kickbacks = copium_total_eth_kickbacks
+
+        if eth_kickbacks is None:
             return False
         log_output = "\t".join(
             [
                 "MEV Blocker kickbacks test:",
                 f"Tx Hash: {tx_hash}",
-                f"Kickback: {total_eth_kickbacks:.5f}ETH",
+                f"Kickback: {eth_kickbacks:.5f}ETH",
             ]
         )
-        if total_eth_kickbacks >= KICKBACKS_ALERT_THRESHOLD:
+        if eth_kickbacks >= KICKBACKS_ALERT_THRESHOLD:
             self.alert(log_output)
         else:
             self.logger.info(log_output)
