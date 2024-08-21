@@ -1,6 +1,7 @@
 """
 Checks the uniform directed prices constraint that was introduced with CIP-38
 """
+
 # pylint: disable=duplicate-code
 from typing import Any
 from fractions import Fraction
