@@ -8,7 +8,7 @@ from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.constants import (
     COW_DAO_MEV_BLOCKER_KICKBACKS_ADDRESS,
-    COPIUM_MEV_BLOCKER_KICKBACKS_ADDRESS,
+    COPIUM_CAPITAL_MEV_BLOCKER_KICKBACKS_ADDRESS,
     KICKBACKS_ALERT_THRESHOLD,
 )
 
@@ -35,14 +35,16 @@ class MEVBlockerRefundsMonitoringTest(BaseTest):
         cow_dao_total_eth_kickbacks = self.web3_api.get_eth_transfers_by_block_range(
             block_number, block_number, COW_DAO_MEV_BLOCKER_KICKBACKS_ADDRESS
         )
-        copium_total_eth_kickbacks = self.web3_api.get_eth_transfers_by_block_range(
-            block_number, block_number, COPIUM_MEV_BLOCKER_KICKBACKS_ADDRESS
+        copium_capital_total_eth_kickbacks = (
+            self.web3_api.get_eth_transfers_by_block_range(
+                block_number, block_number, COPIUM_CAPITAL_MEV_BLOCKER_KICKBACKS_ADDRESS
+            )
         )
         eth_kickbacks = None
         if cow_dao_total_eth_kickbacks is not None:
             eth_kickbacks = cow_dao_total_eth_kickbacks
-        if copium_total_eth_kickbacks is not None:
-            eth_kickbacks = copium_total_eth_kickbacks
+        if copium_capital_total_eth_kickbacks is not None:
+            eth_kickbacks = copium_capital_total_eth_kickbacks
 
         if eth_kickbacks is None:
             return False
