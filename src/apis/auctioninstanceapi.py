@@ -1,6 +1,7 @@
 """
 API for fetching auction instances from AWS.
 """
+
 # pylint: disable=logging-fstring-interpolation
 
 from typing import Any, Optional

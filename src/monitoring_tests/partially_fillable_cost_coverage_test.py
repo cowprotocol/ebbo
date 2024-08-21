@@ -1,6 +1,7 @@
 """
 Cost coverage test for partially fillable orders.
 """
+
 # pylint: disable=logging-fstring-interpolation
 
 from web3.types import TxData, TxReceipt

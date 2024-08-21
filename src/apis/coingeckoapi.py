@@ -1,6 +1,7 @@
 """
 CoingeckoAPI for fetching the price in usd of a given token.
 """
+
 # pylint: disable=logging-fstring-interpolation
 
 from typing import Optional

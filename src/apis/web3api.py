@@ -1,6 +1,7 @@
 """
 Web3API for fetching relevant data using the web3 library.
 """
+
 # pylint: disable=logging-fstring-interpolation
 
 from os import getenv

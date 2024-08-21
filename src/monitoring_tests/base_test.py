@@ -2,6 +2,7 @@
 In this file, we introduce the BaseTest class, whose purpose is to be used as the basis
 for all tests developed.
 """
+
 # pylint: disable=logging-fstring-interpolation
 
 from abc import ABC, abstractmethod
