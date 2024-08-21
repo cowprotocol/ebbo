@@ -8,7 +8,7 @@ more than KICKBACKS_ALERT_THRESHOLD
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API
 from src.constants import (
-    MEV_BLOCKER_KICKBACKS_ADDRESS,
+    MEV_BLOCKER_KICKBACKS_ADDRESSES,
     KICKBACKS_ALERT_THRESHOLD,
 )
 
@@ -32,19 +32,25 @@ class MEVBlockerRefundsMonitoringTest(BaseTest):
         if block_number is None:
             return False
 
-        total_eth_kickbacks = self.web3_api.get_eth_transfers_by_block_range(
-            block_number, block_number, MEV_BLOCKER_KICKBACKS_ADDRESS
-        )
-        if total_eth_kickbacks is None:
+        eth_kickbacks = None
+        for address in MEV_BLOCKER_KICKBACKS_ADDRESSES:
+            kickback = self.web3_api.get_eth_transfers_by_block_range(
+                block_number, block_number, address
+            )
+            if kickback is not None:
+                eth_kickbacks = kickback
+                break
+
+        if eth_kickbacks is None:
             return False
         log_output = "\t".join(
             [
                 "MEV Blocker kickbacks test:",
                 f"Tx Hash: {tx_hash}",
-                f"Kickback: {total_eth_kickbacks:.5f}ETH",
+                f"Kickback: {eth_kickbacks:.5f}ETH",
             ]
         )
-        if total_eth_kickbacks >= KICKBACKS_ALERT_THRESHOLD:
+        if eth_kickbacks >= KICKBACKS_ALERT_THRESHOLD:
             self.alert(log_output)
         else:
             self.logger.info(log_output)
