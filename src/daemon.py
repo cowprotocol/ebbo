@@ -4,7 +4,6 @@ the correstonding transaction hash is added to the queue of the individual tests
 
 If a settlement failes a test, an error level message is logged.
 """
-
 # pylint: disable=logging-fstring-interpolation
 
 import time

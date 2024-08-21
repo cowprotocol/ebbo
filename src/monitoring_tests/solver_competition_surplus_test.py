@@ -1,7 +1,6 @@
 """
 Comparing order surplus accross different solutions.
 """
-
 # pylint: disable=logging-fstring-interpolation
 
 from typing import Any

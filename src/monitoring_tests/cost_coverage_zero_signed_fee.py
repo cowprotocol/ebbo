@@ -1,7 +1,6 @@
 """
 Computing cost coverage per solver.
 """
-
 # pylint: disable=logging-fstring-interpolation
 
 from typing import Any, Dict

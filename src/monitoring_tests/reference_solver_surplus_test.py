@@ -1,7 +1,6 @@
 """
 Comparing order surplus to a reference solution.
 """
-
 # pylint: disable=logging-fstring-interpolation
 # pylint: disable=duplicate-code
 

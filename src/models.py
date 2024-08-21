@@ -1,7 +1,6 @@
 """
 Definition of trades, orders, and executions.
 """
-
 from __future__ import annotations
 from fractions import Fraction
 from dataclasses import dataclass

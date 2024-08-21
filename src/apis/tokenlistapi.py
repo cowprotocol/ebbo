@@ -1,7 +1,6 @@
 """
 TokenListAPI for fetching a curated token list.
 """
-
 # pylint: disable=logging-fstring-interpolation
 from typing import Optional
 import requests

@@ -1,7 +1,6 @@
 """
 Checks that commitments for custom CoW AMM of CoW AMM orders are reset.
 """
-
 # pylint: disable=duplicate-code
 from typing import Any
 

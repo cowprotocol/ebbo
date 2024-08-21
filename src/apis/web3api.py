@@ -1,7 +1,6 @@
 """
 Web3API for fetching relevant data using the web3 library.
 """
-
 # pylint: disable=logging-fstring-interpolation
 
 from os import getenv
@@ -140,7 +139,7 @@ class Web3API:
         """
         Decode settlement from transaction using the settlement contract.
         """
-        return self.get_settlement_from_calldata(transaction["input"].hex())
+        return self.get_settlement_from_calldata(transaction["input"])
 
     def get_settlement_from_calldata(self, calldata: str) -> dict[str, Any]:
         """

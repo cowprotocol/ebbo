@@ -1,7 +1,6 @@
 """
 API for calling an http solver with auction instances.
 """
-
 # pylint: disable=logging-fstring-interpolation
 
 from os import getenv

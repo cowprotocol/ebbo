@@ -1,7 +1,6 @@
 """
 TenderlyAPI for simulating transactions on tenderly.
 """
-
 # pylint: disable=logging-fstring-interpolation
 
 from os import getenv
