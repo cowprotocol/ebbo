@@ -70,8 +70,9 @@ class BuffersMonitoringTest(BaseTest):
                         coingecko_value_in_usd = (
                             balance / 10**decimals
                         ) * coingecko_price_in_usd
-                        if coingecko_value_in_usd < token_buffer_value_in_usd:
-                            token_buffer_value_in_usd = coingecko_value_in_usd
+                        token_buffer_value_in_usd = min(
+                            token_buffer_value_in_usd, coingecko_value_in_usd
+                        )
                     value_in_usd += token_buffer_value_in_usd
             log_output = f"Buffer value is {value_in_usd} USD"
             if value_in_usd > BUFFERS_VALUE_USD_THRESHOLD:
