@@ -140,7 +140,7 @@ class Web3API:
         """
         Decode settlement from transaction using the settlement contract.
         """
-        return self.get_settlement_from_calldata(transaction["input"])
+        return self.get_settlement_from_calldata(transaction["input"].hex())
 
     def get_settlement_from_calldata(self, calldata: str) -> dict[str, Any]:
         """
