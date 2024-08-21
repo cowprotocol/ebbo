@@ -1,6 +1,7 @@
 """
 OrderbookAPI for fetching relevant data using the CoW Swap Orderbook API.
 """
+
 # pylint: disable=logging-fstring-interpolation
 
 from typing import Any, Optional

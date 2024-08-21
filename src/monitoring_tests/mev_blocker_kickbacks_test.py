@@ -3,6 +3,7 @@ Checks whether there were any kickbacks received after each settlement.
 It generates an alert when kickbacks due to a specific settlement are
 more than KICKBACKS_ALERT_THRESHOLD
 """
+
 # pylint: disable=logging-fstring-interpolation
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.web3api import Web3API

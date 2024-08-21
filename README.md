@@ -28,7 +28,7 @@ Clone Repository: <br>
     git clone https://github.com/cowprotocol/ebbo.git
 
 
-Version python 3.10 is used. <br>
+Version python 3.12 is used. <br>
 
 ### Dependencies:
 
