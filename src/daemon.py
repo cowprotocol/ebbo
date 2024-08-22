@@ -13,23 +13,14 @@ from src.apis.web3api import Web3API
 from src.monitoring_tests.solver_competition_surplus_test import (
     SolverCompetitionSurplusTest,
 )
-from src.monitoring_tests.reference_solver_surplus_test import (
-    ReferenceSolverSurplusTest,
-)
 from src.monitoring_tests.mev_blocker_kickbacks_test import (
     MEVBlockerRefundsMonitoringTest,
-)
-from src.monitoring_tests.buffers_monitoring_test import (
-    BuffersMonitoringTest,
 )
 from src.monitoring_tests.combinatorial_auction_surplus_test import (
     CombinatorialAuctionSurplusTest,
 )
 from src.monitoring_tests.uniform_directed_prices_test import (
     UniformDirectedPricesTest,
-)
-from src.monitoring_tests.cowamm_commitment_test import (
-    CoWAMMCommitmentTest,
 )
 from src.constants import SLEEP_TIME_IN_SEC
 
@@ -43,12 +34,9 @@ def main() -> None:
     # initialize tests
     tests = [
         SolverCompetitionSurplusTest(),
-        ReferenceSolverSurplusTest(),
         MEVBlockerRefundsMonitoringTest(),
-        BuffersMonitoringTest(),
         CombinatorialAuctionSurplusTest(),
         UniformDirectedPricesTest(),
-        CoWAMMCommitmentTest(),
     ]
 
     start_block: Optional[int] = None
