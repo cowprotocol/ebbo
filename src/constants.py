@@ -32,7 +32,7 @@ BUFFER_INTERVAL = 150
 BUFFERS_VALUE_USD_THRESHOLD = 400000
 
 # threshold parameter to generate an alert when receiving kickbacks
-KICKBACKS_ALERT_THRESHOLD = 0.2
+KICKBACKS_ALERT_THRESHOLD = 0.5
 
 # threshold to generate an alert for violating UDP
 UDP_SENSITIVITY_THRESHOLD = 0.005
