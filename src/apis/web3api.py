@@ -45,6 +45,9 @@ class Web3API:
         except ValueError as err:
             self.logger.warning(f"Error while fetching block number: {err}")
             return None
+        except Exception as err:  # pylint: disable=W0718
+            self.logger.warning(f"Exception of type {type(err)} not handled: {err}")
+            return None
 
     def get_filtered_receipts(
         self, start_block: int, end_block: int, target: str, topics: list[Any]
@@ -64,6 +67,9 @@ class Web3API:
             log_receipts = self.web_3.eth.filter(filter_criteria).get_all_entries()
         except ValueError as err:
             self.logger.warning(f"ValueError while fetching hashes: {err}")
+            return None
+        except Exception as err:  # pylint: disable=W0718
+            self.logger.warning(f"Exception of type {type(err)} not handled: {err}")
             return None
         return log_receipts
 
@@ -111,7 +117,7 @@ class Web3API:
         try:
             transaction = self.web_3.eth.get_transaction(HexStr(tx_hash))
         except Exception as err:  # pylint: disable=W0718
-            self.logger.warning(f"Error while fetching transaction: {err}")
+            self.logger.warning(f"Error of type {type(err)} while fetching transaction: {err}")
             transaction = None
         return transaction
 
