@@ -16,12 +16,6 @@ from src.monitoring_tests.solver_competition_surplus_test import (
 from src.monitoring_tests.mev_blocker_kickbacks_test import (
     MEVBlockerRefundsMonitoringTest,
 )
-from src.monitoring_tests.combinatorial_auction_surplus_test import (
-    CombinatorialAuctionSurplusTest,
-)
-from src.monitoring_tests.uniform_directed_prices_test import (
-    UniformDirectedPricesTest,
-)
 from src.constants import SLEEP_TIME_IN_SEC
 
 
