@@ -35,8 +35,8 @@ def main() -> None:
     tests = [
         SolverCompetitionSurplusTest(),
         MEVBlockerRefundsMonitoringTest(),
-        #CombinatorialAuctionSurplusTest(),
-        #UniformDirectedPricesTest(),
+        # CombinatorialAuctionSurplusTest(),
+        # UniformDirectedPricesTest(),
     ]
 
     start_block: Optional[int] = None
