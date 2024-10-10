@@ -73,7 +73,7 @@ class SolverCompetitionSurplusTest(BaseTest):
                 ):
                     self.alert(log_output)
                 elif (
-                    a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10
+                    a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 100
                     and a_rel > SURPLUS_REL_DEVIATION / 10
                 ):
                     self.logger.info(log_output)
