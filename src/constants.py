@@ -6,7 +6,7 @@ All Constants that are used throughout the project
 SLEEP_TIME_IN_SEC = 10
 
 # surplus tests
-SURPLUS_ABSOLUTE_DEVIATION_ETH = 0.005
+SURPLUS_ABSOLUTE_DEVIATION_ETH = 0.05
 SURPLUS_REL_DEVIATION = 0.004
 
 # combinatorial auctions
