@@ -5,10 +5,8 @@ Checking winner's score and generating an alert if score is very large
 # pylint: disable=logging-fstring-interpolation
 
 from typing import Any
-from fractions import Fraction
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.orderbookapi import OrderbookAPI
-from src.models import Trade, OrderExecution
 from src.constants import HIGH_SCORE_THRESHOLD_ETH
 
 
