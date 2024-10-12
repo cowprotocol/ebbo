@@ -1,5 +1,5 @@
 """
-Tests for combinatorial auction surplus test.
+Tests for large score test.
 """
 
 import unittest
