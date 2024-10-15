@@ -16,6 +16,9 @@ from src.monitoring_tests.solver_competition_surplus_test import (
 from src.monitoring_tests.mev_blocker_kickbacks_test import (
     MEVBlockerRefundsMonitoringTest,
 )
+from src.monitoring_tests.high_score_test import (
+    HighScoreTest,
+)
 from src.constants import SLEEP_TIME_IN_SEC
 
 
@@ -29,6 +32,7 @@ def main() -> None:
     tests = [
         SolverCompetitionSurplusTest(),
         MEVBlockerRefundsMonitoringTest(),
+        HighScoreTest(),
     ]
 
     start_block: Optional[int] = None
