@@ -55,7 +55,7 @@ class UniformDirectedPricesTest(BaseTest):
             log_output = "\t".join(
                 [
                     "Uniform Directed Prices test:",
-                    f"Tx Hash: {competition_data['transactionHash']}",
+                    f"Tx Hash: {competition_data['transactionHashes'][0]}",
                     f"Winning Solver: {solution['solver']}",
                     f"Token pair: {pair}",
                     f"Directional prices: {[float(p) for p in prices_list]}",
