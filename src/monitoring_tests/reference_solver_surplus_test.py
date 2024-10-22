@@ -75,7 +75,7 @@ class ReferenceSolverSurplusTest(BaseTest):
             log_output = "\t".join(
                 [
                     "Reference solver surplus test:",
-                    f"Tx Hash: {competition_data['transactionHash']}",
+                    f"Tx Hash: {competition_data['transactionHashes'][0]}",
                     f"Order UID: {uid}",
                     f"Winning Solver: {solution['solver']}",
                     "Solver providing more surplus: Reference solver",
@@ -85,7 +85,7 @@ class ReferenceSolverSurplusTest(BaseTest):
             )
             ref_solver_log = "\t".join(
                 [
-                    f"Tx Hash: {competition_data['transactionHash']}",
+                    f"Tx Hash: {competition_data['transactionHashes'][0]}",
                     f"Order UID: {uid}",
                     f"Solution providing more surplus: {ref_solver_response}",
                 ]

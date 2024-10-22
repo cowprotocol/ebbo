@@ -29,7 +29,7 @@ class HighScoreTest(BaseTest):
         log_output = "\t".join(
             [
                 "Large score test:",
-                f"Tx Hash: {competition_data['transactionHash']}",
+                f"Tx Hash: {competition_data['transactionHashes'][0]}",
                 f"Winning Solver: {solution['solver']}",
                 f"Score in ETH: {score}",
             ]

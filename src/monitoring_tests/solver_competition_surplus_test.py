@@ -58,7 +58,7 @@ class SolverCompetitionSurplusTest(BaseTest):
                 log_output = "\t".join(
                     [
                         "Solver competition surplus test:",
-                        f"Tx Hash: {competition_data['transactionHash']}",
+                        f"Tx Hash: {competition_data['transactionHashes'][0]}",
                         f"Order UID: {uid}",
                         f"Winning Solver: {solution['solver']}",
                         f"Solver providing more surplus: {solver_alt}",

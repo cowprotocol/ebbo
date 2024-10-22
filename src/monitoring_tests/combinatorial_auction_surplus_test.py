@@ -88,7 +88,7 @@ class CombinatorialAuctionSurplusTest(BaseTest):
         log_output = "\t".join(
             [
                 "Combinatorial auction surplus test:",
-                f"Tx Hash: {competition_data['transactionHash']}",
+                f"Tx Hash: {competition_data['transactionHashes'][0]}",
                 f"Winning Solver: {competition_data['solutions'][-1]['solver']}",
                 f"Winning surplus: {self.convert_fractions_to_floats(aggregate_solutions[-1])}",
                 f"Baseline surplus: {self.convert_fractions_to_floats(baseline_surplus)}",
