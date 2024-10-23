@@ -103,9 +103,8 @@ class Web3API:
             return None
         total_transfers_in_eth = 0.0
         for txs in log_receipts:
-            if (
-                txs["topics"][0].hex()
-                == "0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d"
+            if txs["topics"][0] == HexBytes(
+                "0x3d0ce9bfc3ed7d6862dbb28b2dea94561fe714a1b4d019aa8af39730d1ad7c3d"
             ):
                 total_transfers_in_eth += int(txs["data"].hex(), 16) / 10**18
         return total_transfers_in_eth
