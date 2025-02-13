@@ -58,4 +58,4 @@ header = {
     "(KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
 }
 
-CHAIN_ID_TO_NAME = {1: "mainnet", 100: "xdai", 42161: "arbitrum", 8453: "base"}
+CHAIN_ID_TO_NAME = {1: "mainnet", 100: "xdai", 42161: "arbitrum_one", 8453: "base"}
