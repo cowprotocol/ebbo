@@ -56,7 +56,9 @@ class BuffersMonitoringTest(BaseTest):
                 decimals = int(token["tokenInfo"]["decimals"])
                 if token["tokenInfo"]["price"] is not False:
                     price_in_usd = token["tokenInfo"]["price"]["rate"]
-                    token_buffer_value_in_usd = (balance / 10**decimals) * price_in_usd
+                    token_buffer_value_in_usd = (
+                        balance / 10**decimals
+                    ) * price_in_usd
                     # in case some price is way off and it blows a lot the total value held in the
                     # smart contract we use a second price feed, from coingecko, to correct in case
                     # the initial price is indeed off
