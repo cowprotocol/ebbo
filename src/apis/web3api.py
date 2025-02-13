@@ -36,6 +36,9 @@ class Web3API:
         )
         self.logger = get_logger()
 
+    def get_chain_id(self) -> int:
+        return self.web_3.eth.chain_id
+
     def get_current_block_number(self) -> Optional[int]:
         """
         Function that returns the current block number

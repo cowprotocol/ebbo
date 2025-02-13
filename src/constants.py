@@ -57,3 +57,5 @@ header = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36"
 }
+
+CHAIN_ID_TO_NAME = {1: "mainnet", 100: "xdai", 42161: "arbitrum", 8453: "base"}
