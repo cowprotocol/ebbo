@@ -8,3 +8,4 @@ python-dotenv
 requests
 types-requests
 web3
+slack_sdk==3.34.0

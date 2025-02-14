@@ -1,4 +1,4 @@
-""" A daemon to run tests on settlements.
+"""A daemon to run tests on settlements.
 An infinite loop is started which listens to CoW Protocol trade events. If such an event happens,
 the correstonding transaction hash is added to the queue of the individual tests.
 

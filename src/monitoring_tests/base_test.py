@@ -5,7 +5,9 @@ for all tests developed.
 
 # pylint: disable=logging-fstring-interpolation
 
+import os
 from abc import ABC, abstractmethod
+from slack_sdk import WebClient
 from src.helper_functions import get_logger
 
 
@@ -19,6 +21,9 @@ class BaseTest(ABC):
     def __init__(self) -> None:
         self.tx_hashes: list[str] = []
         self.logger = get_logger()
+
+        if "SLACK_BOT_TOKEN" in os.environ:
+            self.slack_client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
 
     @abstractmethod
     def run(self, tx_hash: str) -> bool:
@@ -58,3 +63,8 @@ class BaseTest(ABC):
         It must be implemented by all subclasses.
         """
         self.logger.error(msg)
+
+        if self.slack_client:
+            self.slack_client.chat_postMessage(
+                channel=os.environ.get("SLACK_CHANNEL", "#alerts-ebbo"), text=msg
+            )
