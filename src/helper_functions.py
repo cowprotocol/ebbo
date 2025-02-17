@@ -16,20 +16,20 @@ class LogFilter(logging.Filter):
         super().__init__()
         self.max_log_level = max_log_level
 
-    def filter(self, log_record: logging.LogRecord) -> bool:
-        return log_record.levelno <= self.max_log_level
+    def filter(self, record: logging.LogRecord) -> bool:
+        return record.levelno <= self.max_log_level
 
 
 class Logger:
+    """
+    Logging wrapper class to send info and below to stdout and above to stderr.
+    """
     def __init__(
         self,
         name: str = __name__,
         level: int = logging.INFO,
         filename: Optional[str] = None,
     ):
-        """
-        Logging wrapper class to send info and below to stdout and above to stderr.
-        """
         self._logger = logging.getLogger(name)
         self._logger.setLevel(level)
         self._logger.handlers = []
@@ -54,16 +54,31 @@ class Logger:
             self._logger.addHandler(file_handler)
 
     def debug(self, msg, *args, **kwargs):
+        """
+        Debug logs
+        """
         self._logger.debug(msg, *args, **kwargs)
 
     def info(self, msg, *args, **kwargs):
+        """
+        Info logs
+        """
         self._logger.info(msg, *args, **kwargs)
 
     def warning(self, msg, *args, **kwargs):
+        """
+        Warning logs
+        """
         self._logger.warning(msg, *args, **kwargs)
 
     def error(self, msg, *args, **kwargs):
+        """
+        Error logs
+        """
         self._logger.error(msg, *args, **kwargs)
 
     def critical(self, msg, *args, **kwargs):
+        """
+        Critical logs
+        """
         self._logger.critical(msg, *args, **kwargs)

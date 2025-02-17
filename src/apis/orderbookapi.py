@@ -21,7 +21,7 @@ class OrderbookAPI:
     """
     Class for fetching data from a Web3 API.
     """
-    
+
     def __init__(self, chain_name: str) -> None:
         self.logger = Logger()
         self.prod_url_prefix = f"https://api.cow.fi/{chain_name}/api/v1/"
