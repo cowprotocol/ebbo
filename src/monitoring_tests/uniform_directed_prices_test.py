@@ -18,9 +18,9 @@ class UniformDirectedPricesTest(BaseTest):
     as introduced in CIP-38, is satisfied.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, orderbook_api: OrderbookAPI) -> None:
         super().__init__()
-        self.orderbook_api = OrderbookAPI()
+        self.orderbook_api = orderbook_api
 
     def check_udp(self, competition_data: dict[str, Any]) -> bool:
         """

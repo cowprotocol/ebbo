@@ -22,10 +22,10 @@ class ReferenceSolverSurplusTest(BaseTest):
     the executions of these orders by a reference solver.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, web3_api: Web3API, orderbook_api: OrderbookAPI) -> None:
         super().__init__()
-        self.web3_api = Web3API()
-        self.orderbook_api = OrderbookAPI()
+        self.web3_api = web3_api
+        self.orderbook_api = orderbook_api
         self.auction_instance_api = AuctionInstanceAPI()
         self.solver_api = SolverAPI()
 
