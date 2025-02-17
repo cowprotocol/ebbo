@@ -18,9 +18,9 @@ class SolverCompetitionSurplusTest(BaseTest):
     the different executions of these orders by other solvers in the competition.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, orderbook_api: OrderbookAPI) -> None:
         super().__init__()
-        self.orderbook_api = OrderbookAPI()
+        self.orderbook_api = orderbook_api
 
     def compare_orders_surplus(self, competition_data: dict[str, Any]) -> bool:
         """
@@ -119,7 +119,7 @@ class SolverCompetitionSurplusTest(BaseTest):
     def run(self, tx_hash: str) -> bool:
         """
         Wrapper function for the whole test. Checks if solver competition data is retrievable
-        and runs EBBO test, else returns True to add to list of unchecked hashes.
+        and runs EBBO test, else returns False to add to list of unchecked hashes.
         """
 
         solver_competition_data = self.orderbook_api.get_solver_competition_data(

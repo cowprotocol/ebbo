@@ -35,9 +35,9 @@ class CombinatorialAuctionSurplusTest(BaseTest):
       with our current mechanism.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, orderbook_api: OrderbookAPI) -> None:
         super().__init__()
-        self.orderbook_api = OrderbookAPI()
+        self.orderbook_api = orderbook_api
 
     def run_combinatorial_auction(self, competition_data: dict[str, Any]) -> bool:
         """Run combinatorial auction on competition data.

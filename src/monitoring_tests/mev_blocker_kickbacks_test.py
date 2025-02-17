@@ -19,9 +19,9 @@ class MEVBlockerRefundsMonitoringTest(BaseTest):
     generates a log/alert if this is the case.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, web3_api: Web3API) -> None:
         super().__init__()
-        self.web3_api = Web3API()
+        self.web3_api = web3_api
 
     def run(self, tx_hash: str) -> bool:
         """
