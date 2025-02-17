@@ -5,7 +5,7 @@ This file contains some auxiliary functions.
 from __future__ import annotations
 import os
 import logging
-from typing import Optional
+from typing import Optional, Any
 from slack_sdc import WebClient
 
 
@@ -23,7 +23,7 @@ class Logger:
         self._logger = logging.getLogger(name)
         self._logger.setLevel(level)
         self.formatter = logging.Formatter("%(levelname)s - %(message)s")
-        self._logger.setFormatter(self.formatter)
+        self._logger.setFormatter(self.formatter)  # type: ignore[attr-defined]
 
         if "SLACK_BOT_TOKEN" in os.environ:
             self.slack_client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
@@ -34,37 +34,37 @@ class Logger:
             file_handler.setFormatter(self.formatter)
             self._logger.addHandler(file_handler)
 
-    def debug(self, msg, *args, **kwargs):
+    def debug(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """
         Debug logs
         """
         self._logger.debug(msg, *args, **kwargs)
 
-    def info(self, msg, *args, **kwargs):
+    def info(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """
         Info logs
         """
         self._logger.info(msg, *args, **kwargs)
 
-    def warning(self, msg, *args, **kwargs):
+    def warning(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """
         Warning logs
         """
         self._logger.warning(msg, *args, **kwargs)
 
-    def error(self, msg, *args, **kwargs):
+    def error(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """
         Error logs
         """
         self._logger.error(msg, *args, **kwargs)
 
-    def critical(self, msg, *args, **kwargs):
+    def critical(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """
         Critical logs
         """
         self._logger.critical(msg, *args, **kwargs)
 
-    def _post_to_slack(self, msg):
+    def _post_to_slack(self, msg: str) -> None:
         """
         Post log to slack
         """
