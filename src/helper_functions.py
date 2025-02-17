@@ -3,27 +3,15 @@ This file contains some auxiliary functions.
 """
 
 from __future__ import annotations
-import sys
+import os
 import logging
 from typing import Optional
-
-
-class LogFilter(logging.Filter):
-    """
-    Filter logs above given level
-    """
-
-    def __init__(self, max_log_level: int):
-        super().__init__()
-        self.max_log_level = max_log_level
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        return record.levelno <= self.max_log_level
+from slack_sdc import WebClient
 
 
 class Logger:
     """
-    Logging wrapper class to send info and below to stdout and above to stderr.
+    Logging wrapper class to send warning logs and above to slack.
     """
 
     def __init__(
@@ -34,20 +22,11 @@ class Logger:
     ):
         self._logger = logging.getLogger(name)
         self._logger.setLevel(level)
-        self._logger.handlers = []
         self.formatter = logging.Formatter("%(levelname)s - %(message)s")
+        self._logger.setFormatter(self.formatter)
 
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        stdout_handler.setLevel(logging.DEBUG)
-        stdout_handler.addFilter(LogFilter(logging.INFO))
-        stdout_handler.setFormatter(self.formatter)
-
-        stderr_handler = logging.StreamHandler(sys.stderr)
-        stderr_handler.setLevel(logging.WARNING)
-        stderr_handler.setFormatter(self.formatter)
-
-        self._logger.addHandler(stdout_handler)
-        self._logger.addHandler(stderr_handler)
+        if "SLACK_BOT_TOKEN" in os.environ:
+            self.slack_client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
 
         if filename:
             file_handler = logging.FileHandler(f"{filename}.log", mode="w")
@@ -84,3 +63,14 @@ class Logger:
         Critical logs
         """
         self._logger.critical(msg, *args, **kwargs)
+
+    def _post_to_slack(self, msg):
+        """
+        Post log to slack
+        """
+        if self.slack_client:
+            self.slack_client.chat_postMessage(
+                channel=os.environ.get("SLACK_CHANNEL", "#alerts-ebbo"), text=msg
+            )
+        else:
+            self._logger.info("Slack bot token not set")
