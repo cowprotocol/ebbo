@@ -37,6 +37,7 @@ def main() -> None:
         SolverCompetitionSurplusTest(orderbook_api),
         HighScoreTest(orderbook_api),
     ]
+    # special case for mainnet as MEV Blocker only exists on mainnet
     if chain_name == "mainnet":
         tests.append(MEVBlockerRefundsMonitoringTest(web3_api))
 
