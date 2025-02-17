@@ -16,17 +16,16 @@ from src.constants import (
     FAIL_CODE,
 )
 
-PROD_BASE_URL = "https://api.cow.fi/mainnet/api/v1/"
-BARN_BASE_URL = "https://barn.api.cow.fi/mainnet/api/v1/"
-
 
 class OrderbookAPI:
     """
     Class for fetching data from a Web3 API.
     """
-
-    def __init__(self) -> None:
+    
+    def __init__(self, chain_name: str) -> None:
         self.logger = Logger()
+        self.prod_url_prefix = f"https://api.cow.fi/{chain_name}/api/v1/"
+        self.barn_url_prefix = f"https://barn.api.cow.fi/{chain_name}/api/v1/"
 
     def get_solver_competition_data(self, tx_hash: str) -> Optional[dict[str, Any]]:
         """
@@ -34,8 +33,12 @@ class OrderbookAPI:
         The returned dict follows the schema outlined here:
         https://api.cow.fi/docs/#/default/get_api_v1_solver_competition_by_tx_hash__tx_hash_
         """
-        prod_endpoint_url = f"{PROD_BASE_URL}solver_competition/by_tx_hash/{tx_hash}"
-        barn_endpoint_url = f"{BARN_BASE_URL}solver_competition/by_tx_hash/{tx_hash}"
+        prod_endpoint_url = (
+            f"{self.prod_url_prefix}solver_competition/by_tx_hash/{tx_hash}"
+        )
+        barn_endpoint_url = (
+            f"{self.barn_url_prefix}solver_competition/by_tx_hash/{tx_hash}"
+        )
         solver_competition_data: Optional[dict[str, Any]] = None
         try:
             json_competition_data = requests.get(
@@ -65,8 +68,8 @@ class OrderbookAPI:
         The returned dict follows the schema outlined here:
         https://api.cow.fi/docs/#/default/get_api_v1_orders__UID_
         """
-        prod_endpoint_url = f"{PROD_BASE_URL}orders/{uid}"
-        barn_endpoint_url = f"{BARN_BASE_URL}orders/{uid}"
+        prod_endpoint_url = f"{self.prod_url_prefix}orders/{uid}"
+        barn_endpoint_url = f"{self.barn_url_prefix}orders/{uid}"
         order_data: Optional[dict[str, Any]] = None
         try:
             json_order_data = requests.get(

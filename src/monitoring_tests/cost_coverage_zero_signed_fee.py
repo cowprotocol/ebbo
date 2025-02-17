@@ -16,10 +16,10 @@ class CostCoverageForZeroSignedFee(BaseTest):
     sent as zero-signed fee orders from CoW Swap.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, web3_api: Web3API, orderbook_api: OrderbookAPI) -> None:
         super().__init__()
-        self.web3_api = Web3API()
-        self.orderbook_api = OrderbookAPI()
+        self.web3_api = web3_api
+        self.orderbook_api = orderbook_api
         self.cost_coverage_per_solver: Dict[str, float] = {}
         self.total_coverage_per_solver: Dict[str, float] = {}
         self.original_block = self.web3_api.get_current_block_number()

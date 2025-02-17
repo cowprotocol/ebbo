@@ -16,9 +16,9 @@ class HighScoreTest(BaseTest):
     is above certain threshold
     """
 
-    def __init__(self) -> None:
+    def __init__(self, orderbook_api: OrderbookAPI) -> None:
         super().__init__()
-        self.orderbook_api = OrderbookAPI()
+        self.orderbook_api = orderbook_api
 
     def compute_winning_score(self, competition_data: dict[str, Any]) -> bool:
         """

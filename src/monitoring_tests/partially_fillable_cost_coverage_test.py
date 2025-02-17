@@ -20,10 +20,10 @@ class PartialFillCostCoverageTest(BaseTest):
     Class for testing fees.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, web3_api: Web3API, orderbook_api: OrderbookAPI) -> None:
         super().__init__()
-        self.web3_api = Web3API()
-        self.orderbook_api = OrderbookAPI()
+        self.web3_api = web3_api
+        self.orderbook_api = orderbook_api
 
     def run(self, tx_hash: str) -> bool:
         """
