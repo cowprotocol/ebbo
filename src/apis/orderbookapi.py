@@ -7,7 +7,7 @@ OrderbookAPI for fetching relevant data using the CoW Swap Orderbook API.
 from typing import Any, Optional
 import json
 import requests
-from src.helper_functions import get_logger
+from src.helper_functions import Logger
 from src.models import Trade, OrderData, OrderExecution
 from src.constants import (
     header,
@@ -26,7 +26,7 @@ class OrderbookAPI:
     """
 
     def __init__(self) -> None:
-        self.logger = get_logger()
+        self.logger = Logger()
 
     def get_solver_competition_data(self, tx_hash: str) -> Optional[dict[str, Any]]:
         """

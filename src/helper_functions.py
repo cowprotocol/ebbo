@@ -1,24 +1,69 @@
 """
-This file contains some auxiliary functions
+This file contains some auxiliary functions.
 """
 
 from __future__ import annotations
+import sys
 import logging
 from typing import Optional
 
 
-def get_logger(filename: Optional[str] = None) -> logging.Logger:
+class LogFilter(logging.Filter):
     """
-    get_logger() returns a logger object that can write to a file, terminal or only file if needed.
+    Filter logs above given level
     """
-    logging.basicConfig(format="%(levelname)s - %(message)s")
-    logger = logging.getLogger()
-    logger.setLevel(logging.INFO)
-    if filename:
-        file_handler = logging.FileHandler(filename + ".log", mode="w")
-        file_handler.setLevel(logging.INFO)
-        formatter = logging.Formatter("%(levelname)s - %(message)s")
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+    def __init__(self, max_log_level: int):
+        super().__init__()
+        self.max_log_level = max_log_level
 
-    return logger
+    def filter(self, log_record: logging.LogRecord) -> bool:
+        return log_record.levelno <= self.max_log_level
+
+
+class Logger:
+    def __init__(
+        self,
+        name: str = __name__,
+        level: int = logging.INFO,
+        filename: Optional[str] = None,
+    ):
+        """
+        Logging wrapper class to send info and below to stdout and above to stderr.
+        """
+        self._logger = logging.getLogger(name)
+        self._logger.setLevel(level)
+        self._logger.handlers = []
+        self.formatter = logging.Formatter("%(levelname)s - %(message)s")
+
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setLevel(logging.DEBUG)
+        stdout_handler.addFilter(LogFilter(logging.INFO))
+        stdout_handler.setFormatter(self.formatter)
+
+        stderr_handler = logging.StreamHandler(sys.stderr)
+        stderr_handler.setLevel(logging.WARNING)
+        stderr_handler.setFormatter(self.formatter)
+
+        self._logger.addHandler(stdout_handler)
+        self._logger.addHandler(stderr_handler)
+
+        if filename:
+            file_handler = logging.FileHandler(f"{filename}.log", mode="w")
+            file_handler.setLevel(logging.DEBUG)
+            file_handler.setFormatter(self.formatter)
+            self._logger.addHandler(file_handler)
+
+    def debug(self, msg, *args, **kwargs):
+        self._logger.debug(msg, *args, **kwargs)
+
+    def info(self, msg, *args, **kwargs):
+        self._logger.info(msg, *args, **kwargs)
+
+    def warning(self, msg, *args, **kwargs):
+        self._logger.warning(msg, *args, **kwargs)
+
+    def error(self, msg, *args, **kwargs):
+        self._logger.error(msg, *args, **kwargs)
+
+    def critical(self, msg, *args, **kwargs):
+        self._logger.critical(msg, *args, **kwargs)

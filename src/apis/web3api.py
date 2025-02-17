@@ -14,7 +14,7 @@ from eth_typing import Address, HexStr
 from hexbytes import HexBytes
 from contracts.gpv2_settlement import gpv2_settlement
 from src.models import Trade, OrderData, OrderExecution
-from src.helper_functions import get_logger
+from src.helper_functions import Logger
 from src.constants import SETTLEMENT_CONTRACT_ADDRESS
 
 
@@ -34,7 +34,7 @@ class Web3API:
         self.contract = self.web_3.eth.contract(
             address=Address(HexBytes(SETTLEMENT_CONTRACT_ADDRESS)), abi=gpv2_settlement
         )
-        self.logger = get_logger()
+        self.logger = Logger()
 
     def get_current_block_number(self) -> Optional[int]:
         """
