@@ -12,6 +12,7 @@ class LogFilter(logging.Filter):
     """
     Filter logs above given level
     """
+
     def __init__(self, max_log_level: int):
         super().__init__()
         self.max_log_level = max_log_level
@@ -24,6 +25,7 @@ class Logger:
     """
     Logging wrapper class to send info and below to stdout and above to stderr.
     """
+
     def __init__(
         self,
         name: str = __name__,
