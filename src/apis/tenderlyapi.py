@@ -8,7 +8,7 @@ from os import getenv
 from typing import Any, Optional
 import requests
 from dotenv import load_dotenv
-from src.helper_functions import get_logger
+from src.helper_functions import Logger
 from src.constants import (
     SETTLEMENT_CONTRACT_ADDRESS,
     REQUEST_TIMEOUT,
@@ -21,7 +21,7 @@ class TenderlyAPI:
     """
 
     def __init__(self) -> None:
-        self.logger = get_logger()
+        self.logger = Logger()
         load_dotenv()
         self.tenderly_url = (
             "https://api.tenderly.co/api/v1/account/"

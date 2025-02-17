@@ -10,7 +10,7 @@ import json
 import requests
 from dotenv import load_dotenv
 from src.models import OrderExecution
-from src.helper_functions import get_logger
+from src.helper_functions import Logger
 from src.constants import (
     header,
     REQUEST_TIMEOUT,
@@ -24,7 +24,7 @@ class SolverAPI:
     """
 
     def __init__(self, url: Optional[str] = None) -> None:
-        self.logger = get_logger()
+        self.logger = Logger()
         if url is None:
             load_dotenv()
             self.solver_url = getenv("QUASIMODO_SOLVER_URL")

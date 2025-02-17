@@ -8,7 +8,7 @@ for all tests developed.
 import os
 from abc import ABC, abstractmethod
 from slack_sdk import WebClient
-from src.helper_functions import get_logger
+from src.helper_functions import Logger
 
 
 class BaseTest(ABC):
@@ -20,7 +20,7 @@ class BaseTest(ABC):
 
     def __init__(self) -> None:
         self.tx_hashes: list[str] = []
-        self.logger = get_logger()
+        self.logger = Logger()
 
         if "SLACK_BOT_TOKEN" in os.environ:
             self.slack_client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])

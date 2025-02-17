@@ -6,7 +6,7 @@ CoingeckoAPI for fetching the price in usd of a given token.
 
 from typing import Optional
 import requests
-from src.helper_functions import get_logger
+from src.helper_functions import Logger
 from src.constants import (
     header,
     REQUEST_TIMEOUT,
@@ -19,7 +19,7 @@ class CoingeckoAPI:
     """
 
     def __init__(self) -> None:
-        self.logger = get_logger()
+        self.logger = Logger()
 
     def get_token_price_in_usd(self, address: str) -> Optional[float]:
         """
