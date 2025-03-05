@@ -13,7 +13,7 @@ from src.apis.orderbookapi import OrderbookAPI
 from src.apis.auctioninstanceapi import AuctionInstanceAPI
 from src.apis.solverapi import SolverAPI
 from src.models import Trade
-from src.constants import SURPLUS_ABSOLUTE_DEVIATION_ETH, SURPLUS_REL_DEVIATION
+from src.constants import SURPLUS_ABSOLUTE_DEVIATION_NATIVE_TOKEN, SURPLUS_REL_DEVIATION
 
 
 class ReferenceSolverSurplusTest(BaseTest):
@@ -22,10 +22,13 @@ class ReferenceSolverSurplusTest(BaseTest):
     the executions of these orders by a reference solver.
     """
 
-    def __init__(self, web3_api: Web3API, orderbook_api: OrderbookAPI) -> None:
+    def __init__(
+        self, web3_api: Web3API, orderbook_api: OrderbookAPI, chain_name: str
+    ) -> None:
         super().__init__()
         self.web3_api = web3_api
         self.orderbook_api = orderbook_api
+        self.chain_name = chain_name
         self.auction_instance_api = AuctionInstanceAPI()
         self.solver_api = SolverAPI()
 
@@ -92,13 +95,14 @@ class ReferenceSolverSurplusTest(BaseTest):
             )
 
             if (
-                a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH
+                a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_NATIVE_TOKEN[self.chain_name]
                 and a_rel > SURPLUS_REL_DEVIATION
             ):
                 self.logger.info(log_output)
                 self.logger.info(ref_solver_log)
             elif (
-                a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10
+                a_abs_eth
+                > SURPLUS_ABSOLUTE_DEVIATION_NATIVE_TOKEN[self.chain_name] / 10
                 and a_rel > SURPLUS_REL_DEVIATION / 10
             ):
                 self.logger.info(log_output)

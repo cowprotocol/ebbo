@@ -6,11 +6,21 @@ All Constants that are used throughout the project
 SLEEP_TIME_IN_SEC = 10
 
 # surplus tests
-SURPLUS_ABSOLUTE_DEVIATION_ETH = 0.05
+SURPLUS_ABSOLUTE_DEVIATION_NATIVE_TOKEN = {
+    "mainnet": 0.05,
+    "xdai": 10,
+    "arbitrum_one": 0.01,
+    "base": 0.01,
+}
 SURPLUS_REL_DEVIATION = 0.004
 
 # combinatorial auctions
-COMBINATORIAL_AUCTION_ABSOLUTE_DEVIATION_ETH = 0.005
+COMBINATORIAL_AUCTION_ABSOLUTE_DEVIATION_NATIVE_TOKEN = {
+    "mainnet": 0.005,
+    "xdai": 10,
+    "arbitrum_one": 0.005,
+    "base": 0.005,
+}
 
 # cost coverage test
 COST_COVERAGE_ABSOLUTE_DEVIATION_ETH = 0.01
@@ -38,7 +48,12 @@ KICKBACKS_ALERT_THRESHOLD = 0.5
 UDP_SENSITIVITY_THRESHOLD = 0.005
 
 # threshold to generate an alert for high score
-HIGH_SCORE_THRESHOLD_ETH = 10
+HIGH_SCORE_THRESHOLD_NATIVE_TOKEN = {
+    "mainnet": 10,
+    "xdai": 100,
+    "arbitrum_one": 1,
+    "base": 1,
+}
 
 # relevant addresses
 SETTLEMENT_CONTRACT_ADDRESS = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"

@@ -9,7 +9,7 @@ from fractions import Fraction
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.orderbookapi import OrderbookAPI
 from src.models import Trade, OrderExecution
-from src.constants import SURPLUS_ABSOLUTE_DEVIATION_ETH, SURPLUS_REL_DEVIATION
+from src.constants import SURPLUS_ABSOLUTE_DEVIATION_NATIVE_TOKEN, SURPLUS_REL_DEVIATION
 
 
 class SolverCompetitionSurplusTest(BaseTest):
@@ -18,9 +18,10 @@ class SolverCompetitionSurplusTest(BaseTest):
     the different executions of these orders by other solvers in the competition.
     """
 
-    def __init__(self, orderbook_api: OrderbookAPI) -> None:
+    def __init__(self, orderbook_api: OrderbookAPI, chain_name: str) -> None:
         super().__init__()
         self.orderbook_api = orderbook_api
+        self.chain_name = chain_name
 
     def compare_orders_surplus(self, competition_data: dict[str, Any]) -> bool:
         """
@@ -68,12 +69,13 @@ class SolverCompetitionSurplusTest(BaseTest):
                 )
 
                 if (
-                    a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH
+                    a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_NATIVE_TOKEN[self.chain_name]
                     and a_rel > SURPLUS_REL_DEVIATION
                 ):
                     self.alert(log_output)
                 elif (
-                    a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 100
+                    a_abs_eth
+                    > SURPLUS_ABSOLUTE_DEVIATION_NATIVE_TOKEN[self.chain_name] / 100
                     and a_rel > SURPLUS_REL_DEVIATION / 10
                 ):
                     self.logger.info(log_output)

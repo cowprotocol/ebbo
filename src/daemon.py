@@ -34,8 +34,8 @@ def main() -> None:
 
     # initialize tests
     tests = [
-        SolverCompetitionSurplusTest(orderbook_api),
-        HighScoreTest(orderbook_api),
+        SolverCompetitionSurplusTest(orderbook_api, chain_name),
+        HighScoreTest(orderbook_api, chain_name),
     ]
     # special case for mainnet as MEV Blocker only exists on mainnet
     if chain_name == "mainnet":
