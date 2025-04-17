@@ -15,7 +15,6 @@ jobs:
         uses: contributor-assistant/github-action@v2.6.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PERSONAL_ACCESS_TOKEN : ${{ secrets.ORG_TOKEN }}
         with:
           branch: 'cla-signatures'
           path-to-signatures: 'signatures/version1/cla.json'
