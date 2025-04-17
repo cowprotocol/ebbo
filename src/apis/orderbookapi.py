@@ -7,7 +7,7 @@ OrderbookAPI for fetching relevant data using the CoW Swap Orderbook API.
 from typing import Any, Optional
 import json
 import requests
-from src.helper_functions import get_logger
+from src.helper_functions import Logger
 from src.models import Trade, OrderData, OrderExecution
 from src.constants import (
     header,
@@ -23,7 +23,7 @@ class OrderbookAPI:
     """
 
     def __init__(self, chain_name: str) -> None:
-        self.logger = get_logger()
+        self.logger = Logger()
         self.prod_url_prefix = f"https://api.cow.fi/{chain_name}/api/v1/"
         self.barn_url_prefix = f"https://barn.api.cow.fi/{chain_name}/api/v1/"
 

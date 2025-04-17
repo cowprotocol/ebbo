@@ -9,7 +9,7 @@ from copy import deepcopy
 import json
 import requests
 from src.models import OrderData
-from src.helper_functions import get_logger
+from src.helper_functions import Logger
 from src.constants import (
     header,
     REQUEST_TIMEOUT,
@@ -31,7 +31,7 @@ class AuctionInstanceAPI:
     """
 
     def __init__(self) -> None:
-        self.logger = get_logger()
+        self.logger = Logger()
 
     def get_auction_instance(self, auction_id: int) -> Optional[dict[str, Any]]:
         """
