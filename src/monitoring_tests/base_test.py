@@ -24,6 +24,8 @@ class BaseTest(ABC):
 
         if "SLACK_BOT_TOKEN" in os.environ:
             self.slack_client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
+        else:
+            self.slack_client = None
 
     @abstractmethod
     def run(self, tx_hash: str) -> bool:
