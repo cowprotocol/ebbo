@@ -40,6 +40,9 @@ UDP_SENSITIVITY_THRESHOLD = 0.005
 # threshold to generate an alert for high score
 HIGH_SCORE_THRESHOLD_ETH = 10
 
+# threshold to generate an alert for price discrepancy test
+UCP_VS_NATIVE_SENSITIVITY_THRESHOLD = 0.5
+
 # relevant addresses
 SETTLEMENT_CONTRACT_ADDRESS = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41"
 MEV_BLOCKER_KICKBACKS_ADDRESSES = [
