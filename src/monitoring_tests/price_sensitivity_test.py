@@ -3,6 +3,7 @@ Checks whether native prices are far from UCP for a trade
 """
 
 # pylint: disable=duplicate-code
+# pylint: disable=too-many-locals
 from typing import Any
 from fractions import Fraction
 from src.monitoring_tests.base_test import BaseTest
@@ -22,9 +23,7 @@ class PriceSensitivityTest(BaseTest):
         super().__init__()
         self.orderbook_api = orderbook_api
 
-    def check_prices(
-        self, competition_data: dict[str, Any]
-    ) -> bool:  # pylint: disable=too-many-locals
+    def check_prices(self, competition_data: dict[str, Any]) -> bool:
         """
         This function checks whether native prices are far from ucp
         """
