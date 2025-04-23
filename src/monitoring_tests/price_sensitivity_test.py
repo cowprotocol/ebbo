@@ -22,17 +22,19 @@ class PriceSensitivityTest(BaseTest):
         super().__init__()
         self.orderbook_api = orderbook_api
 
-    def check_prices(self, competition_data: dict[str, Any]) -> bool:
+    def check_prices(
+        self, competition_data: dict[str, Any]
+    ) -> bool:  # pylint: disable=too-many-locals
         """
         This function checks whether native prices are far from ucp
         """
-        solution = competition_data["solutions"][-1]
-        trades_dict = self.orderbook_api.get_uid_trades(solution)
+        winning_solution = competition_data["solutions"][-1]
+        trades_dict = self.orderbook_api.get_uid_trades(winning_solution)
         if trades_dict is None:
             return False
 
         ucp: dict[str, int] = {}
-        for token, price in competition_data["solutions"][-1]["clearingPrices"].items():
+        for token, price in winning_solution["clearingPrices"].items():
             ucp[token.lower()] = int(price)
 
         native_prices: dict[str, str] = {}
@@ -59,7 +61,7 @@ class PriceSensitivityTest(BaseTest):
                     [
                         "Price sensitivity test:",
                         f"Tx Hash: {competition_data['transactionHashes'][0]}",
-                        f"Winning Solver: {solution['solver']}",
+                        f"Winning Solver: {winning_solution['solver']}",
                         f"Trade: {uid}",
                         f"Gap: {float(max_rate / min_rate)}",
                     ]
