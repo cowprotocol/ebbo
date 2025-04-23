@@ -21,11 +21,10 @@ class BaseTest(ABC):
     def __init__(self) -> None:
         self.tx_hashes: list[str] = []
         self.logger = get_logger()
+        self.slack_client: WebClient | None = None
 
         if "SLACK_BOT_TOKEN" in os.environ:
             self.slack_client = WebClient(token=os.environ["SLACK_BOT_TOKEN"])
-        else:
-            self.slack_client = WebClient()
 
     @abstractmethod
     def run(self, tx_hash: str) -> bool:
