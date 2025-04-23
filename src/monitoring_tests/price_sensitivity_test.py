@@ -36,7 +36,7 @@ class PriceSensitivityTest(BaseTest):
         for token, price in winning_solution["clearingPrices"].items():
             ucp[token.lower()] = int(price)
 
-        native_prices: dict[str, str] = {}
+        native_prices: dict[str, int] = {}
         for token, price in competition_data["auction"]["prices"].items():
             native_prices[token.lower()] = int(price)
 
