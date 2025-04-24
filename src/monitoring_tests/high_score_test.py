@@ -7,7 +7,7 @@ Checking winner's score and generating an alert if score is very large
 from typing import Any
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.orderbookapi import OrderbookAPI
-from src.constants import HIGH_SCORE_THRESHOLD_ETH
+from src.constants import HIGH_SCORE_THRESHOLD_NATIVE_TOKEN
 
 
 class HighScoreTest(BaseTest):
@@ -16,9 +16,10 @@ class HighScoreTest(BaseTest):
     is above certain threshold
     """
 
-    def __init__(self, orderbook_api: OrderbookAPI) -> None:
+    def __init__(self, orderbook_api: OrderbookAPI, chain_name: str) -> None:
         super().__init__()
         self.orderbook_api = orderbook_api
+        self.chain_name = chain_name
 
     def compute_winning_score(self, competition_data: dict[str, Any]) -> bool:
         """
@@ -34,7 +35,7 @@ class HighScoreTest(BaseTest):
                 f"Score in ETH: {score}",
             ]
         )
-        if score > HIGH_SCORE_THRESHOLD_ETH:
+        if score > HIGH_SCORE_THRESHOLD_NATIVE_TOKEN[self.chain_name]:
             self.alert(log_output)
         return True
 

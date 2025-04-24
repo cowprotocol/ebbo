@@ -10,8 +10,8 @@ from fractions import Fraction
 from src.monitoring_tests.base_test import BaseTest
 from src.apis.orderbookapi import OrderbookAPI
 from src.constants import (
-    SURPLUS_ABSOLUTE_DEVIATION_ETH,
-    COMBINATORIAL_AUCTION_ABSOLUTE_DEVIATION_ETH,
+    SURPLUS_ABSOLUTE_DEVIATION_NATIVE_TOKEN,
+    COMBINATORIAL_AUCTION_ABSOLUTE_DEVIATION_NATIVE_TOKEN,
 )
 
 
@@ -35,9 +35,10 @@ class CombinatorialAuctionSurplusTest(BaseTest):
       with our current mechanism.
     """
 
-    def __init__(self, orderbook_api: OrderbookAPI) -> None:
+    def __init__(self, orderbook_api: OrderbookAPI, chain_name: str) -> None:
         super().__init__()
         self.orderbook_api = orderbook_api
+        self.chain_name = chain_name
 
     def run_combinatorial_auction(self, competition_data: dict[str, Any]) -> bool:
         """Run combinatorial auction on competition data.
@@ -103,12 +104,13 @@ class CombinatorialAuctionSurplusTest(BaseTest):
 
         if any(
             solutions[ind]["solver"] == "baseline"
-            and surplus_difference > COMBINATORIAL_AUCTION_ABSOLUTE_DEVIATION_ETH
+            and surplus_difference
+            > COMBINATORIAL_AUCTION_ABSOLUTE_DEVIATION_NATIVE_TOKEN[self.chain_name]
             for ind, surplus_difference in filter_mask[-1]
         ):
             self.alert(log_output)
         elif (
-            a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_ETH / 10
+            a_abs_eth > SURPLUS_ABSOLUTE_DEVIATION_NATIVE_TOKEN[self.chain_name] / 10
             or not len(filter_mask[-1]) == 0
         ):
             self.logger.info(log_output)
