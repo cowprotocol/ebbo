@@ -32,11 +32,15 @@ class PriceSensitivityTest(BaseTest):
         if trades_dict is None:
             return False
 
-        ucp = {token.lower(): int(price) for token, price in winning_solution["clearingPrices"].items()}
+        ucp = {
+            token.lower(): int(price)
+            for token, price in winning_solution["clearingPrices"].items()
+        }
 
-        native_prices: dict[str, int] = {}
-        for token, price in competition_data["auction"]["prices"].items():
-            native_prices[token.lower()] = int(price)
+        native_prices = {
+            token.lower(): int(price)
+            for token, price in competition_data["auction"]["prices"].items()
+        }
 
         for uid, trade in trades_dict.items():
             sell_token = trade.data.sell_token.lower()
