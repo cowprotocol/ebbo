@@ -48,12 +48,8 @@ class PriceSensitivityTest(BaseTest):
                 native_prices[sell_token], native_prices[buy_token]
             )
 
-            if ucp_rate > native_price_rate:
-                max_rate = ucp_rate
-                min_rate = native_price_rate
-            else:
-                max_rate = native_price_rate
-                min_rate = ucp_rate
+            max_rate = max(ucp_rate, native_price_rate)
+            min_rate = min(ucp_rate, native_price_rate)
 
             if max_rate > (1 + UCP_VS_NATIVE_SENSITIVITY_THRESHOLD) * min_rate:
                 log_output = "\t".join(
