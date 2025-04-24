@@ -20,6 +20,7 @@ from src.monitoring_tests.mev_blocker_kickbacks_test import (
 from src.monitoring_tests.high_score_test import (
     HighScoreTest,
 )
+from src.monitoring_tests.price_sensitivity_test import PriceSensitivityTest
 from src.constants import SLEEP_TIME_IN_SEC, CHAIN_ID_TO_NAME
 
 
@@ -36,6 +37,7 @@ def main() -> None:
     tests = [
         SolverCompetitionSurplusTest(orderbook_api),
         HighScoreTest(orderbook_api),
+        PriceSensitivityTest(orderbook_api),
     ]
     # special case for mainnet as MEV Blocker only exists on mainnet
     if chain_name == "mainnet":
