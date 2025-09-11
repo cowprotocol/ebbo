@@ -10,17 +10,9 @@ If a settlement failes a test, an error level message is logged.
 import time
 from typing import Optional
 from src.apis.web3api import Web3API
-from src.apis.orderbookapi import OrderbookAPI
-from src.monitoring_tests.solver_competition_surplus_test import (
-    SolverCompetitionSurplusTest,
-)
 from src.monitoring_tests.mev_blocker_kickbacks_test import (
     MEVBlockerRefundsMonitoringTest,
 )
-from src.monitoring_tests.high_score_test import (
-    HighScoreTest,
-)
-from src.monitoring_tests.price_sensitivity_test import PriceSensitivityTest
 from src.constants import SLEEP_TIME_IN_SEC, CHAIN_ID_TO_NAME
 
 
@@ -31,7 +23,7 @@ def main() -> None:
     web3_api = Web3API()
     chain_id = web3_api.get_chain_id()
     chain_name = CHAIN_ID_TO_NAME[chain_id]
-    orderbook_api = OrderbookAPI(chain_name)
+    # orderbook_api = OrderbookAPI(chain_name)
 
     # initialize tests
     tests = [
